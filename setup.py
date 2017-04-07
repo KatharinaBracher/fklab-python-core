@@ -8,11 +8,11 @@ from distutils.core import Extension
 packages = [ 'fklab.codetools',
              'fklab.events',
              'fklab.segments',
-             'fklab.io',
-             'fklab.plot',
+             'fklab.io.common', 'fklab.io.mwl', 'fklab.io.neuralynx', 'fklab.io.openephys',
+             'fklab.plot.core', 'fklab.plot.neuralynx', 'fklab.plot.openephys', 'fklab.plot.plots',
              'fklab.radon',
-             'fklab.signals',
-             'fklab.statistics',
+             'fklab.signals.core', 'fklab.signals.filter', 'fklab.signals.smooth', 'fklab.signals.multirate', 'fklab.signals.multitaper',
+             'fklab.statistics.core', 'fklab.statistics.circular', 'fklab.statistics.correlation', 'fklab.statistics.information',
              'fklab.utilities',
            ]
 
