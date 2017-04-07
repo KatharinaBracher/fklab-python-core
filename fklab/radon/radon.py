@@ -18,7 +18,7 @@ Radon transform (:mod:`fklab.radon.radon`)
     
 """
 
-import radonc
+from . import radonc
 import numpy as np
 import scipy as sp
 import scipy.stats
