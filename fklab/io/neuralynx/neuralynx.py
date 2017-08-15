@@ -257,7 +257,7 @@ def readheader(file):
     """
     
     #read fixed size text header
-    with open(file,'r') as f:
+    with open(file,'rb') as f:
         hdr = f.read(NLXHEADERSIZE)
 
     #check if this is a valid Neuralynx data file
@@ -265,7 +265,7 @@ def readheader(file):
         raise NeuralynxIOError(file,'Unrecognizable data file header')
 
     #remove unused part of header (filled with chr(0)) and separate lines
-    hdr = hdr.strip(chr(0)).splitlines()
+    hdr = str(hdr.strip(b'\x00'), 'windows-1252').splitlines()
 
     #look for FileType header parameter
     filetype = None
@@ -490,7 +490,7 @@ class NlxFileBase(object):
 
     @property
     def nrecords(self):
-        return (self.filesize - NLXHEADERSIZE)/self.recordsize
+        return int( (self.filesize - NLXHEADERSIZE)/self.recordsize )
 
     @property
     def header(self):
@@ -922,6 +922,9 @@ class NlxFileCSC(NlxFileTimedBuffers):
             signal = np.expand_dims( signal, axis=2 )
         
         data = super(NlxFileCSC,self)._convert_data( signal )
+        
+        if self._nchan==1:
+            data = data.squeeze(axis=2)
         
         return data
     
