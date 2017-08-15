@@ -318,7 +318,7 @@ def inspect_filter( b, a=1.0, fs=1., npoints=None, filtfilt=False, detail=None, 
     # prepare plot
     fig = plt.figure()
     
-    ncols, ratios = 1,[1,] if detail is None else 2,[2,1]
+    ncols, ratios = (1,[1,]) if detail is None else (2,[2,1])
     nrows = 3 if not filtfilt else 1
     
     g = gridspec.GridSpec( nrows=nrows, ncols=ncols, bottom=0.1, top=0.9, left=0.1, right=0.9, wspace = 0.5, hspace =0.5, width_ratios=ratios )
