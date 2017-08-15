@@ -80,7 +80,7 @@ PYBIND11_PLUGIN(radonc) {
     } ) //&Radon::set_integral_method)
     .def_property("valid", &Radon::valid, &Radon::set_valid)
     .def_property("intercept", &Radon::intercept, &Radon::set_intercept)
-    .def("slice", []( const Radon & obj, py::array_t<double> data, double theta, double rho ) {
+    .def("slice", []( const Radon & obj, py::array_t<double, py::array::c_style | py::array::forcecast> data, double theta, double rho ) {
         
         std::vector<double> slice;
         IndexPair n;
@@ -97,7 +97,7 @@ PYBIND11_PLUGIN(radonc) {
         return std::make_tuple( slice, n );
         
         }, py::arg("data"), py::arg("theta"), py::arg("rho") )
-    .def("transform", []( const Radon & obj, py::array_t<double> data, py::array_t<double> theta, py::array_t<double> rho ) {
+    .def("transform", []( const Radon & obj, py::array_t<double, py::array::c_style | py::array::forcecast> data, py::array_t<double, py::array::c_style | py::array::forcecast> theta, py::array_t<double, py::array::c_style | py::array::forcecast> rho ) {
         
         // check data array
         auto data_buf = data.request();
