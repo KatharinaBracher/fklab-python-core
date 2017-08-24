@@ -1151,6 +1151,10 @@ def create_boxed_shape(ax, method='center-size', shape='rectangle'):
         return True
     
     def update_animation(ax,data,pointer):
+        
+        if pointer is None:
+            return [hL, hShape]
+        
         ctr, sz, angle = _method( data, pointer )
         
         sz = np.array(sz).ravel()
@@ -1304,7 +1308,7 @@ def create_polyline(ax):
         return True
     
     def update_animation(ax,data,pointer):
-        if len(data)>0:
+        if len(data)>0 and not pointer is None:
             hRubber.set_xdata([data[-1,0],pointer[0]])
             hRubber.set_ydata([data[-1,1],pointer[1]])
         else:
@@ -1361,14 +1365,14 @@ def create_polygon(ax):
         return True
     
     def update_animation(ax,data,pointer):
-        if len(data)>0:
+        if len(data)>0 and pointer is not None:
             hRubber.set_xdata([data[-1,0],pointer[0]])
             hRubber.set_ydata([data[-1,1],pointer[1]])
         else:
             hRubber.set_xdata([])
             hRubber.set_ydata([])
         
-        if len(data)>2:
+        if len(data)>2 and pointer is not None:
             hP.set_xy( np.append( data, pointer.reshape((1,2)), axis=0 ) )
         else:
             hP.set_xy( [[np.nan,np.nan]] )
