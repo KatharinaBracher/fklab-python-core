@@ -48,6 +48,31 @@ __all__ = ['compute_threshold', 'compute_threshold_zscore',
 
 
 def compute_threshold(time, signal, threshold, segments=None, kind='raw'):
+    """Computes thresholds for other signal detection algorithms.
+    
+    Parameters
+    ----------
+    time : 1d array
+    signal : 1d array
+    threshold : callable or 1d array-like
+        If threshold is a callable, then it will be directly applied to the
+        selected samples in the signal. If threshold is a 1d array, then it the
+        thresholds will be computed according to the kind option.
+    segments : (n,2) segment array
+        Threshold computation will be performed only on the samples inside the
+        segments
+    kind : 'raw', 'zscore', 'median' or 'percentile'
+        The kind option determines how the threshold is computed.
+        raw: use threshold array unmodified
+        zscore: use compute_threshold_zscore function
+        median: use compute_threshold_median function
+        percentile: use compute_threshold_percentile function
+    
+    Returns
+    -------
+    threshold : 1d array
+    
+    """
     
     if segments is None:
         segments = [-np.inf, np.inf]
@@ -165,7 +190,9 @@ def detect_mountains(y, x=None, low=None, high=None,
     segments : Segment (optional)
         pre-defined segments in which to search for above-threshold values
     allowable_gap : float
+        segments with a gap smaller than allowable_gap are merged
     minimum_duration : float
+        segments with a duration smaller than minimum_duration are removed
     
     Returns
     -------
