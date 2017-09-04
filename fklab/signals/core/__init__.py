@@ -11,7 +11,7 @@ Basic algorithms.
     
 """
 
-from .basic_algorithms import (compute_threshold, compute_threshold_median
+from .basic_algorithms import (compute_threshold, compute_threshold_median,
     compute_threshold_percentile, compute_threshold_zscore,
     detect_mountains, zerocrossing, localmaxima, 
     localminima, localextrema, remove_artefacts, extract_data_windows,
