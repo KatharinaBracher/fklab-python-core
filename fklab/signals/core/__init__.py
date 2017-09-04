@@ -11,7 +11,9 @@ Basic algorithms.
     
 """
 
-from .basic_algorithms import (detect_mountains, zerocrossing, localmaxima, 
+from .basic_algorithms import (compute_threshold, compute_threshold_median
+    compute_threshold_percentile, compute_threshold_zscore,
+    detect_mountains, zerocrossing, localmaxima, 
     localminima, localextrema, remove_artefacts, extract_data_windows,
     extract_trigger_windows, generate_windows, generate_trigger_windows,
     event_triggered_average)
