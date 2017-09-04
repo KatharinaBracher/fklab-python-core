@@ -39,12 +39,117 @@ import fklab.segments as seg
 
 _USE_NUMBA = True
 
-__all__ = ['detect_mountains', 'localextrema', 'localmaxima', 'localminima', 
+__all__ = ['compute_threshold', 'compute_threshold_zscore',
+           'compute_threshold_median', 'compute_threshold_percentile',
+           'detect_mountains', 'localextrema', 'localmaxima', 'localminima', 
            'zerocrossing', 'remove_artefacts', 'generate_windows',
            'extract_data_windows', 'generate_trigger_windows', 'extract_trigger_windows',
            'event_triggered_average']
 
-def detect_mountains(y,x=None,low=None,high=None,segments=None):
+
+def compute_threshold(time, signal, threshold, segments=None, kind='raw'):
+    
+    if segments is None:
+        segments = [-np.inf, np.inf]
+    
+    segments = seg.check_segments(segments)
+    
+    b,_,_ = seg.segment_contains(segments, time)
+
+    if callable(threshold):
+        threshold = threshold(signal[b])
+    elif kind=='raw':
+        if threshold is None:
+            raise ValueError("raw threshold cannot be None.")
+        threshold = np.array(threshold, copy=False, dtype=np.float64).ravel()
+    elif kind=='zscore':
+        threshold = compute_threshold_zscore(threshold)(signal[b])
+    elif kind=='median':
+        threshold = compute_threshold_median(threshold)(signal[b])
+    elif kind=='percentile':
+        threshold = compute_threshold_percentile(threshold)(signal[b])
+    
+    return threshold
+
+def compute_threshold_zscore(multipliers=None):
+    """Creates callable for computing thresholds based on zscore.
+    
+    Parameters
+    ----------
+    multipliers : scalar or sequence
+    
+    Returns
+    -------
+    callable object that takes a 1D array and returns
+    mean(signal) + multipliers * standard_deviation(signal)
+    
+    """
+    
+    if multipliers is None:
+        multipliers = 1
+    
+    multipliers = np.array( multipliers, copy=True, dtype=np.float64 ).ravel()
+    
+    def inner( signal, multipliers=multipliers ):
+        mu = np.mean( signal )
+        std = np.std( signal )
+        return mu + multipliers * std
+    
+    return inner
+
+def compute_threshold_median(multipliers=None):
+    """Creates callable for computing thresholds based on median and
+    upper quartile range.
+    
+    Parameters
+    ----------
+    multipliers : scalar or sequence
+    
+    Returns
+    -------
+    callable object that takes a 1D array and returns
+    median(signal) + multipliers * ( percentile(signal,75) - median(signal) )
+    
+    """
+    if multipliers is None:
+        multipliers = 1
+    
+    multipliers = np.array( multipliers, copy=True, dtype=np.float64 ).ravel()
+    
+    def inner( signal, multipliers=multipliers ):
+        mu = np.median( signal )
+        qr = np.percentile( signal, 75 ) - mu
+        return mu + multipliers * qr
+    
+    return inner
+
+def compute_threshold_percentile(percentiles=None):
+    """Creates callable for computing thresholds based on percentiles.
+    
+    Parameters
+    ----------
+    percentiles : scalar or sequence
+    
+    Returns
+    -------
+    callable object that takes an 1D array and returns the requested
+    percentiles.
+    
+    """
+    
+    if percentiles is None:
+        percentiles = [50,90]
+    
+    percentiles = np.array( percentiles, copy=True, dtype=np.float64 ). ravel()
+    
+    def inner( signal, percentiles=percentiles ):
+        return np.percentile( signal, percentiles )
+    
+    return inner
+
+
+def detect_mountains(y, x=None, low=None, high=None,
+                     segments=None, allowable_gap=None, minimum_duration=None):
     """Detects segments with above-threshold values 1D data array.
     
     Parameters
@@ -59,6 +164,8 @@ def detect_mountains(y,x=None,low=None,high=None,segments=None):
         upper data value threshold
     segments : Segment (optional)
         pre-defined segments in which to search for above-threshold values
+    allowable_gap : float
+    minimum_duration : float
     
     Returns
     -------
@@ -95,6 +202,14 @@ def detect_mountains(y,x=None,low=None,high=None,segments=None):
         #combine with user-provided segments
         if segments is not None:
             s = s & segments
+    
+    # join nearby bursts
+    if not allowable_gap is None:
+        s.ijoin(gap=allowable_gap)
+    
+    # eliminate short duration bursts
+    if not minimum_duration is None:
+        del s[s.duration<minimum_duration]
     
     return s
 
