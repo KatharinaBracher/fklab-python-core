@@ -405,14 +405,14 @@ def event_count( events, x=None ):
     """
     
     events = check_events( events, copy=False )
-    ne = len(e);
+    ne = len(events);
     
     #make sure x is 1D numpy vector
     x = np.array(x).ravel()
     nx = len(x)
     
     #combine event and x vectors, label 0/1 and sort
-    tmp = np.concatenate( (e, x) )
+    tmp = np.concatenate( (events, x) )
     q = np.concatenate( (np.zeros(ne), np.ones(nx)) )
     q = q[ tmp.argsort(), ]
     qi = np.nonzero( q )[0]
