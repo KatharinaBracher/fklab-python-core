@@ -13,5 +13,6 @@ Tools for code management, including deprecations warnings.
 """
 
 from .general import *
+from .profile import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]

@@ -20,7 +20,7 @@ import warnings
 
 __all__ = ['deprecated']
 
-# deprecated decorator was borred from https://gist.github.com/kgriffs/8202106
+# deprecated decorator was borrowed from https://gist.github.com/kgriffs/8202106
 
 # We don't want our deprecations to be ignored by default,
 # so create our own type.
