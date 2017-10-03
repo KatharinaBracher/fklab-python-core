@@ -199,6 +199,7 @@ _NLXVALUEHANDLERS = [
     (_NlxIntArrayHandler, [
         'ADChannel',
         'Resolution',
+        'DisabledSubChannels',
         ]
     ),
     (_NlxStringHandler, [
