@@ -36,7 +36,7 @@ Provides basic algorithms for lists of segments.
 import operator
 import numpy as np
 
-__all__ = ['segment_sort','segment_has_overlap', 
+__all__ = ['segment_span', 'segment_sort','segment_has_overlap', 
            'segment_remove_overlap','segment_invert','segment_exclusive',
            'segment_union','segment_difference','segment_intersection',
            'segment_scale','segment_concatenate','segment_contains',
@@ -86,6 +86,24 @@ def check_segments(x, copy=False):
         raise ValueError('Segment durations cannot be negative')
     
     return x
+
+def segment_span(segments):
+    """Span of segments.
+    
+    Parameters
+    ----------
+    segments : segment array
+    
+    Returns
+    -------
+    segment that spans input segments
+    
+    """
+    segments = check_segments(segments,copy=False)
+    if len(segments)==0:
+        return segments
+    else:
+        return np.array([np.min(segments[:,0]), np.max(segments[:,1])])
 
 def segment_sort(segments):
     """Sort segments by start time.

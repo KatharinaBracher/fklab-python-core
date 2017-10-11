@@ -552,19 +552,20 @@ def inrange(x,low=None,high=None,include_boundary=True):
         op_low = np.greater
         op_high = np.less
     
-    if low is None:
+    with np.errstate(invalid='ignore'):
+        if low is None:
+            if high is None:
+                return np.ones( x.shape, dtype=np.bool8 )
+            else:
+                return op_high( x, high )
+        
         if high is None:
-            return np.ones( x.shape, dtype=np.bool8 )
+            return op_low( x, low )
+        
+        if high>=low:
+            return np.logical_and( op_low(x, low), op_high(x, high) )
         else:
-            return op_high( x, high )
-    
-    if high is None:
-        return op_low( x, low )
-    
-    if high>=low:
-        return np.logical_and( op_low(x, low), op_high(x, high) )
-    else:
-        return np.logical_or( op_low(x, low), op_high(x, high) )
+            return np.logical_or( op_low(x, low), op_high(x, high) )
 
 def natural_sort( iter, reverse=False ):
     """Sorts iterable with strings in natural order.

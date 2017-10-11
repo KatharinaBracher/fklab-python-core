@@ -30,13 +30,15 @@ Exceptions
 
 
 import numpy as np
+import scipy.interpolate
 
 from fklab.utilities.general import issorted, partition_vector
-from .basic_algorithms import ( check_segments, segment_sort, segment_has_overlap,
-  segment_remove_overlap, segment_invert, segment_exclusive, segment_union, 
-  segment_difference, segment_intersection, segment_scale, segment_concatenate,
-  segment_contains, segment_count, segment_overlap, segment_asindex, segment_join,
-  segment_split, segment_applyfcn, segment_uniform_random )
+from .basic_algorithms import ( check_segments, segment_span, segment_sort,
+  segment_has_overlap, segment_remove_overlap, segment_invert, segment_exclusive,
+  segment_union, segment_difference, segment_intersection, segment_scale,
+  segment_concatenate, segment_contains, segment_count, segment_overlap,
+  segment_asindex, segment_join, segment_split, segment_applyfcn,
+  segment_uniform_random )
 
 
 __all__ = ['SegmentError','Segment']
@@ -98,7 +100,7 @@ class Segment(object):
         return Segment(data)
     
     @classmethod
-    def fromlogical(cls,y,x=None):
+    def fromlogical(cls,y,x=None,interpolate=False):
         """Construct Segment from logical vector.
         
         Parameters
@@ -115,19 +117,27 @@ class Segment(object):
         
         """
         
-        y = np.asarray( y==True, dtype=np.int8)
+        y = np.asarray( y==True, dtype=np.int8).ravel()
         
         if len(y)==0 or np.all(y==0):
             return Segment([])
         
+        offset = 0
+        if interpolate:
+            offset = 0.5
+        
         d = np.diff( np.concatenate( ([0],y,[0]) ) )
-        segstart = np.nonzero( d[0:-1]==1 )[0]
-        segend = np.nonzero( d[1:]==-1 )[0]
+        segstart = np.nonzero( d[0:-1]==1 )[0] - offset
+        segend = np.nonzero( d[1:]==-1 )[0] + offset
         
         seg = np.vstack( (segstart,segend) ).T
         
         if x is not None:
-            seg = x[seg]
+            if interpolate:
+                seg = scipy.interpolate.interp1d(np.arange(len(y)), x,
+                        kind='linear', bounds_error=False, fill_value=(x[0], x[-1]))(seg)
+            else:
+                seg = x[seg]
         
         return Segment(seg)
     
@@ -266,6 +276,9 @@ class Segment(object):
     def __str__(self):
         """Return string representation of Segment object data."""
         return "Segment(" + str(self._data) + ")"
+    
+    def span(self):
+        return segment_span(self._data)
     
     @property
     def start(self):
