@@ -328,7 +328,7 @@ class iEllipse(Ellipse):
     def axes(self, ax):
         super(iEllipse,iEllipse).axes.__set__(self,ax)
 
-        self._interaction_handles.set_axes(ax)
+        self._interaction_handles.axes=ax
         
         if ax is None:
             return
@@ -514,7 +514,7 @@ class iRectangle(Rectangle):
     def axes(self, ax):
         super(iRectangle,iRectangle).axes.__set__(self,ax)
 
-        self._interaction_handles.set_axes(ax)
+        self._interaction_handles.axes=ax
         
         if ax is None:
             return
@@ -879,7 +879,7 @@ class iPolygon(Polygon):
     def axes(self, ax):
         super(iPolygon,iPolygon).axes.__set__(self,ax)
 
-        self._interaction_handles.set_axes(ax)
+        self._interaction_handles.axes=ax
         
         if ax is None:
             return
@@ -889,7 +889,7 @@ class iPolygon(Polygon):
             self._interaction_handles.set_clip_path(ax.patch)
         ax._update_line_limits(self._interaction_handles)
         
-        self._interaction_handles2.set_axes(ax)
+        self._interaction_handles2.axes=ax
         ax._set_artist_props(self._interaction_handles2)
         if self._interaction_handles2.get_clip_path() is None:
             self._interaction_handles2.set_clip_path(ax.patch)
