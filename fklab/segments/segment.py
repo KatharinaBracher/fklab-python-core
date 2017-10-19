@@ -120,7 +120,7 @@ class Segment(object):
         y = np.asarray( y==True, dtype=np.int8).ravel()
         
         if len(y)==0 or np.all(y==0):
-            return Segment([])
+            return Segment(np.zeros((0,2), dtype=np.int64))
         
         offset = 0
         if interpolate:
