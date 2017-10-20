@@ -66,9 +66,11 @@ import numpy as np
 from fklab.io.common.binary import BinaryFileReader, accessor, signal_indexer
 from fklab.segments import Segment
 
-__all__ = ['NeuralynxError','NeuralynxIOError','NlxTimestamp2Seconds','NlxSeconds2Timestamp','NLXHEADERSIZE','NLXCSCBUFFERSIZE','NlxHeader',
-           'NlxFileSpike','NlxFileTahiti','NlxFileCSC','NlxFileEvent','NlxFileVideo','NlxVideoPoints','NlxOpen',
-           'NlxEventTimes']
+__all__ = ['NeuralynxError','NeuralynxIOError','NlxTimestamp2Seconds',
+           'NlxSeconds2Timestamp','NLXHEADERSIZE','NLXCSCBUFFERSIZE','NlxHeader',
+           'NlxFileSpike','NlxFileTahiti','NlxFileCSC','NlxFileEvent',
+           'NlxFileVideo','NlxVideoPoints','NlxOpen','NlxEventTimes',
+           'nlx_parse_log', 'nlx_parse_lost_records']
 
 #==============================================================================
 # Exceptions for this module
@@ -235,6 +237,113 @@ _NLXVALUEHANDLERS = [
 #==============================================================================
 
 _units_scale_factor = {'V':1, 'mV':1000, 'uV':1000000}
+
+def nlx_parse_log(root):
+    """Parse Cheetah log messages
+    
+    Parameters
+    ----------
+    root : str
+        Directory where to find CheetahLogFile.txt
+    
+    Returns
+    -------
+    records : list
+        list of log records, each of which is a dictionary
+    
+    """
+    
+    import pathlib
+    import re
+    
+    path = pathlib.Path(root).joinpath('CheetahLogFile.txt')
+    
+    if not path.exists() or not path.is_file():
+        raise IOError("No CheetahLogFile.txt file found.") 
+    
+    re_pattern = "-\* +(?P<kind>[A-Z]+) +\*- +[0-9:.]+ +- +(?P<timestamp>[0-9]+) +- (?P<message>.*)"
+    re_msg_pattern = "(?P<source>[a-zA-Z0-9_]+::[a-zA-Z0-9_]+\(\)) +- (?P<message>.*)"
+    
+    re_pattern = re.compile(re_pattern)
+    re_msg_pattern = re.compile(re_msg_pattern)
+    
+    records = []
+    
+    with path.open(mode='r', encoding='ISO-8859-1') as f:
+        lines = f.readlines()
+    
+    k = 0
+    while k<len(lines):
+        
+        line = lines[k].strip()
+        k += 1
+        
+        if len(line)==0:
+            continue
+        
+        match = re_pattern.fullmatch(line.strip())
+        
+        if match is None:
+            records.append(dict(kind='MESSAGE', message=line))
+        else:
+            records.append(match.groupdict())
+            records[-1]['timestamp'] = int(records[-1]['timestamp'])
+            msg_match = re_msg_pattern.fullmatch(match.groupdict()['message'])
+            if not msg_match is None:
+                records[-1].update(msg_match.groupdict())
+                
+                # apparently SendDRSCommand lines are split in two
+                # recombine here
+                if records[-1]['source'] == 'DRSController::SendDRSCommand()':
+                    records[-1]['message'] += lines[k].strip()
+                    k += 1
+        
+    return records
+
+def nlx_parse_lost_records(root):
+    """Parse Cheetah lost records log
+    
+    Parameters
+    ----------
+    root : str
+        Directory where to find CheetahLogFile.txt
+        
+    Returns
+    -------
+    dict
+    
+    """
+    
+    import pathlib
+    path = pathlib.Path(root).joinpath('CheetahLostADRecords.txt')
+    
+    if not path.exists() or not path.is_file():
+        raise IOError("No CheetahLostADRecords.txt file found.") 
+    
+    h = nlx.NlxHeader(path)
+    result = dict(DataSectionsLost=int(h.values['DataSectionsLost']),
+                  ADRecordsLost=int(h.values['ADRecordsLost']),
+                  ADRecordsLostFirstTS=int(h.values['ADRecordsLostFirstTS']),
+                  ADRecordsLostLastTS=int(h.values['ADRecordsLostLastTS']),
+                  LostRecords=[]
+                  )
+    
+    with path.open(mode='r', encoding='ISO-8859-1') as f:
+        f.seek(16384) # skip header
+        lines = f.readlines()
+    
+    for l in lines:
+        l = l.strip(' \n\r\x00')
+        if len(l)>0:
+            parts = l.split(', ')
+            
+            if len(parts)==4 and parts[-1]=='RecordsLost':
+                result['LostRecords'].append(([int(parts[0]), int(parts[1])], int(parts[2])))
+            else:
+                print("Unrecognized line: {}".format(l))
+    
+    return result
+
 
 def readheader(file):
     """Reads Neuralynx data file header and determines file type.
