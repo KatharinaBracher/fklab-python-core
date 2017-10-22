@@ -59,6 +59,7 @@ Exceptions
 """
 
 import os
+import re
 import warnings
 import numbers
 import numpy as np
@@ -320,7 +321,7 @@ def nlx_parse_lost_records(root):
     if not path.exists() or not path.is_file():
         raise IOError("No CheetahLostADRecords.txt file found.") 
     
-    h = nlx.NlxHeader(path)
+    h = NlxHeader(path)
     result = dict(DataSectionsLost=int(h.values['DataSectionsLost']),
                   ADRecordsLost=int(h.values['ADRecordsLost']),
                   ADRecordsLostFirstTS=int(h.values['ADRecordsLostFirstTS']),
@@ -329,7 +330,7 @@ def nlx_parse_lost_records(root):
                   )
     
     with path.open(mode='r', encoding='ISO-8859-1') as f:
-        f.seek(16384) # skip header
+        f.seek(NLXHEADERSIZE) # skip header
         lines = f.readlines()
     
     for l in lines:
@@ -343,6 +344,91 @@ def nlx_parse_lost_records(root):
                 print("Unrecognized line: {}".format(l))
     
     return result
+
+def nlx_parse_cheetah_errors(root, time_window=None):
+    """Check Cheetah recording log for errors.
+    
+    Parameters
+    ----------
+    root : str
+        path to folder that contains Cheetah log files
+    time_window : None or [scalar, scalar], optional
+        start and end times of time window in which to look for errors
+    
+    Returns
+    -------
+    errors : dict
+        for each data source (e.g. csc file, tt file, videotracker) a list of 
+        error messages and the corresponding timestamps when they occurred.
+    lost_records : dict
+        time windows and corresponding number of lost AD records
+
+    """
+    
+    pattern_timestamp = "(t|T)imestamp: (?P<timestamp>[0-9]+)"
+    pattern_sources = ["Data Source Name: (?P<source>[0-9a-zA-Z_\-]+)", "(?P<source>VT[0-9]+)"]
+    
+    errors, lost_records = None, None
+    
+    if time_window is None:
+        time_window = Segment([-np.inf, np.inf])
+    else:
+        time_window = Segment(time_window)
+    
+    try:
+        cheetah_log = nlx_parse_log(root)
+    except IOError:
+        pass
+    else:
+        errors = dict()
+        
+        for log in cheetah_log:
+            if log['kind']=='ERROR':
+                match = re.search(pattern_timestamp, log['message'])
+                
+                if not match is None:
+                    ts = int(match.groupdict()['timestamp'])
+                else:
+                    ts = log['timestamp']
+                
+                ts = NlxTimestamp2Seconds(ts)
+                
+                if not time_window.contains(ts)[0]:
+                    continue
+                
+                for pattern in pattern_sources:
+                    match = re.search(pattern, log['message'])
+                    if not match is None:
+                        break
+                
+                if not match is None:
+                    src = match.groupdict()['source']
+                else:
+                    src = 'unknown'
+                
+                if not src in errors:
+                    errors[src] = dict(time=[], messages=[])
+                
+                errors[src]['time'].append(ts)
+                errors[src]['messages'].append(log['message'])
+    
+    try:
+        cheetah_lost_records = nlx_parse_lost_records(root)
+    except IOError:
+        pass
+    else:
+        n = np.array([lost[1] for lost in cheetah_lost_records['LostRecords']])
+        t = np.array([lost[0] for lost in cheetah_lost_records['LostRecords']])
+        t = NlxTimestamp2Seconds(t)
+    
+        b = np.logical_or(time_window.contains(t[:,0])[0], time_window.contains(t[:,1])[0])
+    
+        lost_records = dict(time_windows=t[b], n=n[b])
+    
+    if errors is None and lost_records is None:
+        raise IOError("No cheetah log files found.")
+    
+    return errors, lost_records
 
 
 def readheader(file):
