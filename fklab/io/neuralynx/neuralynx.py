@@ -71,7 +71,7 @@ __all__ = ['NeuralynxError','NeuralynxIOError','NlxTimestamp2Seconds',
            'NlxSeconds2Timestamp','NLXHEADERSIZE','NLXCSCBUFFERSIZE','NlxHeader',
            'NlxFileSpike','NlxFileTahiti','NlxFileCSC','NlxFileEvent',
            'NlxFileVideo','NlxVideoPoints','NlxOpen','NlxEventTimes',
-           'nlx_parse_log', 'nlx_parse_lost_records']
+           'nlx_parse_log', 'nlx_parse_lost_records', 'nlx_parse_cheetah_errors']
 
 #==============================================================================
 # Exceptions for this module
