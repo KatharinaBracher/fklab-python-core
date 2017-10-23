@@ -420,10 +420,12 @@ def nlx_parse_cheetah_errors(root, time_window=None):
         n = np.array([lost[1] for lost in cheetah_lost_records['LostRecords']])
         t = np.array([lost[0] for lost in cheetah_lost_records['LostRecords']])
         t = NlxTimestamp2Seconds(t)
-    
-        b = np.logical_or(time_window.contains(t[:,0])[0], time_window.contains(t[:,1])[0])
-    
-        lost_records = dict(time_windows=t[b], n=n[b])
+        
+        if len(t)==0:
+            lost_records = dict(time_windows=np.zeros((0,2)), n=np.zeros((0,)))
+        else:
+            b = np.logical_or(time_window.contains(t[:,0])[0], time_window.contains(t[:,1])[0])
+            lost_records = dict(time_windows=t[b], n=n[b])
     
     if errors is None and lost_records is None:
         raise IOError("No cheetah log files found.")
