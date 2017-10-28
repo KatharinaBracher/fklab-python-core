@@ -624,6 +624,11 @@ class Smoother(object):
         ndarray
         
         """
+        
+        data = np.array(data)
+        if len(data)==0:
+            return data
+        
         k = self._kernel(delta).copy()
         
         if self._normalize == 'sum':
