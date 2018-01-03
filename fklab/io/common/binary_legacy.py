@@ -43,11 +43,11 @@ class BinaryFileReader(object):
         self._data = klass(src, None)
         
         #set up access to individual fields
-        for k,v in self._alias.iteritems():
+        for k,v in self._alias.items():
             self.__setattr__(k, klass(src, {k:v}))
         
         #set up access to field groups
-        for name,grp in self._groups.iteritems():
+        for name,grp in self._groups.items():
             self.__setattr__(name, klass(src, {k:self._alias[k] for k in grp} ) )
     
     def __getitem__(self,key):
@@ -72,7 +72,7 @@ class _DataProxy_MemoryMap(object):
         
         #determine which data fields to read
         fields_to_read = set()
-        for alias, (flds, func) in self._fields.iteritems():
+        for alias, (flds, func) in self._fields.items():
             if isinstance(flds,str):
                 fields_to_read.add( flds )
             else:
@@ -83,7 +83,7 @@ class _DataProxy_MemoryMap(object):
         #apply post-processing functions
         out_data = dict()
         
-        for alias,(flds,func) in self._fields.iteritems():
+        for alias,(flds,func) in self._fields.items():
             if isinstance(flds,str):
                 flds = [flds]
             
@@ -98,7 +98,7 @@ class _DataProxy_MemoryMap(object):
             
         #do not return dictionary when only one field is requested
         if len(out_data)==1:
-            out_data = out_data.values()[0]
+            out_data = list(out_data.values())[0]
 
         return out_data
         
@@ -141,7 +141,7 @@ class _DataProxy_Direct(object):
         else:
             #determine which data fields to read
             fields_to_read = set()
-            for alias, (flds, func) in self._fields.iteritems():
+            for alias, (flds, func) in self._fields.items():
                 if isinstance(flds,str):
                     fields_to_read.add( flds )
                 else:
@@ -179,7 +179,7 @@ class _DataProxy_Direct(object):
         if not nofields:
             out_data = dict()
             
-            for alias,(flds,func) in self._fields.iteritems():
+            for alias,(flds,func) in self._fields.items():
                 if isinstance(flds,str):
                     flds = [flds]
                 
@@ -194,7 +194,7 @@ class _DataProxy_Direct(object):
             
             #do not return dictionary when only one field is requested
             if len(out_data)==1:
-                out_data = out_data.values()[0]
+                out_data = list(out_data.values())[0]
             
         else:
             out_data = in_data

@@ -278,10 +278,11 @@ def readheader(filename):
     
     header_lines = []
     header_size = 0
-    magic_start = '%%BEGINHEADER'
-    magic_end = '%%ENDHEADER'
+    magic_start = b'%%BEGINHEADER'
+    magic_end = b'%%ENDHEADER'
 
     with open(filename, 'rb') as fid:
+
         if fid.read(len(magic_start))!=magic_start:
             raise ValueError
         
@@ -301,18 +302,20 @@ def readheader(filename):
             
             header_size += len(line)
             
-            line = line.rstrip('\n\r')
+            line = line.rstrip(b'\n\r')
             
             if line==magic_end:
                 hdr_end=True
                 break
             
-            line = line.strip('% ')
+            line = line.strip(b'% ')
             
             header_lines.append(line)
     
     if not hdr_end:
         raise ValueError #no end of header found!
+    
+    header_lines = [ str(h, encoding='ascii') for h in header_lines]
     
     return header_lines, header_size
 
@@ -454,7 +457,7 @@ class MwlFileBase(object):
         header = cls._prepare_header( **kwargs )
         header = header.serialize()
         
-        with open( filename, 'w' ) as fid:
+        with open( filename, 'w', encoding='latin-1' ) as fid:
             fid.write(header)
         
         return cls( filename )
