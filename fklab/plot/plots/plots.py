@@ -191,6 +191,9 @@ def plot_events( events, **kwargs ):
     
     fullheight = kwargs.pop( 'fullheight', False )
 
+    if fullheight:
+        kwargs.update(lineoffset=0.5)
+
     cm = kwargs.pop( 'colormap', None )
     
     alpha = kwargs.pop( 'alpha', 1.0 )
