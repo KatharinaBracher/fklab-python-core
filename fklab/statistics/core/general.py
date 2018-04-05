@@ -39,6 +39,17 @@ def monte_carlo_pvalue(simulated, test, tails='right', center=0, axis=0):
     
     """
     
+    simulated = np.atleast_1d(simulated)
+    test = np.atleast_1d(test)
+    
+    if test.size!=int(np.prod(simulated.shape[1:])):
+        raise ValueError("Incorrect size of test statistic array.")
+    
+    if test.ndim==simulated.ndim-1:
+        test = test[None,:]
+    elif test.ndim!=simulated.ndim or test.shape[0]!=1:
+        raise ValueError("Incompatible shape of test statistic array.")
+
     if tails == 'right':
         cmp_fcn = np.greater_equal
     elif tails == 'left':
@@ -49,11 +60,18 @@ def monte_carlo_pvalue(simulated, test, tails='right', center=0, axis=0):
         raise ValueError("Invalid tails.")
     
     if center is None:
-        center is np.nanmean
+        center = lambda x: np.nanmean(x, axis=0)
     
     if callable(center):
         center = center(simulated)
+    else:
+        center = np.asarray(center)
     
+    if center.ndim>0:
+        if center.size!=test.size:
+            raise ValueError("Incorrect size of center array.")
+        center = center.reshape(test.shape)
+            
     p = (np.nansum(cmp_fcn(simulated-center,test-center), axis=axis)+1)/(len(simulated)+1)
     
     return p
