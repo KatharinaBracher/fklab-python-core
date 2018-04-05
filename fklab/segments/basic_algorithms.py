@@ -306,7 +306,7 @@ def segment_intersection(*args):
             
             b = np.logical_and(segment_stack[k,0] <= iseg[:,0], segment_stack[k,1] > iseg[:,0] )
             b = np.logical_or(b, np.logical_and( iseg[:,0] <= segment_stack[k,0], iseg[:,1] > segment_stack[k,0] ) )
-            if sum(b)>0:
+            if np.sum(b)>0:
                 overlap_start = np.maximum( segment_stack[k,0], iseg[b,0] )
                 overlap_stop = np.minimum( segment_stack[k,1], iseg[b,1] )
                 overlap_new = np.vstack([overlap_start, overlap_stop]).T
