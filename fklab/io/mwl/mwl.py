@@ -775,7 +775,7 @@ class MwlFileWaveform(MwlFileFixedRecord):
                 self._nchannels = sh['nchannels']
                 break        
         
-        self._nsamples = nsamples / self._nchannels
+        self._nsamples = int(nsamples / self._nchannels)
         
         self._probe = self._header['Probe']
         self._gains = np.array( [self._header['channel ' + str(k+self._probe*self._nchannels) + ' ampgain'] for k in range(self._nchannels) ] )
