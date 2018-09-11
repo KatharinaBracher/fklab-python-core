@@ -20,7 +20,39 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.transforms
 
-__all__ = ['LinearOffsetCollection', 'RangeVector', 'ColumnView']
+import matplotlib.style as _style
+import pkg_resources as _pkg
+import atexit as _atexit
+import pathlib as _pathlib
+
+__all__ = ['LinearOffsetCollection', 'RangeVector', 'ColumnView', 
+    'install_custom_stylesheets', 'install_custom_colors',]
+
+
+def install_custom_stylesheets(pkg):
+    _stylesheets = _pkg.resource_filename(pkg, 'stylesheets')
+    
+    _atexit.unregister(_pkg.cleanup_resources) # make sure it is only registered once
+    _atexit.register(_pkg.cleanup_resources)
+
+    styles = _pathlib.Path(_stylesheets).glob('*.mplstyle')
+    styles = tuple(x.stem for x in styles)
+
+    if not _stylesheets in _style.core.USER_LIBRARY_PATHS:
+        _style.core.USER_LIBRARY_PATHS.append(_stylesheets)
+        _style.core.reload_library()
+
+    return styles
+
+def install_custom_colors(colors, name=None):
+    # first validate colors
+    colors = {k:mpl.colors.to_hex(v) for k,v in colors.items()}
+
+    if not name is None:
+        mpl.colors.__dict__['{}_COLORS'.format(str(name).upper())] = colors
+    
+    mpl.colors.colorConverter.colors.update(colors)
+    mpl.colors.colorConverter.cache.clear()
 
 class LinearOffsetCollection:
     """
