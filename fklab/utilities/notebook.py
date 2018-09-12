@@ -1,6 +1,6 @@
 import io, os, sys, types
 
-import ast
+import ast, traceback
 
 from nbformat import read
 
@@ -63,7 +63,7 @@ def filter_ast(module_ast):
         # otherwise check that the id is uppercase
         if isinstance(node, ast.Assign):
             return all([node_predicate(t) for t in node.targets if not hasattr(t, 'id')]) \
-                and all([t.id.isupper() for t in node.targets if hasattr(t, 'id')])
+                and all([(t.id.isupper() and t.id[0]=='_') for t in node.targets if hasattr(t, 'id')])
 
         return False
 
@@ -124,7 +124,7 @@ class NotebookLoader(object):
             code = ast.parse(self.code_from_ipynb(nb))
             if self.defs_only:
                 code = filter_ast(code)
-            exec(compile(code, filename="<ast>", mode="exec"), mod.__dict__)               
+            exec(compile(code, filename="<ast>", mode="exec"), mod.__dict__)
         finally:
             self.shell.user_ns = save_user_ns
             
