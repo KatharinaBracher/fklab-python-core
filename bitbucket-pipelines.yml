@@ -6,12 +6,14 @@
 image: continuumio/miniconda3:latest
 
 pipelines:
-  default:
-    - step:
-        name: build package and deploy to anaconda cloud
-        deployment: production
-        script: # Modify the commands below to build your repository.
-          - conda update conda
-          - conda install conda-build anaconda-client
-          - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
-          - conda config --set anaconda_upload yes
+  custom:
+    build:
+      - step:
+          name: build package and deploy to anaconda cloud
+          deployment: production
+          script: # Modify the commands below to build your repository.
+            - conda update conda
+            - conda install conda-build anaconda-client
+            - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
+            - conda config --set anaconda_upload yes
+            - conda build recipe
