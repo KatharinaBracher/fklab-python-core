@@ -6,9 +6,9 @@
 
 namespace py = pybind11;
 
-PYBIND11_PLUGIN(radonc) {
+PYBIND11_MODULE(radonc, m) {
 
-    py::module m("radonc", "Radon transform");
+    m.doc() = "Radon transform";
     
     py::enum_<Interpolation>(m, "Interpolation")
     .value("Linear", Interpolation::Linear)
@@ -122,8 +122,8 @@ PYBIND11_PLUGIN(radonc) {
             sizeof(double),
             py::format_descriptor<double>::value,
             2,
-            { theta_buf.shape[0], rho_buf.shape[0] },
-            { sizeof(double) * rho_buf.shape[0], sizeof(double) }
+            py::detail::any_container<long int>({ theta_buf.shape[0], rho_buf.shape[0] }),
+            py::detail::any_container<long int>({ sizeof(double) * rho_buf.shape[0], sizeof(double) })
         ));
         
         auto result_buf = result.request();
@@ -133,8 +133,8 @@ PYBIND11_PLUGIN(radonc) {
             sizeof(uint16_t),
             py::format_descriptor<uint16_t>::value,
             3,
-            { theta_buf.shape[0], rho_buf.shape[0], 2 },
-            { sizeof(uint16_t) * rho_buf.shape[0] * 2, sizeof(uint16_t) * 2, sizeof(uint16_t) }
+            py::detail::any_container<long int>({ theta_buf.shape[0], rho_buf.shape[0], 2 }),
+            py::detail::any_container<long int>({ sizeof(uint16_t) * rho_buf.shape[0] * 2, sizeof(uint16_t) * 2, sizeof(uint16_t)) }
         ));
         
         auto n_buf = n.request();
@@ -149,6 +149,5 @@ PYBIND11_PLUGIN(radonc) {
         
         }, py::arg("data"), py::arg("theta"), py::arg("rho") );
     
-    return m.ptr();
     
 }
