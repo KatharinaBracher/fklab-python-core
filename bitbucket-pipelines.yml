@@ -25,7 +25,8 @@ pipelines:
       - step:
           name: test building
           script:
-            - apt-get install g++
+            - apt-get install gcc5
+            - gcc -v
             - conda update conda
             - conda create -n env python=3.6 conda-build anaconda-client
             - conda activate env
