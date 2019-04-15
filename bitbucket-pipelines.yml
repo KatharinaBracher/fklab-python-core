@@ -18,4 +18,4 @@ pipelines:
             - conda config --prepend channels KloostermanLab
             - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
             - conda config --set anaconda_upload yes
-            - conda build recipe -u KloostermanLab
+            - conda build recipe --user KloostermanLab
