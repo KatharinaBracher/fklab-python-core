@@ -14,6 +14,8 @@ pipelines:
           script: # Modify the commands below to build your repository.
             - conda update conda
             - conda install conda-build anaconda-client
+            - conda config --append channels conda-forge
+            - conda config --prepend channels KloostermanLab
             - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
             - conda config --set anaconda_upload yes
-            - conda build recipe
+            - conda build recipe -u KloostermanLab
