@@ -25,13 +25,11 @@ pipelines:
       - step:
           name: test building
           script:
-            - apt-get install gcc-5
-            - gcc -v
             - conda update conda
             - conda create -n env python=3.6 conda-build anaconda-client
             - conda activate env
             - conda config --append channels conda-forge
             - conda config --prepend channels KloostermanLab
             - conda install pybind11 
-            - python setup.py build_ext
+            - DISTUTILS_DEBUG=1 python setup.py build_ext -v -v
             
