@@ -12,6 +12,7 @@ pipelines:
           name: build package and deploy to anaconda cloud
           deployment: production
           script: # Modify the commands below to build your repository.
+            - apt-get install g++
             - conda update conda
             - conda create -n env python=3.6 conda-build anaconda-client
             - conda activate env
