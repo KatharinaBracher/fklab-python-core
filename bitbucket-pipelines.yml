@@ -13,7 +13,8 @@ pipelines:
           deployment: production
           script: # Modify the commands below to build your repository.
             - conda update conda
-            - conda install conda-build anaconda-client
+            - conda create -n env python=3.6 conda-build anaconda-client
+            - conda activate env
             - conda config --append channels conda-forge
             - conda config --prepend channels KloostermanLab
             - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
