@@ -134,7 +134,7 @@ PYBIND11_MODULE(radonc, m) {
             py::format_descriptor<uint16_t>::value,
             3,
             py::detail::any_container<long int>({ theta_buf.shape[0], rho_buf.shape[0], 2 }),
-            py::detail::any_container<long int>({ sizeof(uint16_t) * rho_buf.shape[0] * 2, sizeof(uint16_t) * 2, sizeof(uint16_t)) }
+            py::detail::any_container<long int>({ sizeof(uint16_t) * rho_buf.shape[0] * 2, sizeof(uint16_t) * 2, sizeof(uint16_t) })
         ));
         
         auto n_buf = n.request();
