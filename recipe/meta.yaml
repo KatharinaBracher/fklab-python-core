@@ -11,7 +11,7 @@ build:
 requirements:
   build:
     - setuptools
-    - python
+    - python {{ python }}
     - numpy
     - scipy>=1.2
     - numba
