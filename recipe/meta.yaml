@@ -12,7 +12,12 @@ requirements:
   build:
     - setuptools
     - python
+    - numpy
+    - scipy
+    - numba
+    - h5py
     - pybind11
+    - matplotlib
   run:
     - python
     - numpy
