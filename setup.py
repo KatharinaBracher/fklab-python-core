@@ -40,7 +40,7 @@ radon_ext = Extension('fklab.radon.radonc',
 
 setup(
     name="fklab-python-core",
-    version="1.0",
+    version="1.1.1",
     packages=packages,
     
     ext_modules = [radon_ext,],

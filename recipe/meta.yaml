@@ -1,24 +1,18 @@
 package:
   name: fklab-python-core
-  version: "1.01"
+  version: "1.1.1"
 
 source:
   git_url: ..
 
 build:
-  number: 1
+  number: 0
 
 requirements:
   build:
     - setuptools
     - python
-    - numpy
-    - scipy
-    - numba
-    - h5py
     - pybind11
-    - matplotlib
-    - spectrum
   run:
     - python
     - numpy
@@ -27,4 +21,3 @@ requirements:
     - h5py
     - pybind11
     - matplotlib
-    - spectrum

@@ -49,7 +49,7 @@ import math
 import numpy as np
 import scipy as sp
 import scipy.stats
-import spectrum
+#import spectrum
 import fklab.segments as seg
 from fklab.utilities.general import inrange
 from fklab.signals.core import generate_windows, extract_data_windows, extract_trigger_windows
@@ -223,7 +223,10 @@ def _compute_tapers( bw, n, fs, ntapers, correct=False ):
     """
     
     ntapers, bw = _check_ntapers( ntapers, n, bw, fs, correct )
-    tapers = spectrum.dpss( int(n), int( bw*n/fs ), int(ntapers) )[0] * np.sqrt(fs)
+    #tapers = spectrum.dpss( int(n), int( bw*n/fs ), int(ntapers) )[0] * np.sqrt(fs)
+    tapers = sp.signal.windows.dpss(int(n), int(bw*n/fs), int(ntapers))*np.sqrt(fs)
+    tapers = tapers.T
+
     return tapers
 
 
