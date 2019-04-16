@@ -12,7 +12,8 @@ pipelines:
           name: build package and deploy to anaconda cloud
           deployment: production
           script: # Modify the commands below to build your repository.
-            - apt-get install g++
+            - apt-get update
+            - apt-get -y install g++
             - conda update conda
             - conda create -n env python=3.6 conda-build anaconda-client
             - conda activate env
@@ -21,15 +22,3 @@ pipelines:
             - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
             - conda config --set anaconda_upload yes
             - conda build recipe --user KloostermanLab
-    test:
-      - step:
-          name: test building
-          script:
-            - conda update conda
-            - conda create -n env python=3.6 conda-build anaconda-client
-            - conda activate env
-            - conda config --append channels conda-forge
-            - conda config --prepend channels KloostermanLab
-            - conda install pybind11 
-            - DISTUTILS_DEBUG=1 python setup.py build_ext -v -v
-            
