@@ -13,16 +13,16 @@ requirements:
     - setuptools
     - python
     - numpy
-    - scipy
+    - scipy>=1.2
     - numba
     - h5py
-    - pybind11
+    - pybind11>=2.2
     - matplotlib
   run:
     - python
     - numpy
-    - scipy
+    - scipy>=1.2
     - numba
     - h5py
-    - pybind11
+    - pybind11>=2.2
     - matplotlib
