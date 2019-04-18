@@ -49,11 +49,11 @@ def ci(data, nsamples=10000, statistic=None, alpha=0.05, alternative="two-sided"
     #stat.sort(axis=0)
 
     if alternative=='two-sided':
-        lo,hi = np.percentile( stat, [100.*alpha/2., 100.*(1-alpha/2.)], axis=0 )
+        lo,hi = np.nanpercentile( stat, [100.*alpha/2., 100.*(1-alpha/2.)], axis=0 )
     elif alternative=='greater':
-        lo,hi = -np.inf, np.percentile( stat, 100.*(1-alpha), axis=0 )
+        lo,hi = -np.inf, np.nanpercentile( stat, 100.*(1-alpha), axis=0 )
     else: # 'less'
-        lo,hi = np.percentile( stat, 100.*alpha, axis=0 ), np.inf
+        lo,hi = np.nanpercentile( stat, 100.*alpha, axis=0 ), np.inf
 
     return lo, hi
 
