@@ -7,22 +7,20 @@ source:
 
 build:
   number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
 requirements:
   build:
-    - setuptools
-    - python {{ python }}
-    - numpy
-    - scipy>=1.2
-    - numba
-    - h5py
+    - {{ compiler('cxx') }}
+  host:
+    - python
+    - pip
     - pybind11>=2.2
-    - matplotlib
   run:
     - python
     - numpy
     - scipy>=1.2
     - numba
     - h5py
-    - pybind11>=2.2
     - matplotlib
+    - pyyaml
