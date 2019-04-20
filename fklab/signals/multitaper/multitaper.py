@@ -49,6 +49,7 @@ import math
 import numpy as np
 import scipy as sp
 import scipy.stats
+import scipy.signal
 #import spectrum
 import fklab.segments as seg
 from fklab.utilities.general import inrange
