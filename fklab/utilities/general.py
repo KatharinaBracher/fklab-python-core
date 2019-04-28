@@ -28,10 +28,16 @@ General utiltity functions.
     
     randomize
 
+    map_dict
+    map_dicts
+    zip_mappings
+    dict_merge
+
 """
 
 
-
+from functools import reduce
+from collections import Mapping
 
 import re
 
@@ -40,7 +46,8 @@ import numba
 
 __all__ = ['check_vector', 'check_vector_list', 'issorted','isascending',
            'isdescending','partition_vector','partitions','blocks','slices',
-           'slicedarray','inrange','natural_sort', 'randomize']
+           'slicedarray','inrange','natural_sort', 'randomize',
+           'map_dict','map_dicts','zip_mappings']
 
 def check_vector(x, copy=True, real=True):
     """Convert to numpy vector if possible.
@@ -637,3 +644,151 @@ def randomize( a, axis=0, group=None, method='shuffle' ):
         indices[ axis ] = np.argsort( np.random.uniform(0,1, size=[ 1 if d in group else n for d,n in enumerate(a.shape) ]), axis=axis )
     
     return a.flat[np.ravel_multi_index( indices, a.shape, mode='wrap' )], indices
+
+
+class MissingKey:
+    def __repr__(self):
+        return 'Missing Key'
+
+class MissingValue:
+    def __repr__(self):
+        return 'Missing Value'
+
+def map_dict(fcn, d, dest=None):
+    """Apply function to values in a mapping.
+    
+    The function is applied recursively to all
+    values in the mapping.
+    
+    Parameters
+    ----------
+    fcn : callable
+    d : Mapping
+    dest : None or Mapping
+        destination mapping for the result
+    
+    Returns
+    -------
+    dest
+    
+    """
+    
+    if dest is None:
+        dest = d
+    
+    for k, v in d.items():
+        if isinstance(v, Mapping):
+            if not k in dest:
+                dest[k] = {}
+            map_dict(fcn, v, dest=dest[k])
+        else:
+            dest[k] = fcn(v)
+    
+    return dest
+
+def map_dicts(fcn, *d, dest=None, missing=MissingValue, kind='union'):
+    """Apply function to aggregated values across multiple mappings
+    
+    Parameters
+    ----------
+    fcn : callable
+    *d : Mappings
+    dest : None or Mapping
+        destination mapping for the result. By default, the first provided
+        mapping is used.
+    missing
+        sentinel value for missing keys
+    kind : 'union', 'intersection' or 'first'
+        how to combine keys across mappings. See `zip_mappings`.
+    
+    Returns
+    -------
+    dest
+    
+    """
+    
+    if dest is None:
+        dest = d[0]
+    
+    for k, *v in zip_mappings(*d, kind=kind):
+        
+        b = [isinstance(x, Mapping) or x is MissingKey for x in v]
+        
+        if all(b):
+            if not k in dest:
+                dest[k] = {}
+            map_dicts(fcn, *v, dest=dest[k], missing=missing, kind=kind)
+        else:
+            # replace MissingKey with missing value
+            dest[k] = fcn(*[missing if x is MissingKey else x for x in v])
+    
+    return dest
+
+def zip_mappings(*mappings, kind='union', missing=MissingKey):
+    """Make an iterator that aggregates elements from mappings
+    
+    Parameters
+    ----------
+    mappings : dict
+    kind : 'union', 'intersection' or 'first'
+        how to combine keys across mappings. 'First' uses all keys from
+        the first mapping. 'union' and 'intersection' take the union and
+        intersection of keys across mappings.
+    missing
+        sentinel value for missing keys
+    
+    Yields
+    ------
+    (key, *values)
+    
+    """
+    keys_sets = map(lambda x: set(x) if isinstance(x, Mapping) else set(),
+                    mappings)
+    
+    if kind=='first':
+        keys = next(keys_sets)
+    else:
+        fcn = set.intersection if kind.startswith('intersect') else set.union
+        keys = reduce(fcn, keys_sets)
+    
+    for key in keys:
+        yield (key,) + tuple(map(
+            lambda x: x.get(key,missing) if isinstance(x, Mapping) 
+                                         else missing, mappings))
+
+def dict_merge(*args, key='', merge=None):
+    """Merge dictionaries.
+
+    Parameters
+    ----------
+    *args : dictionaries
+    key : str
+        Key (dot notation) for nested dictionaries. Mainly used internally
+        for recursive calls to `dict_merge`.
+    merge : None or callable
+        Custom function to merge two (non dict) values with same key. The function
+        should have signature `fcn(left, right, key)`, where left/right are the 
+        values of the left/right dictionary in the merge operation. By default,
+        the left value is replaced with the right value.
+
+    Returns
+    -------
+    dict
+
+    """
+
+    if len(args)==0:
+        return {}
+    
+    a = args[0]
+    
+    for b in args[1:]:    
+        for k,v in b.items():
+            if k in a and isinstance(v, Mapping) and isinstance(a[k], Mapping):
+                dict_merge(a[k], v, key='.'.join([key,k]), merge=merge)
+            elif not k in a or merge is None:
+                a[k] = v
+            else:
+                a[k] = merge(a[k], v, key='.'.join([key,k]))
+        
+    return a
