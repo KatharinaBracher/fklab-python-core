@@ -20,6 +20,11 @@ plotting functions
     plot_spectrogram
     add_scalebar
     add_static_scalebar
+    add_axes_message
+
+    labeled_vmarker
+    labeled_hmarker
+
 
 """
 
@@ -36,7 +41,8 @@ from fklab.plot.core.interaction import ScrollPanZoom
 import fklab.segments
 
 __all__ = ['plot_signals','plot_events','plot_segments','plot_raster',
-           'plot_spectrogram', 'add_static_scalebar', 'add_scalebar']
+           'plot_spectrogram', 'add_static_scalebar', 'add_scalebar',
+           'add_axes_message', 'labeled_vmarker', 'labeled_hmarker']
 
 
 def plot_signals(*args,**kwargs):
@@ -442,6 +448,85 @@ def add_scalebar(ax, matchx=True, matchy=True, hidex=True, hidey=True, **kwargs)
     if hidey : ax.yaxis.set_visible(False)
 
     return sb
+
+
+def labeled_vmarker(x, text=None, text_x='right', text_y=0.01, text_offset=0,
+                         style=None, text_style=None, ax=None):
+    
+    if ax is None:
+        ax = plt.gca()
+    
+    artists = {}
+    
+    style_ = {'linewidth': 1, 'color':'k', 'linestyle':'--'}
+    if not style is None:
+        style_.update(style)
+    
+    artists['line'] = ax.axvline(x, **style_)
+    
+    if not text is None:
+        
+        if text_x=='left':
+            ha = 'right'
+            text_x = x - text_offset
+        else:
+            ha = 'left'
+            text_x = x + text_offset
+        
+        if text_y=='bottom': text_y = 0
+        elif text_y=='top': text_y = 1
+        elif text_y=='center': text_y = 0.5
+        
+        va = ['bottom', 'center', 'top'][round(text_y*2)]
+        
+        tform = matplotlib.transforms.blended_transform_factory(ax.transData, ax.transAxes)
+
+        text_style_ = {'color':'k', 'rotation':90, 'va':va, 'ha':ha}
+        if not text_style is None:
+            text_style_.update(text_style)
+        
+        artists['text'] = ax.text(text_x, text_y, text, transform=tform, **text_style_)
+    
+    return artists    
+
+def labeled_hmarker(y, text=None, text_x=0.99, text_y='top', text_offset=0,
+                         style=None, text_style=None, ax=None):
+    
+    if ax is None:
+        ax = plt.gca()
+    
+    artists = {}
+    
+    style_ = {'linewidth': 1, 'color':'k', 'linestyle':'--'}
+    if not style is None:
+        style_.update(style)
+    
+    artists['line'] = ax.axhline(y, **style_)
+    
+    if not text is None:
+        
+        if text_y=='bottom':
+            va = 'top'
+            text_y = y - text_offset
+        else:
+            va = 'bottom'
+            text_y = y + text_offset
+        
+        if text_x=='left': text_x = 0
+        elif text_x=='right': text_x = 1
+        elif text_x=='center': text_x = 0.5
+        
+        ha = ['left', 'center', 'right'][round(text_x*2)]
+        
+        tform = matplotlib.transforms.blended_transform_factory(ax.transAxes, ax.transData)
+
+        text_style_ = {'color':'k', 'va':va, 'ha':ha}
+        if not text_style is None:
+            text_style_.update(text_style)
+        
+        artists['text'] = ax.text(text_x, text_y, text, transform=tform, **text_style_)
+    
+    return artists
 
 
 # WIP 
