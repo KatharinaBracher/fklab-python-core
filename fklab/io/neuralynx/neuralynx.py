@@ -643,11 +643,14 @@ class NlxFileBase(object):
         self._record_dtype = dtype
         
         #define accessors
-        self._accessors = dict( original_time = (accessor(dtype,'timestamp', label='time', record_shape=(), record_processor=NlxTimestamp2Seconds), None),
-                                original_timestamp = (accessor(dtype,'timestamp'),None),
-                                time = (accessor(dtype,'timestamp', label='time', record_shape=(), record_processor=NlxTimestamp2Seconds), None),
-                              )
-        self._accessors['default_time'] = self._accessors['time']
+        if not dtype.fields is None and 'timestamp' in dtype.fields:
+            self._accessors = dict( original_time = (accessor(dtype,'timestamp', label='time', record_shape=(), record_processor=NlxTimestamp2Seconds), None),
+                                    original_timestamp = (accessor(dtype,'timestamp'),None),
+                                    time = (accessor(dtype,'timestamp', label='time', record_shape=(), record_processor=NlxTimestamp2Seconds), None),
+                                  )
+            self._accessors['default_time'] = self._accessors['time']
+        else:
+            self._accessors = dict()
               
         #merge in accessors specified as arguments
         self._accessors.update( accessors )
@@ -655,11 +658,13 @@ class NlxFileBase(object):
         self.data = BinaryFileReader( self.fullpath, self._record_dtype, offset=NLXHEADERSIZE, accessors=self._accessors )
         
         if self.nrecords>0:
+            self._starttime = self.data.original_time[0][0]
+            self._endtime = self.data.original_time[self.nrecords-1][0]
             self._starttimestamp = self.data.original_timestamp[0][0]
             self._endtimestamp = self.data.original_timestamp[self.nrecords-1][0]
         else:
-            self._starttimestamp = 0
-            self._endtimestamp = 0
+            self._starttimestamp = self._starttime = 0
+            self._endtimestamp = self._endtime = 0
         
     def __str__(self):
         return self.__class__.__name__ +  " ( " + self._header.fullpath + " )"
@@ -727,11 +732,11 @@ class NlxFileBase(object):
     
     @property
     def starttime(self):
-        return self._convert_timestamp_to_time(self.starttimestamp)
+        return self._starttime
 
     @property
     def endtime(self):
-        return self._convert_timestamp_to_time(self.endtimestamp)
+        return self._endtime
 
     @property
     def starttimestamp(self):
@@ -800,9 +805,14 @@ class NlxFileTimedBuffers(NlxFileBase):
     def aliasing(self):
         """Check if data suffers from potential aliasing.
         """
-        fs = self.header['SamplingFrequency']
-        hc = self.header['DspHighCutFrequency']
-        return self.header["DSPHighCutFilterEnabled"] and (2*hc > fs)
+        try:
+            fs = self.header['SamplingFrequency']
+            hc = self.header['DspHighCutFrequency']
+            has_aliasing = self.header["DSPHighCutFilterEnabled"] and (2*hc > fs)
+        except KeyError:
+            has_aliasing = False
+        
+        return has_aliasing
     
     @property
     def nchannels(self):
@@ -993,7 +1003,10 @@ class NlxFileTahiti(NlxFileTimedBuffers):
         kwargs.setdefault('units','uV')
         
         #call base class __init__
-        NlxFileTimedBuffers.__init__(self, source, dtype, nchannels=nchan, nsamples=nsamples, accessors={}, **kwargs)
+        time_accessors = dict( original_time = ( accessor( dtype, ['seconds','nanoseconds'], label='time', record_shape=(), record_processor=self._convert_timestamp ), None ), 
+                          original_timestamp = ( accessor( dtype, ['seconds','nanoseconds'], label='timestamp', record_shape=(), record_processor=self._convert_timestamp ), None ),
+                        )
+        NlxFileTimedBuffers.__init__(self, source, dtype, nchannels=nchan, nsamples=nsamples, accessors=time_accessors, **kwargs)
         
         #check if correct file type
         if self._header.filetype != "MOZ":
@@ -1003,9 +1016,7 @@ class NlxFileTahiti(NlxFileTimedBuffers):
         time_by_sample_accessor = accessor( dtype, ['seconds','nanoseconds'], label='time', record_shape=(nsamples,), sample_dim=0, record_processor=self._convert_and_expand_timestamp )
         data_by_sample_accessor = accessor(dtype,'data',sample_dim=0,record_processor=self._convert_data)
         
-        accessors = dict( original_time = ( accessor( dtype, ['seconds','nanoseconds'], label='time', record_shape=(), record_processor=self._convert_timestamp ), None ), 
-                          original_timestamp = ( accessor( dtype, ['seconds','nanoseconds'], label='timestamp', record_shape=(), record_processor=self._convert_timestamp ), None ),
-                          time = ( accessor( dtype, ['seconds','nanoseconds'], label='time', record_shape=(), record_processor=self._convert_timestamp ), None ),
+        accessors = dict( time = ( accessor( dtype, ['seconds','nanoseconds'], label='time', record_shape=(), record_processor=self._convert_timestamp ), None ),
                           time_by_sample = ( time_by_sample_accessor, indexer ),
                           data = ( accessor(dtype,'data',record_processor=self._convert_data), None),
                           data_by_sample = ( data_by_sample_accessor, indexer ), 
