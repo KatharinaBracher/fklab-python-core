@@ -35,7 +35,7 @@ import scipy.interpolate
 import numba
 
 import fklab.utilities.general
-from fklab.segments.basic_algorithms import check_segments, segment_remove_overlap, segment_contains
+from fklab.segments.basic_algorithms import check_segments, segment_remove_overlap, segment_contains, segment_intersection
 
 from fklab.codetools import deprecated
 
@@ -830,7 +830,7 @@ def peri_event_histogram( events, reference=None, lags=None, segments=None, norm
     segments : (n,2) array or Segment, optional
         array of time segment start and end times
     normalization : {'none', 'coef', 'rate', 'conditional mean intensity',
-                     'product density', 'cross covariance',
+                     'product density', 'cross covariance', 'standard cross covariance',
                      'cumulant density', 'zscore'}, optional
         type of normalization
     unbiased : bool, optional
@@ -890,10 +890,12 @@ def peri_event_histogram( events, reference=None, lags=None, segments=None, norm
         p = p / (nvalid[None,None,:] * np.diff( lags )[:,None,None])
     elif normalization in ['product density']:
         p = p / (np.diff(lags)[:,None,None]*duration)
-    elif normalization in ['cross covariance','cumulant density']:
+    elif normalization in ['cross covariance','cumulant density', 'standard cross covariance']:
         refrate = np.array( [np.sum(segment_contains(segments,x)[0])/duration for x in reference] )
         evrate = np.array( [np.sum(segment_contains(segments,x)[0])/duration for x in events] )
         p = p / (np.diff(lags)[:,None,None]*duration) - evrate[None,:,None] * refrate[None,None,:]
+        if normalization=='standard cross covariance':
+            p *= np.sqrt((np.diff(lags)[:,None,None]*duration)/(evrate[None,:,None] * refrate[None,None,:]))
     elif normalization in ['zscore']:
         refrate = np.array( [np.sum(segment_contains(segments,x)[0])/duration for x in reference] )
         evrate = np.array( [np.sum(segment_contains(segments,x)[0])/duration for x in events] )
@@ -936,6 +938,67 @@ def peri_event_histogram( events, reference=None, lags=None, segments=None, norm
 #% variance normalized q10 is approx normal only when normal approx to Poisson
 #% distribution applies, i.e. when lamda > 20 (see Lubenov&Siapas,2005)
 #% this gives condition bTP0P1>20
+
+def spike_time_tiling_coefficient(a, b, dt=0.1, epochs=None):
+    """Compute spike time tiling coefficient
+    
+    This computes a measure of correlation between two spike
+    trains. The measure is not dependent on firing rate. It was
+    described in
+    https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4205553/
+
+    Parameters
+    ----------
+    a, b : 1d array
+        arrays with spike times
+    dt : float
+        time bin
+    epochs : (n,2) array
+        start and stop times for the epochs within which
+        the correlation needs to be computed
+    
+    Returns
+    -------
+    float
+
+    """
+
+    a = np.sort(np.asarray(a).ravel())
+    b = np.sort(np.asarray(b).ravel())
+
+    dt = float(dt)
+
+    if epochs is None:
+        epochs = [np.minimum(a[0], b[0])-dt, np.maximum(a[-1], b[-1])+dt]
+
+    epochs = check_segments(epochs)
+    duration = np.sum(epochs[:,-1]-epochs[:,0])
+    
+    # define [-dt, dt] time windows around events
+    sega = segment_remove_overlap(a[:,None] + [[-dt, dt]])
+    segb = segment_remove_overlap(b[:,None] + [[-dt, dt]])
+    
+    # restrict to epochs
+    sega = segment_intersection(sega, epochs)
+    segb = segment_intersection(segb, epochs)
+
+    # select events in epochs
+    a = a[segment_contains(epochs, a)[0]]
+    b = b[segment_contains(epochs, b)[0]]
+
+    # compute fraction of time around events
+    ta = np.sum(sega[:,-1] - sega[:,0]) / duration
+    tb = np.sum(segb[:,-1] - segb[:,0]) / duration
+
+    # compute proportion of events inside time windows
+    pa = np.sum(segment_contains(segb, a)[0]) / len(a)
+    pb = np.sum(segment_contains(sega, b)[0]) / len(b)
+
+    # compute spike time tiling coefficient
+    sttc = 0.5*( (pa-tb)/(1-pa*tb) + (pb-ta)/(1-pb*ta) )
+
+    return sttc
+
 
 @deprecated("Please use fklab.signals.event_triggered_average instead.")
 def event_average( events, t, data, lags=None, fs=None, interpolation='linear', method='fast', function=None ):
