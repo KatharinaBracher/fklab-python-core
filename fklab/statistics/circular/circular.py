@@ -52,6 +52,7 @@ Circular Distributions
     
     uniform
     vonmises
+    vonmises_weighted_fit
 
 Circular Histogram and Density
 ==============================
@@ -77,7 +78,8 @@ from fklab.codetools import deprecated
 
 __all__ = ['rad2deg', 'deg2rad', 'wrap', 'diff', 'mean', 'dispersion', 'centralmoment', 
            'moment', 'median', 'kuiper', 'rayleigh', 'rank', 'uniformize',
-           'interval', 'std', 'inrange', 'uniform', 'vonmises', 'kde', 'hist']
+           'interval', 'std', 'inrange', 'uniform', 'vonmises', 'vonmises_weighted_fit',
+           'kde', 'hist']
 
 def wrap(x,low=0.0,high=2*np.pi):
     """Wrap values to circular range.
@@ -479,18 +481,34 @@ def uniformize(population, sample=None,*args,**kwargs):
             return 2*np.pi*population(sample,*args,**kwargs)
         else:
             
-            population = np.asarray(population)
+            population = wrap(population) # [0, 2*pi>
             poprank = rank(population)
             
             #remove duplicate values for correct interpolation
+            # note that population will be sorted after this
             population, bi = np.unique( population, return_index=True )
             poprank = poprank[bi]
             
+            # augment population so that interpolation
+            # deals properly with circular data
+            # note: one point is sufficient for nearest and linear
+            # interpolation. If in the future other interpolation
+            # methods are needed, more points areneed for padding
+
+            npad = 1
+            population = np.pad(population, npad, 'wrap')
+            population[:npad]-=2*np.pi
+            population[-npad:]+=2*np.pi
+
+            poprank = np.pad(poprank, npad, 'wrap')
+            poprank[:npad]-=2*np.pi
+            poprank[-npad:]+=2*np.pi
+
             #compute ranks for samples
             sample = wrap(sample)
             r = sp.interpolate.interp1d(population,poprank,kind='linear')(sample)
             
-            return r
+            return wrap(r)
             
     else:
         return rank(population)
@@ -773,3 +791,46 @@ def hist( data, bins=24 ):
     return count, theta, width
 
 
+def _vonmises_concentration_mle(rbar):
+    
+    if rbar<-1 or rbar>1:
+        raise ValueError('Expecting rbar to be within range [-1,1]')
+
+    if rbar==-1 or rbar==1:
+        return np.inf*np.sign(rbar)
+
+    kinit = rbar*(2-rbar*rbar)/(1-rbar*rbar) 
+    fcn = lambda k: (scipy.special.iv(1,k)/scipy.special.iv(0,k)) - rbar 
+    try:
+        kappa = scipy.optimize.newton(fcn, kinit)
+    except:
+        # root finding failed, return initial estimate
+        kappa = kinit
+
+    return kappa
+
+def vonmises_weighted_fit(theta, weights=None):
+    """Parameter estimates for Von Mises distribution.
+
+    This function can be used when samples have weights
+    associated with them. When all samples are weighted
+    equally, one can also use:
+    kappa, mu, _ = scipy.stats.vonmises.fit(theta, fscale=1)
+
+    Parameters
+    ----------
+    theta : ndarray
+        Array of angles (in radians).
+    weights : ndarray
+        Array of weights.
+
+    Returns
+    -------
+    mu, kappa : float
+
+    """
+
+    mu, rbar, _ = mean(theta, weights=weights)
+    kappa = _vonmises_concentration_mle(rbar)
+
+    return mu, kappa
