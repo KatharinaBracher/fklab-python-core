@@ -59,6 +59,8 @@ def deprecated(instructions="Please avoid use in the future."):
 
             return func(*args, **kwargs)
 
+        wrapper.__doc__ = "DEPRECATED. " + wrapper.__doc__
+
         return wrapper
 
     return decorator
