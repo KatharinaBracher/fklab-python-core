@@ -59,7 +59,10 @@ def deprecated(instructions="Please avoid use in the future."):
 
             return func(*args, **kwargs)
 
-        wrapper.__doc__ = "DEPRECATED. " + wrapper.__doc__
+        if wrapper.__doc__ is None:
+            wrapper.__doc__ = "DEPRECATED."
+        else:
+            wrapper.__doc__ = "DEPRECATED. " + wrapper.__doc__
 
         return wrapper
 
