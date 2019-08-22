@@ -1294,7 +1294,8 @@ def plot_spectrum( data, t=None, axes=None, units=None, db=True, color='black', 
     
     return axes, artists, (S,f,err,options)
 
-def plot_spectrogram( data, t=None, axes=None, units=None, db=True, **kwargs ):
+def plot_spectrogram(data, t=None, axes=None, units=None, db=True,
+                     colorbar=True, **kwargs ):
     """Plot spectrogram of data vector.
     
     Parameters
@@ -1335,23 +1336,30 @@ def plot_spectrogram( data, t=None, axes=None, units=None, db=True, **kwargs ):
     
     artists = []
     
-    artists.append( plt.imshow( S.T, axes=axes, cmap='YlOrRd', aspect='auto', 
-                        origin='lower', extent=[t[0,0],t[-1,1], f[0], f[-1]],
-                        interpolation='nearest' ) )
+    artists.append(
+        axes.imshow(S.T, cmap='YlOrRd', aspect='auto', 
+                    origin='lower', extent=[t[0,0],t[-1,1], f[0], f[-1]],
+                    interpolation='nearest'
+                    ))
     
-    plt.ylabel('frequency [Hz]')
-    plt.xlabel('{label} [s]'.format(label='time' if kwargs.get('triggers',None) is None else 'latency'))
+    axes.set_ylabel('frequency [Hz]')
+    axes.set_xlabel('{label} [s]'.format(
+        label='time' if kwargs.get('triggers',None) is None 
+        else 'latency'))
     
-    cbar = plt.colorbar()
-    artists.append(cbar)
+    if colorbar:
+        cbar = plt.colorbar(artists[0])
+        artists.append(cbar)
     
-    if units is None or units=='':
-        units = '1'
-    else:
-        units = str(units)
-        units = units + '*' + units
+        if units is None or units=='':
+            units = '1'
+        else:
+            units = str(units)
+            units = units + '*' + units
         
-    cbar.set_label('power spectral density [{units}/Hz] {db}'.format(units=units, db='in db' if db else ''))
+        cbar.set_label('power spectral density [{units}/Hz] {db}'.format(
+            units=units, db='in db' if db else ''))
+    
     plt.draw()
     
     return axes, artists, (S,t,f,err,options)
