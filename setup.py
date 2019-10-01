@@ -45,7 +45,7 @@ setup(
     
     ext_modules = [radon_ext,],
     
-    install_requires=['numpy 1.16.*', 'scipy>=1.2', 'numba', 'h5py', 'pybind11>=2.2', 'matplotlib 3.0.*', 'pyyaml'],
+    install_requires=['numpy==1.16.*', 'scipy>=1.2', 'numba', 'h5py', 'pybind11>=2.2', 'matplotlib==3.0.*', 'pyyaml'],
 
     author="Fabian Kloosterman",
     author_email="fabian.kloosterman@nerf.be",
