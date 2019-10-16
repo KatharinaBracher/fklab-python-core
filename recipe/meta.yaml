@@ -1,6 +1,6 @@
 package:
   name: fklab-python-core
-  version: "1.2.0"
+  version: {{ GIT_DESCRIBE_TAG }}
 
 source:
   git_url: ..
