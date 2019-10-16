@@ -18,9 +18,9 @@ requirements:
     - pybind11>=2.2
   run:
     - python
-    - numpy==1.16.*
+    - numpy
     - scipy>=1.2
     - numba
     - h5py
-    - matplotlib==3.0.*
+    - matplotlib
     - pyyaml
