@@ -7,12 +7,29 @@ image: fklab/pybuild:latest
 #image: continuumio/miniconda3:latest
 
 pipelines:
-  custom:
-    build:
+#script:
+  tags:
+    '*':
       - step:
           name: build package and deploy to anaconda cloud
           deployment: production
           script: # Modify the commands below to build your repository.
+            - echo $BITBUCKET_TAG >> fklab/version/_core_version.py
+            - git checkout master
+            - git add .
+            - git commit -m "update version"
+            - git push
             - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
             - conda config --set anaconda_upload yes
             - conda build recipe --user KloostermanLab
+      - step: 
+          name: trigger the doc repository to re-build the doc
+          script :
+             - git clone --depth 1 https://$BITBUCKET_USER:$GIT_PWD@bitbucket.org/kloostermannerflab/fklab-python-doc.git
+             - echo $BITBUCKET_TAG >> fklab-python-doc/source/internal_version.rst
+             - cd fklab-python-doc
+             - git config --global user.email marine.chaput@nerf.be
+             - git config --global user.name marinechaput
+             - git add .
+             - git commit -q -m "update version"
+             - git push https://$BITBUCKET_USER:$GIT_PWD@bitbucket.org/kloostermannerflab/fklab-python-doc.git master
