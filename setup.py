@@ -5,7 +5,8 @@ from distutils.core import Extension
 # because we have namespace packages without __init__.py
 # which are not detected automatically by find_packages()
 # we need to explicitly specify the packages
-packages = [ 'fklab.codetools',
+packages = [ 'fklab._version',
+             'fklab.codetools',
              'fklab.events',
              'fklab.segments',
              'fklab.io.common', 'fklab.io.mwl', 'fklab.io.neuralynx', 'fklab.io.openephys',
@@ -36,11 +37,19 @@ radon_ext = Extension('fklab.radon.radonc',
                 language = "c++",
                 extra_compile_args = ['-std=c++11', '-O3']
                )
-
+import re
+VERSIONFILE="fklab/version/_core_version.py"
+verstrline = open(VERSIONFILE, "rt").read()
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VSRE, verstrline, re.M)
+if mo:
+    verstr = mo.group(1)
+else:
+    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 setup(
     name="fklab-python-core",
-    version="1.2.0",
+    version=verstr,
     packages=packages,
     
     ext_modules = [radon_ext,],
