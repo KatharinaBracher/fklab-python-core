@@ -15,10 +15,9 @@ pipelines:
           deployment: production
           script: # Modify the commands below to build your repository.
             - echo "__version__ = \"$BITBUCKET_TAG\"" >> fklab/version/_core_version.py
-            - git checkout master
             - git add .
             - git commit -m "update version"
-            - git push
+            - git push origin master
             - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
             - conda config --set anaconda_upload yes
             - conda build recipe --user KloostermanLab
