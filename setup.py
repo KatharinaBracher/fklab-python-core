@@ -5,7 +5,7 @@ from distutils.core import Extension
 # because we have namespace packages without __init__.py
 # which are not detected automatically by find_packages()
 # we need to explicitly specify the packages
-packages = [ 'fklab._version',
+packages = [ 'fklab.version',
              'fklab.codetools',
              'fklab.events',
              'fklab.segments',
