@@ -15,14 +15,14 @@ pipelines:
           deployment: production
           script: # Modify the commands below to build your repository.
           # Get an oauth access token using the client credentials, parsing out the token with jq.
-            - apt-get update && apt-get install -y curl jq
-            - >
-              export access_token=$(curl -s -X POST -u "${CLIENT_ID}:${CLIENT_SECRET}" \
-              https://bitbucket.org/site/oauth2/access_token \
-              -d grant_type=client_credentials -d scopes="repository"| jq --raw-output '.access_token')
+            #- apt-get update && apt-get install -y curl jq
+            #- >
+            #  export access_token=$(curl -s -X POST -u "${CLIENT_ID}:${CLIENT_SECRET}" \
+             # https://bitbucket.org/site/oauth2/access_token \
+             # -d grant_type=client_credentials -d scopes="repository"| jq --raw-output '.access_token')
 
             # Configure git to use the oauth token.
-            - git remote set-url origin "https://x-token-auth:${access_token}@bitbucket.org/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}"
+            #- git remote set-url origin "https://x-token-auth:${access_token}@bitbucket.org/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}"
             - echo "__version__ = \"$BITBUCKET_TAG\"" > fklab/version/_core_version.py
             - git add .
             - git commit -m "update version"
