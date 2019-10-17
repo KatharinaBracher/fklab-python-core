@@ -12,7 +12,7 @@ Utilities
 
 .. autosummary::
     :toctree: generated/
-    
+
     deg2rad
     rad2deg
     wrap
@@ -26,7 +26,7 @@ Summary statistics
 
 .. autosummary::
     :toctree: generated/
-    
+
     mean
     dispersion
     centralmoment
@@ -40,16 +40,16 @@ Statistical Tests
 
 .. autosummary::
     :toctree: generated/
-    
+
     kuiper
     rayleigh
-    
+
 Circular Distributions
 ======================
 
 .. autosummary::
     :toctree: generated/
-    
+
     uniform
     vonmises
     vonmises_weighted_fit
@@ -59,51 +59,70 @@ Circular Histogram and Density
 
 .. autosummary::
     :toctree: generated/
-    
+
     kde
     hist
 
 """
-
-
-
 import numpy as np
 import scipy as sp
 import scipy.stats
-
-from numpy import rad2deg, deg2rad
+from numpy import deg2rad
+from numpy import rad2deg
 from scipy.stats import vonmises
 
 from fklab.codetools import deprecated
+from fklab.version._core_version import __version__
 
-__all__ = ['rad2deg', 'deg2rad', 'wrap', 'diff', 'mean', 'dispersion', 'centralmoment', 
-           'moment', 'median', 'kuiper', 'rayleigh', 'rank', 'uniformize',
-           'interval', 'std', 'inrange', 'uniform', 'vonmises', 'vonmises_weighted_fit',
-           'kde', 'hist']
+__all__ = [
+    "rad2deg",
+    "deg2rad",
+    "wrap",
+    "diff",
+    "mean",
+    "dispersion",
+    "centralmoment",
+    "moment",
+    "median",
+    "kuiper",
+    "rayleigh",
+    "rank",
+    "uniformize",
+    "interval",
+    "std",
+    "inrange",
+    "uniform",
+    "vonmises",
+    "vonmises_weighted_fit",
+    "kde",
+    "hist",
+]
 
-def wrap(x,low=0.0,high=2*np.pi):
+
+def wrap(x, low=0.0, high=2 * np.pi):
     """Wrap values to circular range.
-    
+
     Parameters
     ----------
     x : ndarray
     low, high : float
         Low and high values that define the circular range.
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    #y = np.mod( np.mod( x, extent ) + extent - offset, extent ) + offset;
-    #y = np.mod( np.mod(x-low,high-low) + high-low - offset, high-low ) + offset + low
+    # y = np.mod( np.mod( x, extent ) + extent - offset, extent ) + offset;
+    # y = np.mod( np.mod(x-low,high-low) + high-low - offset, high-low ) + offset + low
     x = np.asarray(x)
-    y = np.mod( np.mod(x-low,high-low) + high-low, high-low ) + low
+    y = np.mod(np.mod(x - low, high - low) + high - low, high - low) + low
     return y
 
-def diff(phi,theta=None,axis=0,low=0.0,high=2*np.pi,directed=False):
+
+def diff(phi, theta=None, axis=0, low=0.0, high=2 * np.pi, directed=False):
     """Computes circular difference.
-    
+
     Parameters
     ----------
     phi : ndarray
@@ -118,33 +137,34 @@ def diff(phi,theta=None,axis=0,low=0.0,high=2*np.pi,directed=False):
     directed : bool
         Compute directed distance, which is negative if the shortest
         distance from one angle to another is counter-clockwise.
-        
+
     Returns
     -------
     ndarray
-    
+
     """
-    
-    #make sure phi is within range
-    phi = wrap( phi, low=low, high=high )
-    range_center = (low+high)/2.0
-    
+
+    # make sure phi is within range
+    phi = wrap(phi, low=low, high=high)
+    range_center = (low + high) / 2.0
+
     if theta is None:
-        d = np.diff(phi,1,axis=axis)
+        d = np.diff(phi, 1, axis=axis)
     else:
-        theta = wrap( theta, low=low, high=high )
-        d = theta-phi
-    
+        theta = wrap(theta, low=low, high=high)
+        d = theta - phi
+
     if directed:
-        d = wrap( theta - phi, low=low-range_center, high=high-range_center )
+        d = wrap(theta - phi, low=low - range_center, high=high - range_center)
     else:
-        d = range_center - np.abs( range_center - np.abs(theta-phi) )
-    
+        d = range_center - np.abs(range_center - np.abs(theta - phi))
+
     return d
 
-def mean(theta,axis=None,weights=None,keepdims=False, alpha=0.05):
+
+def mean(theta, axis=None, weights=None, keepdims=False, alpha=0.05):
     """Computes circular mean of angles.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -157,7 +177,7 @@ def mean(theta,axis=None,weights=None,keepdims=False, alpha=0.05):
         Do not reduce the number of dimensions.
     alpha : float
         Alpha value for confidence interval.
-    
+
     Returns
     -------
     mu : scalar or ndarray
@@ -167,33 +187,36 @@ def mean(theta,axis=None,weights=None,keepdims=False, alpha=0.05):
     ci : [scalar, scalar ] or [ ndarray, ndarray ]
         Estimated low and high confidence intervals, based on circular
         dispersion
-    
+
     """
     if weights is None:
         weights = 1
-    
+
     theta = np.asarray(theta)
     weights = np.asarray(weights)
-    
-    S = np.nansum( weights * np.sin(theta), axis=axis, keepdims=keepdims )
-    C = np.nansum( weights * np.cos(theta), axis=axis, keepdims=keepdims )
-    
-    m = np.arctan2(S,C)
-    
-    n = np.sum( weights * ~np.isnan(theta), axis=axis, keepdims=keepdims )
-    rbar = np.sqrt(S**2 + C**2) / n
-    
-    d = np.sqrt( dispersion(theta,axis=axis,weights=weights,keepdims=keepdims)/n )
-    d = sp.stats.norm.ppf( 1-0.5*alpha, loc=0, scale=1) * d
-    d = np.minimum( d, 1.0 ) #if distribution is very spread out, then return the maximum confidence interval
-    ci_mu = np.arcsin( d )
-    ci_mu = [m-ci_mu,m+ci_mu]
-    
+
+    S = np.nansum(weights * np.sin(theta), axis=axis, keepdims=keepdims)
+    C = np.nansum(weights * np.cos(theta), axis=axis, keepdims=keepdims)
+
+    m = np.arctan2(S, C)
+
+    n = np.sum(weights * ~np.isnan(theta), axis=axis, keepdims=keepdims)
+    rbar = np.sqrt(S ** 2 + C ** 2) / n
+
+    d = np.sqrt(dispersion(theta, axis=axis, weights=weights, keepdims=keepdims) / n)
+    d = sp.stats.norm.ppf(1 - 0.5 * alpha, loc=0, scale=1) * d
+    d = np.minimum(
+        d, 1.0
+    )  # if distribution is very spread out, then return the maximum confidence interval
+    ci_mu = np.arcsin(d)
+    ci_mu = [m - ci_mu, m + ci_mu]
+
     return (m, rbar, ci_mu)
 
-def dispersion(theta,axis=None,weights=None,keepdims=False):
+
+def dispersion(theta, axis=None, weights=None, keepdims=False):
     """Computes circular dispersion.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -204,29 +227,32 @@ def dispersion(theta,axis=None,weights=None,keepdims=False):
         Array of weights for a weighted circular dispersion.
     keepdims : bool
         Do not reduce the number of dimensions.
-    
+
     Returns
     -------
     dispersion : ndarray
-    
+
     """
-    
+
     if weights is None:
         weights = 1
-    
+
     theta = np.asarray(theta)
     weights = np.asarray(weights)
-    
-    r = np.abs( centralmoment( theta, k=1, axis=axis, weights=weights, keepdims=keepdims ) )
-    p2 = np.abs( centralmoment( theta, k=2, axis=axis, weights=weights, keepdims=keepdims ) )
-    
-    d = (1-p2)/(2*r**2)
-    
+
+    r = np.abs(centralmoment(theta, k=1, axis=axis, weights=weights, keepdims=keepdims))
+    p2 = np.abs(
+        centralmoment(theta, k=2, axis=axis, weights=weights, keepdims=keepdims)
+    )
+
+    d = (1 - p2) / (2 * r ** 2)
+
     return d
 
-def centralmoment(theta,k=1,axis=None,weights=None,keepdims=False):
+
+def centralmoment(theta, k=1, axis=None, weights=None, keepdims=False):
     """Computes circular central moment.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -238,32 +264,33 @@ def centralmoment(theta,k=1,axis=None,weights=None,keepdims=False):
         Array of weights for a weighted circular central moment.
     keepdims : bool
         Do not reduce the number of dimensions.
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    
+
     if weights is None:
         weights = 1
-    
+
     theta = np.asarray(theta)
     weights = np.asarray(weights)
-    
-    m1 = np.angle( moment( theta, k, axis=axis, weights=weights, keepdims=True ) )
-    
-    n = np.sum( weights * ~np.isnan(theta), axis=axis, keepdims=keepdims )
-    S = np.nansum( weights * np.sin( k*(theta-m1)), axis=axis, keepdims=keepdims )/n
-    C = np.nansum( weights * np.cos( k*(theta-m1)), axis=axis, keepdims=keepdims )/n
-    
-    m = C + S*1j
-    
+
+    m1 = np.angle(moment(theta, k, axis=axis, weights=weights, keepdims=True))
+
+    n = np.sum(weights * ~np.isnan(theta), axis=axis, keepdims=keepdims)
+    S = np.nansum(weights * np.sin(k * (theta - m1)), axis=axis, keepdims=keepdims) / n
+    C = np.nansum(weights * np.cos(k * (theta - m1)), axis=axis, keepdims=keepdims) / n
+
+    m = C + S * 1j
+
     return m
 
-def moment(theta,k=1,axis=None,weights=None,keepdims=False):
+
+def moment(theta, k=1, axis=None, weights=None, keepdims=False):
     """Computes circular moment.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -275,39 +302,40 @@ def moment(theta,k=1,axis=None,weights=None,keepdims=False):
         Array of weights for a weighted circular moment.
     keepdims : bool
         Do not reduce the number of dimensions.
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    
+
     if weights is None:
-        weights=1
-    
+        weights = 1
+
     theta = np.asarray(theta)
     weights = np.asarray(weights)
-    
-    n = np.sum( weights*~np.isnan(theta), axis=axis, keepdims=keepdims )
-    S = np.nansum( weights * np.sin(k*theta), axis=axis, keepdims=keepdims )/n
-    C = np.nansum( weights * np.cos(k*theta), axis=axis, keepdims=keepdims )/n
-    
-    m = C + S*1j
-    
+
+    n = np.sum(weights * ~np.isnan(theta), axis=axis, keepdims=keepdims)
+    S = np.nansum(weights * np.sin(k * theta), axis=axis, keepdims=keepdims) / n
+    C = np.nansum(weights * np.cos(k * theta), axis=axis, keepdims=keepdims) / n
+
+    m = C + S * 1j
+
     return m
+
 
 def median(theta):
     """Computes circular median.
-    
-    The circular median is computed as the angle for which the mean 
+
+    The circular median is computed as the angle for which the mean
     circular difference to all angles in theta is minimized.
-    
+
     Parameters
     ----------
     theta : ndarray
         Array of angles (in radians). The median is computed over the
         whole array.
-    
+
     Returns
     -------
     median : float
@@ -315,35 +343,36 @@ def median(theta):
         Mean circular difference of theta angles to median angle.
     mdiff : float
         Mean circular difference between all pairs of angles in theta.
-    
+
     """
-    
+
     theta = np.asarray(theta).ravel()
     theta = theta[~np.isnan(theta)]
     n = theta.size
-    
-    if n==0:
-        return (np.NaN, np.NaN, np.NaN)
-    
-    if n==1:
-        return (theta,0,0)
-    
-    theta = wrap(theta)
-    
-    mean_circ_diff = lambda a: np.sum( np.pi - np.abs( np.pi - np.abs( theta - a ) ) ) / n
-    
-    m, mdev = sp.optimize.fminbound( mean_circ_diff, 0, 2*np.pi, full_output=True )[0:2]
-    
-    mdiff=0
-    for k in range(n):
-        mdiff+=mean_circ_diff(theta[k])
-    mdiff/=n
-    
-    return (m,mdev,mdiff)
 
-def kuiper(theta,axis=None,keepdims=False):
+    if n == 0:
+        return (np.NaN, np.NaN, np.NaN)
+
+    if n == 1:
+        return (theta, 0, 0)
+
+    theta = wrap(theta)
+
+    mean_circ_diff = lambda a: np.sum(np.pi - np.abs(np.pi - np.abs(theta - a))) / n
+
+    m, mdev = sp.optimize.fminbound(mean_circ_diff, 0, 2 * np.pi, full_output=True)[0:2]
+
+    mdiff = 0
+    for k in range(n):
+        mdiff += mean_circ_diff(theta[k])
+    mdiff /= n
+
+    return (m, mdev, mdiff)
+
+
+def kuiper(theta, axis=None, keepdims=False):
     """Kuiper's one sample test of uniformity.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -352,47 +381,52 @@ def kuiper(theta,axis=None,keepdims=False):
         Array axis along which to perform Kuiper's test.
     keepdims : bool
         Do not reduce the number of dimensions.
-    
+
     Returns
     -------
     p : ndarray
         P-value.
     V : ndarray
         Test statistic.
-    
+
     """
-    
-    theta=np.asarray(theta)
-    
+
+    theta = np.asarray(theta)
+
     if axis is None:
         theta = theta.ravel()
-        axis=0
-    
-    n=np.sum( ~np.isnan(theta), axis=axis, keepdims=True )
-    theta=np.sort( wrap( theta ), axis=axis )
-    
+        axis = 0
+
+    n = np.sum(~np.isnan(theta), axis=axis, keepdims=True)
+    theta = np.sort(wrap(theta), axis=axis)
+
     shape = [1] * theta.ndim
     shape[axis] = theta.shape[axis]
-    U = theta/(2*np.pi) - np.arange(shape[axis]).reshape( shape )/n
-    
+    U = theta / (2 * np.pi) - np.arange(shape[axis]).reshape(shape) / n
+
     if not keepdims:
         n = n.squeeze(axis=axis)
-    
-    V = np.nanmax(U,axis=axis,keepdims=keepdims) - np.nanmin(U,axis=axis,keepdims=keepdims) + 1/n
-    
-    #modified according to Stephens
-    V = V * (np.sqrt(n) + 0.155 + 0.24/np.sqrt(n))
-    
-    p = (8*V**2-2)*np.exp(-2*V**2)
-    
-    return (p,V)
 
-def rayleigh(theta,axis=None,keepdims=False):
+    V = (
+        np.nanmax(U, axis=axis, keepdims=keepdims)
+        - np.nanmin(U, axis=axis, keepdims=keepdims)
+        + 1 / n
+    )
+
+    # modified according to Stephens
+    V = V * (np.sqrt(n) + 0.155 + 0.24 / np.sqrt(n))
+
+    p = (8 * V ** 2 - 2) * np.exp(-2 * V ** 2)
+
+    return (p, V)
+
+
+def rayleigh(theta, axis=None, keepdims=False):
     """Rayleigh test for uniformity.
-    
+
     Performs a Rayleigh test of uniformity, against the alternative
     hypothesis of a unimodal distribution.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -401,63 +435,65 @@ def rayleigh(theta,axis=None,keepdims=False):
         Array axis along which to perform Rayleigh test.
     keepdims : bool
         Do not reduce the number of dimensions.
-    
+
     Returns
     -------
     p : ndarray
         P-value.
     V : ndarray
         Test statistic.
-    
+
     """
-    
+
     theta = np.asarray(theta)
-    
-    n = np.sum( ~np.isnan(theta), axis=axis, keepdims=keepdims )
-    mu,rbar = mean( theta, axis=axis, keepdims=keepdims )[0:2]
-    
-    S = (1-1/(2*n))*2*n*rbar**2 + n*rbar**4/2
-    p = 1 - sp.stats.chi2.cdf(S,2)
-    
-    return (p,S)
+
+    n = np.sum(~np.isnan(theta), axis=axis, keepdims=keepdims)
+    mu, rbar = mean(theta, axis=axis, keepdims=keepdims)[0:2]
+
+    S = (1 - 1 / (2 * n)) * 2 * n * rbar ** 2 + n * rbar ** 4 / 2
+    p = 1 - sp.stats.chi2.cdf(S, 2)
+
+    return (p, S)
+
 
 def rank(theta):
     """Computes circular rank order statistic.
-    
+
     Parameters
     ----------
     theta : ndarray
         Array of angles (in radians). The rank is computed over the
         whole array.
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    
+
     theta = np.asarray(theta).ravel()
     valid = ~np.isnan(theta)
-    
+
     n = np.sum(valid)
-    r = np.empty( theta.shape ) * np.nan
-    
-    r[valid] = sp.stats.rankdata( wrap(theta[valid]), method='average' )
-    g = 2*np.pi*r/n
-    
+    r = np.empty(theta.shape) * np.nan
+
+    r[valid] = sp.stats.rankdata(wrap(theta[valid]), method="average")
+    g = 2 * np.pi * r / n
+
     return g
 
-def uniformize(population, sample=None,*args,**kwargs):
+
+def uniformize(population, sample=None, *args, **kwargs):
     """Uniformly distribute angles while preserving rank order.
-    
+
     This function will transform angles according to the estimated CDF
     of the angles in population (i.e. the population distribution is made
     uniform).
-    
+
     Parameters
     ----------
     population : callable or ndarray
-        Either an array of angles that represent the population, or a 
+        Either an array of angles that represent the population, or a
         callable that takes the sample array as a first argument and
         computes the CDF of the population distribution at the sample
         angles.
@@ -466,29 +502,29 @@ def uniformize(population, sample=None,*args,**kwargs):
         population is computed.
     *args, **kwargs
         Extra arguments that are passed to population callable.
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    
+
     if sample is not None:
-        
+
         sample = np.asarray(sample)
-        
+
         if callable(population):
-            return 2*np.pi*population(sample,*args,**kwargs)
+            return 2 * np.pi * population(sample, *args, **kwargs)
         else:
-            
-            population = wrap(population) # [0, 2*pi>
+
+            population = wrap(population)  # [0, 2*pi>
             poprank = rank(population)
-            
-            #remove duplicate values for correct interpolation
+
+            # remove duplicate values for correct interpolation
             # note that population will be sorted after this
-            population, bi = np.unique( population, return_index=True )
+            population, bi = np.unique(population, return_index=True)
             poprank = poprank[bi]
-            
+
             # augment population so that interpolation
             # deals properly with circular data
             # note: one point is sufficient for nearest and linear
@@ -496,29 +532,30 @@ def uniformize(population, sample=None,*args,**kwargs):
             # methods are needed, more points areneed for padding
 
             npad = 1
-            population = np.pad(population, npad, 'wrap')
-            population[:npad]-=2*np.pi
-            population[-npad:]+=2*np.pi
+            population = np.pad(population, npad, "wrap")
+            population[:npad] -= 2 * np.pi
+            population[-npad:] += 2 * np.pi
 
-            poprank = np.pad(poprank, npad, 'wrap')
-            poprank[:npad]-=2*np.pi
-            poprank[-npad:]+=2*np.pi
+            poprank = np.pad(poprank, npad, "wrap")
+            poprank[:npad] -= 2 * np.pi
+            poprank[-npad:] += 2 * np.pi
 
-            #compute ranks for samples
+            # compute ranks for samples
             sample = wrap(sample)
-            r = sp.interpolate.interp1d(population,poprank,kind='linear')(sample)
-            
+            r = sp.interpolate.interp1d(population, poprank, kind="linear")(sample)
+
             return wrap(r)
-            
+
     else:
         return rank(population)
 
-def interval(theta,axis=None,keepdims=False):
+
+def interval(theta, axis=None, keepdims=False):
     """Computes circular interval.
-    
+
     This function will find the smallest arc that contains all angles in
     theta.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -528,31 +565,34 @@ def interval(theta,axis=None,keepdims=False):
         the interval is computed over the whole array.
     keepdims : bool
         Do not reduce the number of dimensions.
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    
+
     theta = np.asarray(theta)
-    
+
     if axis is None:
         theta = theta.ravel()
-        axis=0
-        
-    theta = np.sort(theta,axis=axis)
-    T = np.diff(theta,axis=axis)
-    T = np.concatenate( (T,2*np.pi+np.diff(theta.take([-1,0],axis=axis),axis=axis)), axis=axis )
-    
-    #compute circular interval
-    w = 2*np.pi - np.max( T, axis=axis, keepdims=keepdims )
-    
+        axis = 0
+
+    theta = np.sort(theta, axis=axis)
+    T = np.diff(theta, axis=axis)
+    T = np.concatenate(
+        (T, 2 * np.pi + np.diff(theta.take([-1, 0], axis=axis), axis=axis)), axis=axis
+    )
+
+    # compute circular interval
+    w = 2 * np.pi - np.max(T, axis=axis, keepdims=keepdims)
+
     return w
 
-def std(theta,axis=None,weights=None,keepdims=False):
+
+def std(theta, axis=None, weights=None, keepdims=False):
     """Computes circular standard deviation.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -563,24 +603,27 @@ def std(theta,axis=None,weights=None,keepdims=False):
         Array of weights for a weighted circular standard deviation.
     keepdims : bool
         Do not reduce the number of dimensions.
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    
+
     if weights is None:
-        weights=1
-    
-    rbar = np.abs( centralmoment( theta, moment=1, axis=axis, weights=weights, keepdims=keepdims ) )
-    v = np.sqrt( -2*np.log(rbar) )
-    
+        weights = 1
+
+    rbar = np.abs(
+        centralmoment(theta, moment=1, axis=axis, weights=weights, keepdims=keepdims)
+    )
+    v = np.sqrt(-2 * np.log(rbar))
+
     return v
 
-def inrange(theta,crange=[],low=0.0,high=2*np.pi):
+
+def inrange(theta, crange=[], low=0.0, high=2 * np.pi):
     """Tests if angles are within a circular range.
-    
+
     Parameters
     ----------
     theta : ndarray
@@ -592,81 +635,85 @@ def inrange(theta,crange=[],low=0.0,high=2*np.pi):
         than 0.5*pi are considered within the test range.)
     low, high : float
         Circular range of theta angles
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    
+
     theta = np.asarray(theta)
     crange = np.asarray(crange)
-    
-    if crange.size==0:
-        return np.zeros( theta.shape, dtype=np.bool )
-    
-    if crange[0]==crange[1]:
-        return np.ones( theta.shape, dtype=np.bool )
-    
-    theta = wrap(theta,low=low,high=high)
-    crange = wrap(crange,low=low,high=high)
-    
-    if crange[0]>=crange[1]:
-        return np.logical_or( theta>=crange[0], theta<=crange[1] )
-    else:
-        return np.logical_and( theta>=crange[0], theta<=crange[1] )
 
-@deprecated('Please use uniform.rvs instead.')
+    if crange.size == 0:
+        return np.zeros(theta.shape, dtype=np.bool)
+
+    if crange[0] == crange[1]:
+        return np.ones(theta.shape, dtype=np.bool)
+
+    theta = wrap(theta, low=low, high=high)
+    crange = wrap(crange, low=low, high=high)
+
+    if crange[0] >= crange[1]:
+        return np.logical_or(theta >= crange[0], theta <= crange[1])
+    else:
+        return np.logical_and(theta >= crange[0], theta <= crange[1])
+
+
+@deprecated("Please use uniform.rvs instead.")
 def uniformrnd(size=1):
     """Random sample from circular uniform distribution.
-    
+
     Parameters
     ----------
     size : tuple of ints
-    
+
     Returns
     -------
     ndarray
-    
-    """
-    return np.random.uniform(low=0,high=2*np.pi,size=size)
 
-@deprecated('Please use uniform.cdf instead.')
+    """
+    return np.random.uniform(low=0, high=2 * np.pi, size=size)
+
+
+@deprecated("Please use uniform.cdf instead.")
 def uniformcdf(theta):
     """Circular uniform distribution function.
-    
+
     Parameters
     ----------
     theta : ndarray
         Array of angles at which the circular uniform cumulative
         distribution density is computed.
-    
+
     Returns
     -------
     ndarray
-    
-    """
-    
-    return wrap(theta)/(2*np.pi)
 
-@deprecated('Please use uniform.pdf instead.')
+    """
+
+    return wrap(theta) / (2 * np.pi)
+
+
+@deprecated("Please use uniform.pdf instead.")
 def uniformpdf(theta):
     """Circular uniform probability density function.
-    
+
     Parameters
     ----------
     theta : ndarray
         Array of angles at which the circular uniform probability density
         is computed.
-    
+
     Returns
     -------
     ndarray
-    
+
     """
-    
-    theta=np.asarray(theta)
-    return np.ones( theta.shape )/(2*np.pi)
+
+    theta = np.asarray(theta)
+    return np.ones(theta.shape) / (2 * np.pi)
+
 
 class uniform_gen(scipy.stats.rv_continuous):
     """A uniform circular continuous random variable.
@@ -678,30 +725,34 @@ class uniform_gen(scipy.stats.rv_continuous):
     %(example)s
 
     """
-    
+
     def _rvs(self):
-        return self._random_state.uniform(0.0, 2.*np.pi, self._size)
+        return self._random_state.uniform(0.0, 2.0 * np.pi, self._size)
 
     def _pdf(self, x):
-        return (x == x)/(2.*np.pi)
+        return (x == x) / (2.0 * np.pi)
 
     def _cdf(self, x):
-        return wrap(x)/(2.*np.pi)
+        return wrap(x) / (2.0 * np.pi)
 
     def _ppf(self, q):
-        return wrap(q)/(2.*np.pi)
+        return wrap(q) / (2.0 * np.pi)
 
     def _stats_skip(self):
-        return 0., None, 0., None
+        return 0.0, None, 0.0, None
 
     def _entropy(self):
         return 0.0
 
+
 uniform = uniform_gen()
 
-def kde( data, theta=None, bandwidth=None, kernel='vonmises', weights=None, normalize=True ):
+
+def kde(
+    data, theta=None, bandwidth=None, kernel="vonmises", weights=None, normalize=True
+):
     """Kernel density estimate for circular data.
-    
+
     Parameters
     ----------
     data : 1d array-like
@@ -709,98 +760,101 @@ def kde( data, theta=None, bandwidth=None, kernel='vonmises', weights=None, norm
     bandwidth : float
     kernel : {'vonmises', 'box'}
     weights : 1d array-like
-    
+
     Returns
     -------
     density : 1d array
     theta : 1d array
-    
+
     """
-    
-    data = np.array( data, copy=False )
-    valid = np.logical_not( np.isnan( data ) )
-    
+
+    data = np.array(data, copy=False)
+    valid = np.logical_not(np.isnan(data))
+
     n = np.sum(valid)
-    
+
     if theta is None:
         theta = 24
-    
-    if isinstance( theta, int ):
-        theta = np.arange(theta, dtype=np.float)*2*np.pi/theta
+
+    if isinstance(theta, int):
+        theta = np.arange(theta, dtype=np.float) * 2 * np.pi / theta
     else:
         theta = np.array(theta, copy=False).ravel()
-    
-    if n==0:
-        density = np.zeros( len(theta) )
+
+    if n == 0:
+        density = np.zeros(len(theta))
         return density, theta
-    
-    if not kernel in ('vonmises', 'box'):
-        raise ValueError('Invalid kernel.')
-    
+
+    if not kernel in ("vonmises", "box"):
+        raise ValueError("Invalid kernel.")
+
     if bandwidth is None:
-        bandwidth = 5. if kernel=='vonmises' else np.pi/6.
+        bandwidth = 5.0 if kernel == "vonmises" else np.pi / 6.0
     else:
         bandwidth = float(bandwidth)
-    
+
     if weights is not None:
         weights = np.array(weights, copy=False).ravel()
-        if len(weights)!=n:
-            raise ValueError('Number of weights is not equal to the number of data points.')
-        n = np.nansum( weights[valid] )
-    
-    if kernel == 'vonmises':
-        density = vonmises.pdf( theta[:,None], bandwidth, loc=data[valid][None,:] )
+        if len(weights) != n:
+            raise ValueError(
+                "Number of weights is not equal to the number of data points."
+            )
+        n = np.nansum(weights[valid])
+
+    if kernel == "vonmises":
+        density = vonmises.pdf(theta[:, None], bandwidth, loc=data[valid][None, :])
     else:
-        density = diff( theta[:,None], data[valid][None,:] ) <= 0.5*bandwidth
-        density = density.astype(np.float)/bandwidth
-    
+        density = diff(theta[:, None], data[valid][None, :]) <= 0.5 * bandwidth
+        density = density.astype(np.float) / bandwidth
+
     if weights is not None:
-        density = density * weights[valid][None,:]
-        
-    density = np.nansum( density, axis=1 )
-    
+        density = density * weights[valid][None, :]
+
+    density = np.nansum(density, axis=1)
+
     if normalize:
         density = density / n
-    
+
     return density, theta
 
-def hist( data, bins=24 ):
+
+def hist(data, bins=24):
     """Histogram of circular data.
-    
+
     Parameters
     ----------
     data : 1d array-like
     bins : int
         Number of bins in histogram
-        
+
     Returns
     -------
     count : 1d array
-        
+
     theta : 1d array
         Bin centers
     width : float
         Bin width
-    
+
     """
-    
-    width = 2*np.pi/int(bins)
-    count, theta = kde( data, bins, bandwidth=width, kernel='box', normalize=False )
+
+    width = 2 * np.pi / int(bins)
+    count, theta = kde(data, bins, bandwidth=width, kernel="box", normalize=False)
     count = (count * width).astype(np.int)
-    
+
     return count, theta, width
 
 
 def _vonmises_concentration_mle(rbar):
-    
-    if rbar<-1 or rbar>1:
-        raise ValueError('Expecting rbar to be within range [-1,1]')
 
-    if rbar==-1 or rbar==1:
-        return np.inf*np.sign(rbar)
+    if rbar < -1 or rbar > 1:
+        raise ValueError("Expecting rbar to be within range [-1,1]")
 
-    kinit = rbar*(2-rbar*rbar)/(1-rbar*rbar) 
-    fcn = lambda k: (scipy.special.iv(1,k)/scipy.special.iv(0,k)) - rbar 
+    if rbar == -1 or rbar == 1:
+        return np.inf * np.sign(rbar)
+
+    kinit = rbar * (2 - rbar * rbar) / (1 - rbar * rbar)
+    fcn = lambda k: (scipy.special.iv(1, k) / scipy.special.iv(0, k)) - rbar
     try:
         kappa = scipy.optimize.newton(fcn, kinit)
     except:
@@ -808,6 +862,7 @@ def _vonmises_concentration_mle(rbar):
         kappa = kinit
 
     return kappa
+
 
 def vonmises_weighted_fit(theta, weights=None):
     """Parameter estimates for Von Mises distribution.

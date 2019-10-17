@@ -15,7 +15,12 @@ Bootstrapping utilities.
 """
 import numpy as np
 
-def ci(data, nsamples=10000, statistic=None, alpha=0.05, alternative="two-sided", axis=0):
+from fklab.version._core_version import __version__
+
+
+def ci(
+    data, nsamples=10000, statistic=None, alpha=0.05, alternative="two-sided", axis=0
+):
     """Bootstrap estimate of 100.0*(1-alpha) confidence interval for statistic.
 
     Parameters
@@ -35,25 +40,32 @@ def ci(data, nsamples=10000, statistic=None, alpha=0.05, alternative="two-sided"
 
     """
 
-    if not isinstance(data, (list,tuple) ):
+    if not isinstance(data, (list, tuple)):
         data = (data,)
 
     if statistic is None:
-        statistic = lambda x : np.average( x, axis=axis )
+        statistic = lambda x: np.average(x, axis=axis)
 
-    if not alternative in ['two-sided', 'greater', 'less']:
+    if not alternative in ["two-sided", "greater", "less"]:
         raise ValueError("Invalid alternative argument")
 
-    bootindexes = bootstrap_indexes( [x.shape[axis] for x in data], nsamples )
-    stat = np.array([statistic(*(x.take(idx,axis=axis) for x, idx in zip(data, indexes))) for indexes in bootindexes])
-    #stat.sort(axis=0)
+    bootindexes = bootstrap_indexes([x.shape[axis] for x in data], nsamples)
+    stat = np.array(
+        [
+            statistic(*(x.take(idx, axis=axis) for x, idx in zip(data, indexes)))
+            for indexes in bootindexes
+        ]
+    )
+    # stat.sort(axis=0)
 
-    if alternative=='two-sided':
-        lo,hi = np.nanpercentile( stat, [100.*alpha/2., 100.*(1-alpha/2.)], axis=0 )
-    elif alternative=='greater':
-        lo,hi = -np.inf, np.nanpercentile( stat, 100.*(1-alpha), axis=0 )
-    else: # 'less'
-        lo,hi = np.nanpercentile( stat, 100.*alpha, axis=0 ), np.inf
+    if alternative == "two-sided":
+        lo, hi = np.nanpercentile(
+            stat, [100.0 * alpha / 2.0, 100.0 * (1 - alpha / 2.0)], axis=0
+        )
+    elif alternative == "greater":
+        lo, hi = -np.inf, np.nanpercentile(stat, 100.0 * (1 - alpha), axis=0)
+    else:  # 'less'
+        lo, hi = np.nanpercentile(stat, 100.0 * alpha, axis=0), np.inf
 
     return lo, hi
 

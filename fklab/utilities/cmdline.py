@@ -4,15 +4,17 @@ Created on Mon Sep  2 23:52:42 2013
 
 @author: fabian
 """
-
-#source:
-#http://code.activestate.com/recipes/577096/
-
 import sys
+
+from fklab.version._core_version import __version__
+
+# source:
+# http://code.activestate.com/recipes/577096/
+
 
 def query_custom_answers(question, answers, default=None):
     """Ask a question via raw_input() and return the chosen answer.
-    
+
     @param question {str} Printed on stdout before querying the user.
     @param answers {list} A list of acceptable string answers. Particular
         answers can include '&' before one of its letters to allow a
@@ -20,7 +22,7 @@ def query_custom_answers(question, answers, default=None):
         "&quit"]. All answer strings should be lowercase.
     @param default {str, optional} A default answer. If no default is
         given, then the user must provide an answer. With a default,
-        just hitting <Enter> is sufficient to choose. 
+        just hitting <Enter> is sufficient to choose.
     """
     prompt_bits = []
     answer_from_valid_choice = {
@@ -28,10 +30,10 @@ def query_custom_answers(question, answers, default=None):
     }
     clean_answers = []
     for answer in answers:
-        if '&' in answer and not answer.index('&') == len(answer)-1:
-            head, sep, tail = answer.partition('&')
-            prompt_bits.append(head.lower()+tail.lower().capitalize())
-            clean_answer = head+tail
+        if "&" in answer and not answer.index("&") == len(answer) - 1:
+            head, sep, tail = answer.partition("&")
+            prompt_bits.append(head.lower() + tail.lower().capitalize())
+            clean_answer = head + tail
             shortcut = tail[0].lower()
         else:
             prompt_bits.append(answer.lower())
@@ -53,21 +55,26 @@ def query_custom_answers(question, answers, default=None):
     #   Frob nots the zids -- (y)es, (n)o, quit? [y] _
     prompt = " [%s] " % ", ".join(prompt_bits)
     leader = question + prompt
-    if len(leader) + max(len(c) for c in list(answer_from_valid_choice.keys()) + ['']) > 78:
-        leader = question + '\n' + prompt.lstrip()
+    if (
+        len(leader) + max(len(c) for c in list(answer_from_valid_choice.keys()) + [""])
+        > 78
+    ):
+        leader = question + "\n" + prompt.lstrip()
     leader = leader.lstrip()
 
     valid_choices = list(answer_from_valid_choice.keys())
     if clean_answers:
-        admonishment = "*** Please respond with '%s' or '%s'. ***" \
-                       % ("', '".join(clean_answers[:-1]), clean_answers[-1])
+        admonishment = "*** Please respond with '%s' or '%s'. ***" % (
+            "', '".join(clean_answers[:-1]),
+            clean_answers[-1],
+        )
 
     while 1:
         sys.stdout.write(leader)
         choice = input().lower()
-        if default is not None and choice == '':
+        if default is not None and choice == "":
             return default
         elif choice in valid_choices:
             return answer_from_valid_choice[choice]
         else:
-            sys.stdout.write("\n"+admonishment+"\n\n\n")
+            sys.stdout.write("\n" + admonishment + "\n\n\n")
