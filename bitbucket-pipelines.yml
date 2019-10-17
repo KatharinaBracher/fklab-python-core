@@ -26,7 +26,7 @@ pipelines:
           name: trigger the doc repository to re-build the doc
           script :
              - git clone --depth 1 https://$BITBUCKET_USER:$GIT_PWD@bitbucket.org/kloostermannerflab/fklab-python-doc.git
-             - echo $BITBUCKET_TAG >> fklab-python-doc/source/internal_version.rst
+             - echo $BITBUCKET_TAG >> fklab-python-doc/source/core_version.rst
              - cd fklab-python-doc
              - git config --global user.email marine.chaput@nerf.be
              - git config --global user.name marinechaput
