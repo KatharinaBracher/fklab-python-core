@@ -14,7 +14,7 @@ pipelines:
           name: build package and deploy to anaconda cloud
           deployment: production
           script: # Modify the commands below to build your repository.
-            - echo "__version__ = $BITBUCKET_TAG" >> fklab/version/_core_version.py
+            - echo "__version__ = \"$BITBUCKET_TAG\"" >> fklab/version/_core_version.py
             - git checkout master
             - git add .
             - git commit -m "update version"
