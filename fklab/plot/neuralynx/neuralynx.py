@@ -25,7 +25,7 @@ from fklab.plot.core.interaction import ScrollPanZoom
 from fklab.plot.plots import plot_events
 from fklab.plot.plots import plot_signals
 from fklab.plot.plots import plot_spectrogram
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = ["plot_nev", "plot_csc", "plot_csc_spectrogram"]
 

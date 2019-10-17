@@ -15,7 +15,7 @@ Information theoretic functions.
 """
 import numpy as np
 
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 
 def spatial_information(spike_rate, occupancy, units="bits/spike"):

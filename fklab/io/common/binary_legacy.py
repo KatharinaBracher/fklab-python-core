@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from fklab.utilities.general import blocks
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 
 class BinaryFileReader(object):

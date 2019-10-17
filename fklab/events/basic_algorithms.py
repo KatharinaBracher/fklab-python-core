@@ -36,7 +36,7 @@ from fklab.segments.basic_algorithms import check_segments
 from fklab.segments.basic_algorithms import segment_contains
 from fklab.segments.basic_algorithms import segment_intersection
 from fklab.segments.basic_algorithms import segment_remove_overlap
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = [
     "split_eventstrings",

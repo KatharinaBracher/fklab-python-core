@@ -44,7 +44,7 @@ from fklab.plot.core.interaction import ScrollPanZoom
 from fklab.plot.core.utilities import ColumnView
 from fklab.plot.core.utilities import LinearOffsetCollection
 from fklab.plot.core.utilities import RangeVector
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = [
     "plot_signals",

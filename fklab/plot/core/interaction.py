@@ -36,7 +36,7 @@ from matplotlib.patches import Polygon
 from matplotlib.patches import Rectangle
 
 from .artists import AxesMessage
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = [
     "interactive_figure",

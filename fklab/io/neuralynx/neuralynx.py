@@ -68,7 +68,7 @@ from fklab.io.common.binary import accessor
 from fklab.io.common.binary import BinaryFileReader
 from fklab.io.common.binary import signal_indexer
 from fklab.segments import Segment
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = [
     "NeuralynxError",

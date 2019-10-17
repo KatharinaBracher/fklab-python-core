@@ -2,7 +2,7 @@ import itertools
 import re
 from collections import OrderedDict
 
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 # define voltage scaling factors
 _units_scale_factor = {"V": 1, "mV": 1000, "uV": 1000000}

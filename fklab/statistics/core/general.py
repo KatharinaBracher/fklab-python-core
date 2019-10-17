@@ -15,7 +15,7 @@ General utilities.
     beta_reparameterize
 
 """
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = ["monte_carlo_pvalue", "find_mode", "beta_reparameterize"]
 

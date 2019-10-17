@@ -24,7 +24,7 @@ import matplotlib.transforms
 import numpy as np
 import pkg_resources as _pkg
 
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = [
     "LinearOffsetCollection",

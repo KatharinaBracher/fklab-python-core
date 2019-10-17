@@ -55,7 +55,7 @@ from fklab.signals.core import extract_data_windows
 from fklab.signals.core import extract_trigger_windows
 from fklab.signals.core import generate_windows
 from fklab.utilities.general import inrange
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 # import functools
 # import spectrum

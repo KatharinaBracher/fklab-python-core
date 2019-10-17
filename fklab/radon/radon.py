@@ -25,7 +25,7 @@ import scipy.stats
 
 import fklab.signals.smooth
 from . import radonc
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = [
     "PadMethod",

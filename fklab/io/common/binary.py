@@ -13,7 +13,7 @@ General class for reading binary files.
     BinaryFileReader
 
 """
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = ["BinaryFileReader"]
 

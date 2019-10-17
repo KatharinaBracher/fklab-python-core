@@ -8,7 +8,7 @@ import types
 from IPython.core.interactiveshell import InteractiveShell
 from nbformat import read
 
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 # from IPython import get_ipython
 

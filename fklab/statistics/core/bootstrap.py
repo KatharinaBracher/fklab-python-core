@@ -15,7 +15,7 @@ Bootstrapping utilities.
 """
 import numpy as np
 
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 
 def ci(

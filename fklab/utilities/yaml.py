@@ -13,7 +13,7 @@ from collections import OrderedDict as _OrderedDict
 
 from yaml import *
 
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 # note that we will use the default mapping tag,
 # which means that all maps are loaded as OrderedDicts

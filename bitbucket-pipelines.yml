@@ -14,14 +14,14 @@ pipelines:
           name: build package and deploy to anaconda cloud
           deployment: production
           script: # Modify the commands below to build your repository.
-            - echo "__version__ = \"$BITBUCKET_TAG\"" > fklab/version/_core_version.py
+            - echo "__version__ = \"$BITBUCKET_TAG\"" > fklab/version/_core_version/_version.py
             - git add .
             - git commit -m "update version"
             - git push origin HEAD:master
             - anaconda login --username $ANACONDA_USER --password $ANACONDA_PWD
             - conda config --set anaconda_upload yes
             - conda build recipe --user KloostermanLab
-      - step: 
+      - step:
           name: trigger the doc repository to re-build the doc
           script :
              - git clone --depth 1 https://$BITBUCKET_USER:$GIT_PWD@bitbucket.org/kloostermannerflab/fklab-python-doc.git

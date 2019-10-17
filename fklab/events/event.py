@@ -28,7 +28,7 @@ from .basic_algorithms import event_rate
 from .basic_algorithms import filter_bursts
 from .basic_algorithms import filter_intervals
 from .basic_algorithms import peri_event_histogram
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = ["Event"]
 

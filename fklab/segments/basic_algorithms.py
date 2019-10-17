@@ -34,7 +34,7 @@ import operator
 
 import numpy as np
 
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = [
     "segment_span",

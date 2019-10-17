@@ -51,7 +51,7 @@ from .basic_algorithms import segment_uniform_random
 from .basic_algorithms import segment_union
 from fklab.utilities.general import issorted
 from fklab.utilities.general import partition_vector
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 
 __all__ = ["SegmentError", "Segment"]

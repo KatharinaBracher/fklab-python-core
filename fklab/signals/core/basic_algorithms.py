@@ -34,7 +34,7 @@ from numba import jit
 import fklab.segments as seg
 from fklab.events.basic_algorithms import check_events
 from fklab.utilities.general import inrange
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 _USE_NUMBA = True
 

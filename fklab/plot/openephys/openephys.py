@@ -19,7 +19,7 @@ import numpy as np
 
 import fklab.plot.core
 import fklab.plot.plots
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = ["plot_recording"]
 

@@ -6,7 +6,7 @@ Created on Mon Sep  2 23:52:42 2013
 """
 import sys
 
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 # source:
 # http://code.activestate.com/recipes/577096/

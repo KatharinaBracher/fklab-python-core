@@ -22,7 +22,7 @@ import scipy.interpolate
 import scipy.stats
 
 import fklab.statistics.correlation
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = [
     "get_sample_rate",

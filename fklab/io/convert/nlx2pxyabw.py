@@ -5,7 +5,7 @@ import numpy as np
 import fklab.io.mwl as mwl
 import fklab.io.neuralynx as nlx
 from fklab.utilities.general import blocks
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 
 def convert_to_pxyabw(filename):

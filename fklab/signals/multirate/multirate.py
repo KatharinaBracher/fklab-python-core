@@ -17,7 +17,7 @@ Functions to increase or decrease a signal's sampling rate.
     resample
 
 """
-from fklab.version._core_version import __version__
+from fklab.version._core_version._version import __version__
 
 __all__ = ["upsample", "interp", "interp_time_vector", "decimate", "resample"]
 
