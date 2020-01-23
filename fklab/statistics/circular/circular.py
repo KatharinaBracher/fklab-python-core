@@ -13,8 +13,6 @@ Utilities
 .. autosummary::
     :toctree: generated/
 
-    deg2rad
-    rad2deg
     wrap
     diff
     rank
@@ -35,6 +33,7 @@ Summary statistics
     interval
     std
 
+
 Statistical Tests
 =================
 
@@ -44,15 +43,15 @@ Statistical Tests
     kuiper
     rayleigh
 
+
 Circular Distributions
 ======================
 
 .. autosummary::
     :toctree: generated/
 
-    uniform
-    vonmises
     vonmises_weighted_fit
+
 
 Circular Histogram and Density
 ==============================
@@ -558,16 +557,19 @@ def interval(theta, axis=None, keepdims=False):
 
     Parameters
     ----------
+
     theta : ndarray
         Array of angles (in radians).
+
     axis : int
-        Array axis over which interval is computed. If axis is None, then
-        the interval is computed over the whole array.
+        Array axis over which interval is computed. If axis is None, then the interval is computed over the whole array.
+
     keepdims : bool
         Do not reduce the number of dimensions.
 
     Returns
     -------
+
     ndarray
 
     """
@@ -595,12 +597,16 @@ def std(theta, axis=None, weights=None, keepdims=False):
 
     Parameters
     ----------
+
     theta : ndarray
         Array of angles (in radians).
+
     axis : int
         Array axis over which standard deviation is computed.
+
     weights : ndarray
         Array of weights for a weighted circular standard deviation.
+
     keepdims : bool
         Do not reduce the number of dimensions.
 
@@ -622,17 +628,20 @@ def std(theta, axis=None, weights=None, keepdims=False):
 
 
 def inrange(theta, crange=[], low=0.0, high=2 * np.pi):
-    """Tests if angles are within a circular range.
+    """ Tests if angles are within a circular range.
 
     Parameters
     ----------
+
     theta : ndarray
         Array of angles (in radians).
+
     crange : [lower, upper]
         Circular range to test for. If lower >= upper, then the wrapped
         around range from lower to upper is taken (e.g. if crange equals
         [1.5*pi, 0.5*pi], then angles larger than 1.5*pi and smaller
         than 0.5*pi are considered within the test range.)
+
     low, high : float
         Circular range of theta angles
 
@@ -662,7 +671,7 @@ def inrange(theta, crange=[], low=0.0, high=2 * np.pi):
 
 @deprecated("Please use uniform.rvs instead.")
 def uniformrnd(size=1):
-    """Random sample from circular uniform distribution.
+    """ Random sample from circular uniform distribution.
 
     Parameters
     ----------
@@ -678,16 +687,17 @@ def uniformrnd(size=1):
 
 @deprecated("Please use uniform.cdf instead.")
 def uniformcdf(theta):
-    """Circular uniform distribution function.
+    """ Circular uniform distribution function.
 
     Parameters
     ----------
+
     theta : ndarray
-        Array of angles at which the circular uniform cumulative
-        distribution density is computed.
+        Array of angles at which the circular uniform cumulative distribution density is computed.
 
     Returns
     -------
+
     ndarray
 
     """
@@ -697,16 +707,18 @@ def uniformcdf(theta):
 
 @deprecated("Please use uniform.pdf instead.")
 def uniformpdf(theta):
-    """Circular uniform probability density function.
+    """ Circular uniform probability density function.
 
     Parameters
     ----------
+
     theta : ndarray
         Array of angles at which the circular uniform probability density
         is computed.
 
     Returns
     -------
+
     ndarray
 
     """
@@ -716,7 +728,7 @@ def uniformpdf(theta):
 
 
 class uniform_gen(scipy.stats.rv_continuous):
-    """A uniform circular continuous random variable.
+    """ A uniform circular continuous random variable.
 
     This distribution is constant around the unit circle.
 
@@ -751,19 +763,26 @@ uniform = uniform_gen()
 def kde(
     data, theta=None, bandwidth=None, kernel="vonmises", weights=None, normalize=True
 ):
-    """Kernel density estimate for circular data.
+    """ Kernel density estimate for circular data.
 
     Parameters
     ----------
+
     data : 1d array-like
+
     theta : int or 1d-array-like
+
     bandwidth : float
+
     kernel : {'vonmises', 'box'}
+
     weights : 1d array-like
 
     Returns
     -------
+
     density : 1d array
+
     theta : 1d array
 
     """
@@ -819,20 +838,24 @@ def kde(
 
 
 def hist(data, bins=24):
-    """Histogram of circular data.
+    """ Histogram of circular data.
 
     Parameters
     ----------
+
     data : 1d array-like
+
     bins : int
         Number of bins in histogram
 
     Returns
     -------
+
     count : 1d array
 
     theta : 1d array
         Bin centers
+
     width : float
         Bin width
 
@@ -865,7 +888,7 @@ def _vonmises_concentration_mle(rbar):
 
 
 def vonmises_weighted_fit(theta, weights=None):
-    """Parameter estimates for Von Mises distribution.
+    """ Parameter estimates for Von Mises distribution.
 
     This function can be used when samples have weights
     associated with them. When all samples are weighted
@@ -876,11 +899,13 @@ def vonmises_weighted_fit(theta, weights=None):
     ----------
     theta : ndarray
         Array of angles (in radians).
+
     weights : ndarray
         Array of weights.
 
     Returns
     -------
+
     mu, kappa : float
 
     """
