@@ -14,6 +14,7 @@ packages = [
     "fklab.io.mwl",
     "fklab.io.neuralynx",
     "fklab.io.openephys",
+    "fklab.io.spikeGLX",
     "fklab.plot.core",
     "fklab.plot.neuralynx",
     "fklab.plot.openephys",
