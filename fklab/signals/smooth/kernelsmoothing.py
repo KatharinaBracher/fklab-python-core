@@ -639,7 +639,7 @@ class Smoother(object):
         else:
             raise ValueError("Invalid value.")
 
-    def __call__(self, data, delta=1):
+    def __call__(self, data, delta=1, method='auto'):
         """Smooth data.
 
         Parameters
@@ -649,6 +649,8 @@ class Smoother(object):
             of the kernel.
         delta : scalar or sequence
             sampling interval of the data
+        method : str {'auto', 'fft', 'direct'}
+            numpy.convolve method
 
         Returns
         -------
@@ -677,13 +679,13 @@ class Smoother(object):
         else:
             nan_data = None
 
-        data = scipy.signal.convolve(data, k, "same")
+        data = scipy.signal.convolve(data, k, "same", method=method)
 
         if self._unbiased:
             n = np.ones(data.shape) / np.nansum(k)
             if nan_data is not None:
                 n[nan_data] = 0
-            n = scipy.signal.convolve(n, k, "same")
+            n = scipy.signal.convolve(n, k, "same", method=method)
             if nan_data is not None:
                 n[nan_data] = np.nan
             data = data / n
