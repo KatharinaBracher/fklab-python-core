@@ -1,6 +1,6 @@
-from setuptools import setup
 from distutils.core import Extension
 
+from setuptools import setup
 
 
 # because we have namespace packages without __init__.py
@@ -15,7 +15,6 @@ packages = [
     "fklab.io.mwl",
     "fklab.io.neuralynx",
     "fklab.io.openephys",
-    "fklab.io.spikeGLX",
     "fklab.plot.core",
     "fklab.plot.neuralynx",
     "fklab.plot.openephys",
@@ -48,13 +47,14 @@ class get_pybind_include(object):
         return pybind11.get_include(self.user)
 
 
-radon_ext = Extension("fklab.radon.radonc",
+radon_ext = Extension(
+    "fklab.radon.radonc",
     sources=["fklab/radon/src/pybind_radon.cpp", "fklab/radon/src/radon.cpp"],
     libraries=[],
     include_dirs=[get_pybind_include(), get_pybind_include(user=True)],
     language="c++",
-    extra_compile_args=["-std=c++11", "-O3"]
-    )
+    extra_compile_args=["-std=c++11", "-O3"],
+)
 
 
 import re
@@ -72,7 +72,7 @@ setup(
     name="fklab-python-core",
     version=verstr,
     packages=packages,
-    ext_modules=[radon_ext,],
+    ext_modules=[radon_ext],
     install_requires=[
         "numpy==1.16.*",
         "scipy>=1.2",
