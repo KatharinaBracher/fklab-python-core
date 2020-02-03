@@ -1,7 +1,5 @@
-from distutils.core import Extension
-
 from setuptools import setup
-
+from distutils.core import Extension
 
 # because we have namespace packages without __init__.py
 # which are not detected automatically by find_packages()
