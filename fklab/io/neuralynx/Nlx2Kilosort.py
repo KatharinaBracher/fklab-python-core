@@ -11,23 +11,22 @@ Utilities collection for Neuralynx acquisition system
     :toctree: generated/
 
         data_generation
-        channel_map_generation
+        tetrode
 
 """
 
-__all__ = ["data_generation", "channel_map_generation"]
+__all__ = ["data_generation", "tetrode"]
 
 
 import os
 
 import numpy as np
-
+from fklab.io import template_probe
 from fklab.io.neuralynx import NlxOpen
 from fklab.utilities.general import natural_sort
 from fklab.utilities.general import slices
-from fklab.version._internal_version._version import __version__
 
-##TO DO: Update generation to be in numpy format
+from fklab.version._internal_version._version import __version__
 
 
 def data_generation(
@@ -89,46 +88,39 @@ def data_generation(
             signals.tofile(destination_file, sep="")
 
 
-def channel_map_generation(name, destination, n_tetrodes, spacing=200):
+class tetrode(template_probe):
+    def __init__(self, n_tetrodes, spacing=200):
+        super().__init__()
+        self.n_tetrodes = n_tetrodes
+        self.spacing = spacing
 
-    """ generate channelmap files for Kilosort
-        for tetrodes recordings,
-        each tetrode channels is positionned on a single row
-        #TO DO: remove the '#' in the file's header
-                find a solution for tetrodes that have less than 4 channels
+    def create_channel_map(self):
 
-    Parameters
-    ----------
+        """ generate channelmap files for Kilosort
+            for tetrodes recordings,
+            each tetrode channels is positionned on a single row
 
-    name: str
-        name of the output file
+        Parameters
+        ----------
 
-    destination: str
-        path to the folder where the output file will be saved
+        name: str
+            name of the output file
 
-    n_tetrodes: scalar
-        number of tetrodes to generate the map for
+        destination: str
+            path to the folder where the output file will be saved
 
-    spacing: int, opt
-        space between each row (ie tetrode) on the channel map
+        n_tetrodes: scalar
+            number of tetrodes to generate the map for
 
-    """
+        spacing: int, opt
+            space between each row (ie tetrode) on the channel map
 
-    probe = np.arange(n_tetrodes * 4) + 1
-    data = np.arange(n_tetrodes * 4)
-    disconnect = np.zeros(len(probe))
-    x = np.array([0, 5, 10, 15] * n_tetrodes)
-    y = np.repeat(np.arange(n_tetrodes) * spacing, 4)
-    shank = np.zeros(len(probe))
+        """
 
-    mapping = (
-        np.vstack((probe, data, disconnect, x, y, shank)).swapaxes(0, 1).astype(int)
-    )
-
-    np.savetxt(
-        os.path.join(destination, name + ".channelmap"),
-        mapping,
-        fmt="%1i",
-        delimiter=",",
-        header="Probe,Data,Disconnect,X,Y,Shank",
-    )
+        self._chanMap = np.arange(self.n_tetrodes * 4) + 1
+        self._chanMap0ind = np.arange(self.n_tetrodes * 4)
+        self._connected = np.zeros(len(self._chanMap))
+        self._xCoord = np.array([0, 5, 10, 15] * self.n_tetrodes)
+        self._yCoord = np.repeat(np.arange(self.n_tetrodes) * self.spacing, 4)
+        self._kCoord = np.zeros(len(self._chanMap))
+        self._elecInd = np.arange(1, len(self._chanMap))
