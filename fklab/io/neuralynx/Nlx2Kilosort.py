@@ -21,7 +21,7 @@ __all__ = ["data_generation", "tetrode"]
 import os
 
 import numpy as np
-from fklab.io import template_probe
+from fklab.io.template_probe import template_probe
 from fklab.io.neuralynx import NlxOpen
 from fklab.utilities.general import natural_sort
 from fklab.utilities.general import slices
