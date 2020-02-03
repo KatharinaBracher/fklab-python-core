@@ -9,6 +9,7 @@ packages = [
     "fklab.codetools",
     "fklab.events",
     "fklab.segments",
+    "fklab.io",
     "fklab.io.common",
     "fklab.io.mwl",
     "fklab.io.neuralynx",
