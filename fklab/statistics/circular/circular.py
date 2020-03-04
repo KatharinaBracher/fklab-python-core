@@ -112,8 +112,7 @@ def wrap(x, low=0.0, high=2 * np.pi):
     ndarray
 
     """
-    # y = np.mod( np.mod( x, extent ) + extent - offset, extent ) + offset;
-    # y = np.mod( np.mod(x-low,high-low) + high-low - offset, high-low ) + offset + low
+
     x = np.asarray(x)
     y = np.mod(np.mod(x - low, high - low) + high - low, high - low) + low
     return y
@@ -154,9 +153,9 @@ def diff(phi, theta=None, axis=0, low=0.0, high=2 * np.pi, directed=False):
         d = theta - phi
 
     if directed:
-        d = wrap(theta - phi, low=low - range_center, high=high - range_center)
+        d = wrap(d, low=low - range_center, high=high - range_center)
     else:
-        d = range_center - np.abs(range_center - np.abs(theta - phi))
+        d = range_center - np.abs(range_center - np.abs(d))
 
     return d
 
