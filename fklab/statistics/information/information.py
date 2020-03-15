@@ -33,11 +33,8 @@ def spatial_information(spike_rate, occupancy, units="bits/spike"):
 
     """
 
-    list_input = False
-
     if not isinstance(spike_rate, (list, tuple)):
         spike_rate = [spike_rate]
-        list_input = True
 
     spike_rate = [np.array(x, copy=False) for x in spike_rate]
 
@@ -47,13 +44,11 @@ def spatial_information(spike_rate, occupancy, units="bits/spike"):
         raise ValueError("Arrays do not have same shape")
 
     if units not in ("bits/spike", "bits/second"):
-        raise ValueError("Invalid units")
+        raise ValueError("Invalid units. Should be bits/spike or bits/second.")
 
     nspikes = [x * occupancy for x in spike_rate]
     totalspikes = [np.nansum(x) for x in nspikes]
     totaltime = np.nansum(occupancy)
-
-    print(nspikes, totalspikes, totaltime)
 
     si = [
         np.nansum((y / z) * np.log2(x / (z / totaltime)))
