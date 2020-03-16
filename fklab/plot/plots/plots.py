@@ -18,6 +18,8 @@ plotting functions
     plot_segments
     plot_raster
     plot_spectrogram
+    plot_1d_maps
+    plot_2d_maps
     add_scalebar
     add_static_scalebar
     add_axes_message
@@ -47,6 +49,8 @@ from fklab.plot.core.utilities import RangeVector
 from fklab.version._core_version._version import __version__
 
 __all__ = [
+    "plot_1d_maps",
+    "plot_2d_maps",
     "plot_signals",
     "plot_events",
     "plot_segments",
@@ -58,6 +62,300 @@ __all__ = [
     "labeled_vmarker",
     "labeled_hmarker",
 ]
+
+
+def plot_1d_maps(maps, x=None, xlabel='', ylabel='', color='k', fill=True,
+                 grid=None, figsize=None, fill_alpha=0.5, emin=0, emax=0.1,
+                 vmin='shared', vmax='shared', roundto=None):
+    """Plot grid of 1D arrays.
+    
+    Parameters
+    ----------
+    maps : iterable of 1d arrays
+    x : (start,end) or 1d array-like
+        X coordinates
+    color : color spec
+    fill : bool
+    fill_alpha : float
+    xlabel, ylabel : str
+    grid : (rows,cols)
+        Number of row and columns for the plot grid. Entries can be None,
+        which means that the value will be automatically computed.
+    figsize : (width, height)
+    vmin, vmax : 'shared', 'auto', scalar
+        The minimum and maximum y value. If 'shared', the value will be
+        computed as the min/max across all *maps*. If 'auto', the value will
+        be computed separately for each map and will be displayed above each
+        plot (minimum on the top left, maximum on the top right). If a scalar,
+        the value will be fixed for all plots.
+    roundto : scalar
+        Round down/up the minimum and maximum y values to the nearest
+        multiple of *roundto*.
+    emin, emax : scalar
+    
+    Returns
+    -------
+    fig : Figure
+    ax : (nrows, ncols) array of Axes
+    
+    """
+    
+    nmaps = len(maps)
+    npoints = len(maps[0])
+    
+    if not all([len(m)==npoints for m in maps]):
+        raise ValueError()
+    
+    if grid is None:
+        grid = (None, None)
+    elif isinstance(grid, int):
+        grid = (None, grid)
+    
+    nrows, ncols = grid
+    
+    if nrows is None and ncols is None:
+        ncols = int(np.ceil(np.sqrt(nmaps)))
+        nrows = (nmaps + (ncols-1))//ncols
+    elif nrows is None:
+        nrows = (nmaps + (ncols-1))//ncols
+    else:
+        ncols = (nmaps + (nrows-1))//nrows
+    
+    if x is None:
+        x = np.arange(npoints)
+    elif len(x)==2:
+        x = np.linspace(*x, npoints)
+    elif len(x)!=npoints:
+        raise ValueError()
+    
+    if vmin=='shared':
+        vmin_value = [np.nanmin([np.nanmin(m[np.isfinite(m)]) for m in maps]),]*nmaps
+    elif vmin=='auto':
+        vmin_value = [np.nanmin(m[np.isfinit(m)]) for m in maps]
+    elif isinstance(vmin, (int, float)):
+        vmin_value = [vmin,]*nmaps
+    else:
+        raise ValueError()
+        
+    if vmax=='shared':
+        vmax_value = [np.nanmax([np.nanmax(m[np.isfinite(m)]) for m in maps]),]*nmaps
+    elif vmax=='auto':
+        vmax_value = [np.nanmax(m[np.isfinite(m)]) for m in maps]
+    elif isinstance(vmax, (int, float)):
+        vmax_value = [vmax,]*nmaps
+    else:
+        raise ValueError()
+    
+    vmin_value = np.array(vmin_value)
+    vmax_value = np.array(vmax_value)
+    
+    vmin_label = "min" if vmin=='auto' else vmin_value[0]
+    vmax_label = "max" if vmax=='auto' else vmax_value[0]     
+    
+    if emin+emax>=1:
+        raise ValueError()
+        
+    delta = vmax_value - vmin_value
+    
+    if vmin=='auto':
+        vmin_value = vmin_value - (emin*delta/(1-emin-emax))
+    if vmax=='auto':
+        vmax_value = vmax_value + (emax*delta/(1-emin-emax))
+    
+    if not roundto is None:
+        vmin_value = np.floor(vmin_value/roundto)*roundto
+        vmax_value = np.ceil(vmax_value/roundto)*roundto
+    
+    fig, ax = plt.subplots(nrows, ncols, sharex=False, sharey=False, figsize=figsize)
+    
+    ax = np.atleast_2d(ax)
+
+    for k, a in enumerate(ax.ravel()):
+        if k>=nmaps:
+            a.axis('off')
+            continue
+        
+        if fill:
+            a.fill_between(x, maps[k], color=color, alpha=fill_alpha, lw=0)
+            
+        a.plot(x, maps[k], color=color)
+        
+        a.set_ylim((vmin_value[k], vmax_value[k]))
+        a.set_xlim((x[0], x[-1]))
+        
+        if vmin=='auto':
+            a.text(x[0], vmax_value[k], "{}".format(vmin_value[k]), va='bottom', ha='left')
+        if vmax=='auto':
+            a.text(x[-1], vmax_value[k], "{}".format(vmax_value[k]), va='bottom', ha='right')
+        
+        if not a is ax[-1,0]:
+            a.set(yticks=[], xticks=[])
+        else:
+            a.set(ylabel=ylabel, xlabel=xlabel)
+            a.set(yticks=np.linspace(vmin_value[k], vmax_value[k], 6),
+                  yticklabels=['min' if vmin=='auto' else vmin_value[k]]+['',]*4+['max' if vmax=='auto' else vmax_value[k]],
+                  xticks=[x[0], x[-1]] )
+    
+    return fig, ax
+
+def plot_2d_maps(maps, coordinates=None, labels=None,
+                 grid=None, figsize=None,
+                 cmap='inferno', cbar=True, cbar_divisions=5, 
+                 cmin='shared', cmax='shared', roundto=None):
+    """Plot image grid of 2D arrays.
+    
+    Parameters
+    ----------
+    maps : iterable of 2d arrays
+    coordinates : [(xmin, xmax),(ymin,ymax)] or [array, array]
+        Coordinates along the x and y dimensions. For each dimension,
+        coordinates can either be specified as (min,max) tuple, a (n+1,) array
+        with bin edges or a (n,) array with coordinates for all *n*
+        rows/columns in the map.
+    cmap : colormap
+    labels : {'x':'', 'y':'', 'color':''}
+        Dictionary with labels for x and y axes and for the color bar
+    cbar : bool
+        Show color bar.
+    cbar_divisions: int
+        Number of divisions to show in color bar.
+    grid : (rows,cols)
+        Number of row and columns for the image grid. Entries can be None,
+        which means that the value will be automatically computed.
+    figsize : (width, height)
+    cmin, cmax : 'shared', 'auto', scalar
+        The minimum and maximum color value. If 'shared', the value will be
+        computed as the min/max across all *maps*. If 'auto', the value will
+        be computed separately for each map and will be displayed above each
+        plot (minimum on the top left, maximum on the top right). If a scalar,
+        the value will be fixed for all plots.
+    roundto : scalar
+        Round down/up the minimum and maximum color values to the nearest
+        multiple of *roundto*.
+    
+    Returns
+    -------
+    fig : Figure
+    ax : (nrows, ncols) array of Axes
+    
+    """
+        
+    nmaps = len(maps)
+    
+    if nmaps<1:
+        raise ValueError("Expecting at least one 2d map.")
+    
+    maps = [np.asarray(m) for m in maps]
+    
+    shape = maps[0].shape
+    if len(shape)!=2 or any([m.shape!=shape for m in maps]):
+        raise ValueError("All maps should have the same 2d shape.")
+    
+    if grid is None:
+        grid = (None, None)
+    elif isinstance(grid, int):
+        grid = (None, grid)
+    
+    nrows, ncols = grid
+    
+    if nrows is None and ncols is None:
+        ncols = int(np.ceil(np.sqrt(nmaps)))
+        nrows = (nmaps + (ncols-1))//ncols
+    elif nrows is None:
+        nrows = (nmaps + (ncols-1))//ncols
+    else:
+        ncols = (nmaps + (nrows-1))//nrows
+    
+    if coordinates is None:
+        extent = None
+    else:
+        extent = np.zeros(4)
+        for c, slc, nn in zip(
+            coordinates, [slice(0,2), slice(2,None)], shape):
+            if len(c)==2:
+                extent[slc] = c
+            elif len(c)==nn:
+                cdiff = np.diff(c)
+                extent[slc] = [c[0]-cdiff[0]/2, c[-1]+cdiff[-1]/2]
+            elif len(c)==nn+1: # bins
+                extent[slc] = [c[0], c[-1]]
+            else:
+                raise ValueError("Incorrect size of coordinates arrays.")
+    
+    if cmin=='shared':
+        cmin_value = [np.nanmin([np.nanmin(m[np.isfinite(m)]) for m in maps]),]*nmaps
+    elif cmin=='auto':
+        cmin_value = [np.nanmin(m[np.isfinite(m)]) for m in maps]
+    elif isinstance(cmin, (int, float)):
+        cmin_value = [cmin,]*nmaps
+    else:
+        raise ValueError()
+        
+    if cmax=='shared':
+        cmax_value = [np.nanmax([np.nanmax(m[np.isfinite(m)]) for m in maps]),]*nmaps
+    elif cmax=='auto':
+        cmax_value = [np.nanmax(m[np.isfinite(m)]) for m in maps]
+    elif isinstance(cmax, (int, float)):
+        cmax_value = [cmax,]*nmaps
+    else:
+        raise ValueError()
+    
+    if not roundto is None:
+        cmin_value = np.floor(np.array(cmin_value)/roundto)*roundto
+        cmax_value = np.ceil(np.array(cmax_value)/roundto)*roundto
+    
+    cmin_label = "min" if cmin=='auto' else cmin_value[0]
+    cmax_label = "max" if cmax=='auto' else cmax_value[0]
+    
+    label_dict = {'x':'', 'y':'', 'color':''}
+    
+    if not labels is None:
+        label_dict.update(labels)
+        
+    
+    fig, ax = plt.subplots(nrows, ncols, sharex=False, sharey=False, figsize=figsize)
+    
+    ax = np.atleast_2d(ax)
+
+    for k, a in enumerate(ax.ravel()):
+        if k>=nmaps:
+            a.axis('off')
+            continue
+        
+        img = a.imshow(maps[k].T, interpolation='none', aspect='auto',
+                       origin='lower', extent=extent, cmap=cmap);
+        
+        img.set_clim( (cmin_value[k], cmax_value[k]) )
+        
+        if cmin=='auto':
+            a.text(extent[0], extent[3], "{}".format(cmin_value[k]), va='bottom', ha='left')
+        if cmax=='auto':
+            a.text(extent[1], extent[3], "{}".format(cmax_value[k]), va='bottom', ha='right')
+            
+        if not a is ax[-1,0]:
+            a.set(yticks=[], xticks=[])
+        else:
+            a.set(ylabel=label_dict['y'], xlabel=label_dict['x'])
+    
+
+        if cbar and k==0:
+            
+            cax = plt.colorbar(img, ax=ax)
+            cax.set_label(label_dict['color'])
+            
+            if cbar_divisions is None or cbar_divisions<1:
+                cax.set_ticks([])
+            else:
+                cax.set_ticks(cmin_value[k] + cmax_value[k]*np.arange(cbar_divisions+1)/cbar_divisions)
+            
+            cax.set_ticklabels([])
+            cax.ax.grid('y', color='w')
+            
+            cax.ax.tick_params(length=0)
+            cax.ax.text(np.mean(cax.ax.get_xlim()),cmin_value[k], cmin_label,va='top', ha='center')
+            cax.ax.text(np.mean(cax.ax.get_xlim()),cmax_value[k], cmax_label,va='bottom', ha='center')
+    
+    return fig, ax
 
 
 def plot_signals(*args, **kwargs):
