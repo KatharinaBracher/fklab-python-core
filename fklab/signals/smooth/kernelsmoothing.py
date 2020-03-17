@@ -27,6 +27,7 @@ Smoothing
 .. autosummary::
     :toctree: generated/
 
+    create_smoother
     Smoother
     smooth1d
     smooth2d
@@ -45,10 +46,159 @@ __all__ = [
     "VonMisesKernel",
     "MixedKernel",
     "NoKernel",
+    "create_smoother",
     "Smoother",
     "smooth1d",
     "smooth2d",
 ]
+
+
+def create_smoother(
+    ndim,
+    kernel="gaussian",
+    bandwidth=0,
+    delta=None,
+    unbiased=True,
+    nansaszero=True,
+    axes=None,
+):
+    """Create a Smoother instance.
+
+    Parameters
+    ----------
+
+    ndim : int
+        Number of data dimensions.
+
+    kernel : "gaussian", "epanechnikov", "uniform" or "triangular"
+        Type of smoothing kernel. The same kernel will be used for all dimensions.
+
+    bandwidth : float or [float,...]
+        Bandwidth of the smoothing kernel. If a float, then the same bandwidth is used
+        for all dimensions. If a sequence of floats, then the length of the sequence
+        should be *ndim* or len(axes) if the *axes* argument is set.
+
+    delta : None, float or [float,...]
+        Spacing between data points along each array dimension. If None, spacing is
+        fixed to 1. If a float, then the same spacing is used for all dimensions.
+        If a sequence of floats, then the length of the sequence should be *ndim* or
+        len(axes) if the *axes* argument is set.
+
+    unbiased : bool
+        Only use available data for smoothing. With unbiased smoothing there is no
+        zero-padding at the edges of an array. In combination with *nansaszero*, NaNs
+        will be removed for smoothing purposes.
+
+    nansaszero : bool
+        Convert NaNs to zero before smoothing. In combination with *unbiased*, NaNs
+        will be considered invalid data and will not be used in smoothing even after
+        after conversion to zeros.
+
+    axes : None or [int,...]
+        Selected array dimensions that should be smoothed. A *NoKernel* kernel
+        (i.e. no smoothing) is used for all other dimensions. A dimension can
+        only be listed once and the order in which dimensions are listed should
+        match the order in which bandwidths and deltas are provided.
+
+    Returns
+    -------
+
+    smoother(data, delta=None)
+        Function that smooths a *ndim* array with the given parameters.
+        Optionally, the delta keyword argument can be set to override the
+        delta parameter supplied to the *create* function.
+
+    """
+
+    # CHECK ARGUMENTS
+
+    ndim = int(ndim)
+    if ndim < 0:
+        raise ValueError("Number of dimensions ndim expected to be >=0.")
+    if ndim == 0:
+        return lambda data: data
+
+    if not kernel in ("gaussian", "epanechnikov", "uniform", "triangular"):
+        raise ValueError(
+            "Valid kernels are: gaussian, epanechnikov, uniform and triangular"
+        )
+
+    kernel = _kernel_map[kernel]
+
+    if axes is None:
+        axes = np.arange(ndim, dtype=np.int)
+    else:
+        axes = np.asarray(axes, dtype=np.int).ravel()
+        if len(axes) == 0:
+            axes = np.arange(ndim, dtype=np.int)
+        elif len(axes) > ndim:
+            raise ValueError(
+                "The size of axes cannot be higher than ndim ({}).".format(ndim)
+            )
+
+    if len(np.unique(axes)) != len(axes):
+        raise ValueError("Duplicate entries in axes are not allowed.")
+
+    if any([x < 0 or x > ndim - 1 for x in axes]):
+        raise ValueError("Entries in axes should be in range [0,{}]".format(ndim - 1))
+
+    axes_ndim = len(axes)
+
+    bandwidth = np.atleast_1d(bandwidth).ravel()
+    if len(bandwidth) == 1:
+        bandwidth = np.ones(axes_ndim) * bandwidth
+    elif len(bandwidth) != axes_ndim:
+        raise ValueError(
+            "Expecting scalar or ({},) array-like bandwidth.".format(axes_ndim)
+        )
+
+    if any([b < 0 for b in bandwidth]):
+        raise ValueError("Bandwidth cannot be negative.")
+
+    if delta is None:
+        delta = np.ones(axes_ndim)
+    else:
+        delta = np.atleast_1d(delta).ravel()
+        if len(delta) == 1:
+            delta = np.ones(axes_ndim) * delta
+        elif len(delta) != axes_ndim:
+            raise ValueError(
+                "Expecting scalar or ({},) array-like delta.".format(axes_ndim)
+            )
+
+        if any([d <= 0 for d in delta]):
+            raise ValueError("Delta cannot be zero or negative.")
+
+    full_delta = np.ones(ndim)
+    full_delta[axes] = delta
+
+    # END CHECK ARGUMENTS
+
+    # special case of no smoothing
+    if np.allclose(bandwidth, 0.0):
+        return lambda data: data
+
+    # construct kernel
+    K = [NoKernel()] * ndim
+    for ax, bw in zip(axes, bandwidth):
+        if not np.isclose(bw, 0.0):
+            K[ax] = kernel(bandwidth=bw)
+
+    K = MixedKernel(*K)
+
+    # construct smoother object
+    _smoother = Smoother(kernel=K, unbiased=unbiased, nansaszero=nansaszero)
+
+    def smoother(data, delta=None):
+        if not delta is None:
+            actual_delta = full_delta.copy()
+            actual_delta[axes] = delta
+        else:
+            actual_delta = full_delta
+
+        return _smoother(data, actual_delta)
+
+    return smoother
 
 
 class KernelBase(object):
@@ -639,7 +789,7 @@ class Smoother(object):
         else:
             raise ValueError("Invalid value.")
 
-    def __call__(self, data, delta=1, method='auto'):
+    def __call__(self, data, delta=1, method="auto"):
         """Smooth data.
 
         Parameters
