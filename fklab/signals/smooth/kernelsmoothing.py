@@ -62,6 +62,53 @@ def create_smoother(
     nansaszero=True,
     axes=None,
 ):
+    """Create a Smoother instance.
+
+    Parameters
+    ----------
+
+    ndim : int
+        Number of data dimensions.
+
+    kernel : "gaussian", "epanechnikov", "uniform" or "triangular"
+        Type of smoothing kernel. The same kernel will be used for all dimensions.
+
+    bandwidth : float or [float,...]
+        Bandwidth of the smoothing kernel. If a float, then the same bandwidth is used
+        for all dimensions. If a sequence of floats, then the length of the sequence
+        should be *ndim* or len(axes) if the *axes* argument is set.
+
+    delta : None, float or [float,...]
+        Spacing between data points along each array dimension. If None, spacing is
+        fixed to 1. If a float, then the same spacing is used for all dimensions.
+        If a sequence of floats, then the length of the sequence should be *ndim* or
+        len(axes) if the *axes* argument is set.
+
+    unbiased : bool
+        Only use available data for smoothing. With unbiased smoothing there is no
+        zero-padding at the edges of an array. In combination with *nansaszero*, NaNs
+        will be removed for smoothing purposes.
+
+    nansaszero : bool
+        Convert NaNs to zero before smoothing. In combination with *unbiased*, NaNs
+        will be considered invalid data and will not be used in smoothing even after
+        after conversion to zeros.
+
+    axes : None or [int,...]
+        Selected array dimensions that should be smoothed. A *NoKernel* kernel
+        (i.e. no smoothing) is used for all other dimensions. A dimension can
+        only be listed once and the order in which dimensions are listed should
+        match the order in which bandwidths and deltas are provided.
+
+    Returns
+    -------
+
+    smoother(data, delta=None)
+        Function that smooths a *ndim* array with the given parameters.
+        Optionally, the delta keyword argument can be set to override the
+        delta parameter supplied to the *create* function.
+
+    """
 
     # CHECK ARGUMENTS
 
@@ -142,7 +189,9 @@ def create_smoother(
     # construct smoother object
     smoother = Smoother(kernel=K, unbiased=unbiased, nansaszero=nansaszero)
 
-    return lambda data: smoother(data, full_delta)
+    return lambda data, delta=None: smoother(
+        data, full_delta if delta is None else delta
+    )
 
 
 class KernelBase(object):
