@@ -607,17 +607,14 @@ def compute_envelope(
         N = int(np.min([2, 3] ** np.ceil(np.log(N) / np.log([2, 3]))))
 
     for k in range(len(envelope)):
-        envelope[k] = np.abs(scipy.signal.hilbert(envelope[k], N=N, axis=axis))
-        if envelope[k].ndim > 1:
-            envelope[k] = np.mean(
-                np.rollaxis(envelope[k], axis).reshape(
-                    [
-                        envelope[k].shape[axis],
-                        envelope[k].size / envelope[k].shape[axis],
-                    ]
-                ),
-                axis=1,
-            )
+        _envelope = envelope[k]
+        _envelope = np.abs(scipy.signal.hilbert(_envelope, N=N, axis=axis))
+
+        if _envelope.ndim > 1:
+            s = _envelope.shape[axis]
+            _envelope = np.mean(np.rollaxis(_envelope, axis).reshape((s, -1)), axis=1)
+
+        envelope[k] = _envelope
 
     if len(envelope) > 1:
         envelope = reduce(np.add, envelope) / len(envelope)
