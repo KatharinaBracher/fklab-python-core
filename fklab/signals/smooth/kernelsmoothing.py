@@ -187,11 +187,18 @@ def create_smoother(
     K = MixedKernel(*K)
 
     # construct smoother object
-    smoother = Smoother(kernel=K, unbiased=unbiased, nansaszero=nansaszero)
+    _smoother = Smoother(kernel=K, unbiased=unbiased, nansaszero=nansaszero)
 
-    return lambda data, delta=None: smoother(
-        data, full_delta if delta is None else delta
-    )
+    def smoother(data, delta=None):
+        if not delta is None:
+            actual_delta = full_delta.copy()
+            actual_delta[axes] = delta
+        else:
+            actual_delta = full_delta
+
+        return _smoother(data, actual_delta)
+
+    return smoother
 
 
 class KernelBase(object):
