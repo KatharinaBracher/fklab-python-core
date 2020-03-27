@@ -89,11 +89,11 @@ def build_rho_vector(
         thetarange = None
         val = np.sqrt((dy / dx) ** 2 + 1)
     else:
-        thetarange = fklab.circular.wrap(thetarange, -0.5 * np.pi, 0.5 * np.pi)
+        thetarange = fklab.statistics.circular.wrap(thetarange, -0.5 * np.pi, 0.5 * np.pi)
         if len(thetarange) != 2:
             pass
         if thetarange[0] > thetarange[1]:
-            thetarange = fklab.circular.wrap(thetarange, 0, np.pi)
+            thetarange = fklab.statistics.circular.wrap(thetarange, 0, np.pi)
 
         f = lambda x: -np.minimum(
             1.0 / np.abs(np.sin(x)), dy / (dx * np.abs(np.cos(x)))
@@ -173,11 +173,11 @@ def build_theta_vector(nx, ny, dx=1.0, dy=1.0, thetarange=None, oversampling=1.0
         thetarange = [-0.5 * np.pi, 0.5 * np.pi]
         val = np.sqrt((dy / dx) ** 2 + 1)
     else:
-        thetarange = fklab.circular.wrap(thetarange, -0.5 * np.pi, 0.5 * np.pi)
+        thetarange = fklab.statistics.circular.wrap(thetarange, -0.5 * np.pi, 0.5 * np.pi)
         if len(thetarange) != 2:
             pass
         if thetarange[0] > thetarange[1]:
-            thetarange = fklab.circular.wrap(thetarange, 0, np.pi)
+            thetarange = fklab.statistics.circular.wrap(thetarange, 0, np.pi)
 
         f = lambda x: -np.minimum(
             1.0 / np.abs(np.sin(x)), dy / (dx * np.abs(np.cos(x)))
