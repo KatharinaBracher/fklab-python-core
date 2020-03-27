@@ -139,7 +139,7 @@ def build_rho_vector(
             rhorange = [minrho, maxrho]
             nr = np.ceil(np.diff(rhorange) / drho + 1)
 
-    rho = np.linspace(rhorange[0], rhorange[1], nr * oversampling)
+    rho = np.linspace(rhorange[0], rhorange[1], int(nr * oversampling))
 
     return rho, (drho, rhorange, nr)
 
@@ -194,7 +194,7 @@ def build_theta_vector(nx, ny, dx=1.0, dy=1.0, thetarange=None, oversampling=1.0
     nt = np.ceil(np.diff(thetarange) / dtheta)
     dtheta = np.diff(thetarange) / nt
 
-    theta = np.linspace(thetarange[0], thetarange[1], nt * oversampling)
+    theta = np.linspace(thetarange[0], thetarange[1], int(nt * oversampling))
 
     return theta, (dtheta, thetarange, nt)
 
