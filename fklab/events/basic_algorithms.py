@@ -727,13 +727,16 @@ def fastbin(events, bins):
     next_idx = 0
 
     for k in range(nbins):
-        while next_idx < nevents and events[next_idx] < bins[k, 0]:
+        while next_idx < nevents and (
+            events[next_idx] < bins[k, 0] or np.isnan(events[next_idx])
+        ):
             next_idx += 1
 
         idx = next_idx
 
-        while idx < nevents and events[idx] < bins[k, 1]:
-            counts[k] += 1
+        while idx < nevents and (events[idx] < bins[k, 1] or np.isnan(events[idx])):
+            if ~np.isnan(events[idx]):
+                counts[k] += 1
             idx += 1
 
     return counts
