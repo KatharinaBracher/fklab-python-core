@@ -606,6 +606,8 @@ def compute_envelope(
         Norig = N
         N = int(np.min([2, 3] ** np.ceil(np.log(N) / np.log([2, 3]))))
 
+    envelope = envelope.copy()  # to avoid altering input list
+
     for k in range(len(envelope)):
         _envelope = envelope[k]
         _envelope = np.abs(scipy.signal.hilbert(_envelope, N=N, axis=axis))
@@ -693,6 +695,8 @@ def compute_sliding_rms(
     # check that all arrays in the list have the same size along axis
     if not all([x.shape[axis] == envelope[0].shape[axis] for x in envelope]):
         raise ValueError("Signals in list do not have compatible shapes")
+
+    envelope = envelope.copy()  # to avoid altering input list
 
     for k in range(len(envelope)):
         envelope[k] = envelope[k] ** 2
