@@ -63,7 +63,6 @@ Circular Histogram and Density
     hist
 
 """
-import numba
 import numpy as np
 import scipy as sp
 import scipy.stats
@@ -71,7 +70,6 @@ from numpy import deg2rad
 from numpy import rad2deg
 from scipy.stats import vonmises
 
-import fklab.statistics.core
 from fklab.codetools import deprecated
 from fklab.version._core_version._version import __version__
 
