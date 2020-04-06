@@ -12,5 +12,6 @@ Collection of circular statistics functions.
 
 """
 from .circular import *
+from .simulation import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]
