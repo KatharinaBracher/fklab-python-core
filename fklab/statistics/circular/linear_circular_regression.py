@@ -183,6 +183,7 @@ def linear_circular_regression(
 
     x = np.asarray(x).ravel()
     theta = np.asarray(theta).ravel()
+    theta = fklab.statistics.circular.wrap(theta)
 
     if x.ndim != 1 or x.shape != theta.shape:
         raise ValueError("x and theta need to be 1d arrays of equal size")

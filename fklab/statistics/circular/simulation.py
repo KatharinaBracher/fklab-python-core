@@ -10,16 +10,16 @@ Tool to create a dataset with circular dependent variable
 .. autosummary::
     :toctree: generated/
 
-    generate_dataset
+    generate_linear_circular_dataset
 """
 import numpy as np
 
 import fklab.statistics.circular as circ
 
-__all__ = ["generate_dataset"]
+__all__ = ["generate_linear_circular_dataset"]
 
 
-def generate_dataset(
+def generate_linear_circular_dataset(
     nsamples=100, xmin=0, xmax=1, intercept=0, slope=None, period=None, noise=1.0
 ):
     """Generate data with circular dependent variable.
