@@ -20,6 +20,7 @@ plotting functions
     plot_spectrogram
     plot_1d_maps
     plot_2d_maps
+    enhanced_scatter
     add_scalebar
     add_static_scalebar
     add_axes_message
@@ -29,6 +30,8 @@ plotting functions
 
 
 """
+import itertools
+
 import matplotlib.cm
 import matplotlib.collections
 import matplotlib.pyplot as plt
@@ -51,6 +54,7 @@ from fklab.plot.core.utilities import RangeVector
 from fklab.version._core_version._version import __version__
 
 __all__ = [
+    "enhanced_scatter",
     "plot_1d_maps",
     "plot_2d_maps",
     "plot_signals",
@@ -64,6 +68,79 @@ __all__ = [
     "labeled_vmarker",
     "labeled_hmarker",
 ]
+
+
+def enhanced_scatter(*args, rotations=None, alphas=None, axes=None, **kwargs):
+    """Scatter plot that supports varying rotation and alpha for each marker.
+
+    Parameters
+    ----------
+    *args, **kwargs :
+        Arguments for the matplotlib `scatter` function
+    rotations : scalar or 1d array-like
+        Marker rotations.
+    alphas : scalar or 1d array-like
+        Marker alpha values
+
+    Returns
+    -------
+    PathCollection
+
+    """
+
+    if axes is None:
+        axes = plt.gca()
+
+    h = axes.scatter(*args, **kwargs)
+
+    if not rotations is None:
+        rotations = np.ravel(rotations)
+
+        paths = h.get_paths()
+
+        if len(paths) == 1:
+            paths = [
+                p.transformed(matplotlib.transforms.Affine2D().rotate(phi))
+                for p, phi in zip(itertools.cycle(paths), rotations)
+            ]
+        else:
+            paths = [
+                p.transformed(matplotlib.transforms.Affine2D().rotate(phi))
+                for p, phi in zip(paths, itertools.cycle(rotations))
+            ]
+
+        h.set_paths(paths)
+
+    if not alphas is None:
+        alphas = np.ravel(alphas)
+
+        fc = h.get_facecolors()
+
+        if len(fc) > 0:
+            alphas_ = alphas
+            if len(fc) == 1:
+                fc = np.broadcast_to(fc, (len(alphas), 4)).copy()
+            elif len(alphas) == 1:
+                alphas_ = np.broadcast_to(alphas, len(fc))
+
+            fc[:, 3] *= alphas_
+
+            h.set_facecolors(fc)
+
+        ec = h.get_edgecolors()
+
+        if len(ec) > 0:
+            alphas_ = alphas
+            if len(ec) == 1:
+                ec = np.broadcast_to(ec, (len(alphas), 4)).copy()
+            elif len(alphas) == 1:
+                alphas_ = np.broadcast_to(alphas, len(ec))
+
+            ec[:, 3] *= alphas_
+
+            h.set_facecolors(ec)
+
+    return h
 
 
 def plot_1d_maps(
