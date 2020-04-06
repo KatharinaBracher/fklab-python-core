@@ -1,3 +1,17 @@
+"""
+======================================================================
+Circular data simulation (:mod:`fklab.statistics.circular.simulation`)
+======================================================================
+
+.. currentmodule:: fklab.statistics.circular.simulation
+
+Tool to create a dataset with circular dependent variable
+
+.. autosummary::
+    :toctree: generated/
+
+    generate_dataset
+"""
 import numpy as np
 
 import fklab.statistics.circular as circ
