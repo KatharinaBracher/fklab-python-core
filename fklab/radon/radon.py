@@ -80,7 +80,6 @@ def build_rho_vector(
         rho step size, range of rho values, number of rho values
 
     """
-
     import fklab.statistics.circular
 
     if thetarange is None or (
@@ -89,7 +88,9 @@ def build_rho_vector(
         thetarange = None
         val = np.sqrt((dy / dx) ** 2 + 1)
     else:
-        thetarange = fklab.statistics.circular.wrap(thetarange, -0.5 * np.pi, 0.5 * np.pi)
+        thetarange = fklab.statistics.circular.wrap(
+            thetarange, -0.5 * np.pi, 0.5 * np.pi
+        )
         if len(thetarange) != 2:
             pass
         if thetarange[0] > thetarange[1]:
@@ -166,14 +167,15 @@ def build_theta_vector(nx, ny, dx=1.0, dy=1.0, thetarange=None, oversampling=1.0
         theta step size, range of theta values and number of theta values
 
     """
-
     import fklab.statistics.circular
 
     if thetarange is None:
         thetarange = [-0.5 * np.pi, 0.5 * np.pi]
         val = np.sqrt((dy / dx) ** 2 + 1)
     else:
-        thetarange = fklab.statistics.circular.wrap(thetarange, -0.5 * np.pi, 0.5 * np.pi)
+        thetarange = fklab.statistics.circular.wrap(
+            thetarange, -0.5 * np.pi, 0.5 * np.pi
+        )
         if len(thetarange) != 2:
             pass
         if thetarange[0] > thetarange[1]:
@@ -200,7 +202,7 @@ def build_theta_vector(nx, ny, dx=1.0, dy=1.0, thetarange=None, oversampling=1.0
 
 
 class RadonTransform(radonc.Radon):
-    """Radon transform class
+    """Define radon transform class.
 
     Parameters
     ----------
@@ -270,7 +272,7 @@ class RadonTransform(radonc.Radon):
         self.oversampling_ = val
 
     def padded_transform(self, data, theta, rho):
-        """Radon transform with padding
+        """Compute radon transform with padding.
 
         Parameters
         ----------
@@ -286,7 +288,6 @@ class RadonTransform(radonc.Radon):
         n : 3d array
 
         """
-
         if self.pad == PadMethod.No:
             return self.transform(data, theta, rho)
 
@@ -362,7 +363,7 @@ class RadonTransform(radonc.Radon):
         return r, nn
 
     def padded_slice(self, data, theta, rho):
-        """Slice through image with padding
+        """Slice through image with padding.
 
         Parameters
         ----------
@@ -377,7 +378,6 @@ class RadonTransform(radonc.Radon):
         slice : 1d array
 
         """
-
         if self.pad == PadMethod.No:
             val, _ = self.slice(data, theta, rho)
             return val
@@ -436,7 +436,6 @@ class RadonTransform(radonc.Radon):
         projection : 1d array
 
         """
-
         if x is None:
             x = np.arange(data.shape[0])
         elif len(x) != data.shape[0]:
@@ -518,7 +517,7 @@ def local_integrate(m, n=3, axis=0):
 
 
 def bresenham(x0, y0, x1, y1):
-    """Bresenham's algorithm for line digitization
+    """Bresenham's algorithm for line digitization.
 
     Parameters
     ----------
@@ -529,7 +528,6 @@ def bresenham(x0, y0, x1, y1):
     -------
 
     """
-
     steep = abs(y1 - y0) > abs(x1 - x0)
 
     if steep:
@@ -571,7 +569,7 @@ def test_line_fit(
     pad="No",
     integral_method="Sum",
 ):
-    """Tests radon based line fitting.
+    """Test radon based line fitting.
 
     Plots the results of radon transform and line fitting.
 
@@ -584,7 +582,6 @@ def test_line_fit(
     integral_method : {'Sum', 'Integra;', 'Mean', 'LogSum', 'Product'}
 
     """
-
     import matplotlib.pyplot as plt
     import scipy.sparse
 

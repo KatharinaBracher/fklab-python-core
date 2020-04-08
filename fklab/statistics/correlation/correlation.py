@@ -7,11 +7,6 @@ Correlation (:mod:`fklab.statistics.correlation.correlation`)
 
 Functions for correlation analysis.
 
-.. autosummary::
-    :toctree: generated/
-
-    xcorrn
-
 """
 from functools import reduce
 
@@ -25,7 +20,7 @@ __all__ = ["xcorrn"]
 
 
 def xcorrn(x, y=None, lags=None, scale="none", remove_mean=False):
-    """Computes n-dimensional auto/cross correlation.
+    """Compute n-dimensional auto/cross correlation.
 
     Parameters
     ----------
@@ -57,7 +52,6 @@ def xcorrn(x, y=None, lags=None, scale="none", remove_mean=False):
     lags : tuple of arrays
 
     """
-
     x = np.array(x, copy=True)
     y = x if y is None else np.array(y, copy=True)
 

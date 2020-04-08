@@ -6,14 +6,6 @@ Neuralynx (:mod:`fklab.plot.neuralynx.neuralynx`)
 .. currentmodule:: fklab.plot.neuralynx.neuralynx
 
 Convenience functions for plotting neuralynx data
-
-.. autosummary::
-    :toctree: generated/
-
-    plot_csc
-    plot_csc_spectrogram
-    plot_nev
-
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,7 +37,6 @@ def plot_nev(filename, events=None, axes=None, **kwargs):
     collection of events
 
     """
-
     fid = nlx.NlxOpen(filename)
     data = fid.data.default[:]
     data = fklab.events.split_eventstrings(data.time, data.eventstring)
@@ -98,7 +89,6 @@ def plot_csc_spectrogram(filename, axes=None, xlim=None, **kwargs):
     ScrollPanZoom interaction object
 
     """
-
     if isinstance(filename, str):
         fid = nlx.NlxOpen(filename)
     else:
@@ -167,7 +157,6 @@ def plot_csc(
     ScrollPanZoom interaction object
 
     """
-
     x = []
     y = []
 

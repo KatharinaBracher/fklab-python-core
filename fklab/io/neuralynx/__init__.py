@@ -7,9 +7,6 @@ Neuralynx File IO (:mod:`fklab.io.neuralynx`)
 
 Neuralynx file import functions.
 
-.. automodule:: fklab.io.neuralynx.neuralynx
-.. automodule:: fklab.io.neuralynx.nlx_extract_video_image
-.. automodule:: fklab.io.neuralynx.Nlx2Kilosort
 """
 from .neuralynx import *
 from .Nlx2Kilosort import *

@@ -7,10 +7,6 @@ Circular statistics (:mod:`fklab.statistics.circular`)
 
 Collection of circular statistics functions.
 
-.. automodule:: fklab.statistics.circular.circular
-   :noindex:
-.. automodule:: fklab.statistics.circular.simulation
-.. automodule:: fklab.statistics.circular.linear_circular_regression
 """
 from .circular import *
 from .linear_circular_regression import *

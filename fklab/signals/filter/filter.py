@@ -9,23 +9,6 @@ Utilities for the design, application and inspection of digital filters.
 
 Filter utilities
 ================
-
-.. autosummary::
-    :toctree: generated/
-
-    construct_filter
-    construct_low_pass_filter
-    construct_high_pass_filter
-    apply_filter
-    apply_low_pass_filter
-    apply_high_pass_filter
-    inspect_filter
-    plot_filter_amplitude
-    plot_filter_phase
-    plot_filter_group_delay
-    compute_envelope
-    compute_sliding_rms
-
 """
 from functools import reduce
 
@@ -71,12 +54,12 @@ standard_frequency_bands = {
 
 
 def construct_filter(band, fs=1.0, transition_width="25%", attenuation=60):
-    """Constructs FIR high/low/band-pass filter.
+    """Construct FIR high/low/band-pass filter.
 
     Parameters
     ----------
     band : str, scalar or 2-element sequence
-        either a valid key into the `default_frequency_bands` dictionary,
+        either a valid key into the default_frequency_bands dictionary,
         a scalar for a low-pass filter, or a 2-element sequence with lower
         and upper pass-band frequencies. Use 0., None, Inf or NaN for the
         lower/upper cut-offs in the sequence to define a low/high-pass filter.
@@ -97,7 +80,6 @@ def construct_filter(band, fs=1.0, transition_width="25%", attenuation=60):
         filter coefficients
 
     """
-
     # look up pre-defined frequency band
     if isinstance(band, str):
         band = standard_frequency_bands[band]
@@ -161,7 +143,7 @@ construct_band_filter.__doc__ = construct_filter.__doc__
 
 
 def construct_low_pass_filter(cutoff, **kwargs):
-    """Constructs FIR low-pass filter.
+    """Construct FIR low-pass filter.
 
     Parameters
     ----------
@@ -183,12 +165,11 @@ def construct_low_pass_filter(cutoff, **kwargs):
         filter coefficients
 
     """
-
     return construct_filter([None, float(cutoff)], **kwargs)
 
 
 def construct_high_pass_filter(cutoff, **kwargs):
-    """Constructs FIR high-pass filter.
+    """Construct FIR high-pass filter.
 
     Parameters
     ----------
@@ -210,19 +191,17 @@ def construct_high_pass_filter(cutoff, **kwargs):
         filter coefficients
 
     """
-
     return construct_filter([float(cutoff), None], **kwargs)
 
 
 def apply_filter(signal, band, axis=-1, **kwargs):
-    """Applies low/high/band-pass filter to signal.
+    """Apply low/high/band-pass filter to signal.
 
     Parameters
     ----------
     signal : array
     band : str, scalar or 2-element sequence
         frequency band, either as a string, a scalar or [low,high] sequence.
-        See `construct_filter` for more details.
     axis : scalar, optional
         axis along which to filter
     fs : scalar
@@ -232,13 +211,16 @@ def apply_filter(signal, band, axis=-1, **kwargs):
     attenuation: scalar
         stop-band attenuation in dB
 
+    See Also
+    --------
+    construct_filter
+
     Returns
     -------
     array
         filtered signal
 
     """
-
     b = construct_filter(band, **kwargs)
 
     if isinstance(signal, (tuple, list)):
@@ -262,7 +244,7 @@ apply_band_filter.__doc__ = apply_filter.__doc__
 
 
 def apply_low_pass_filter(signal, cutoff, **kwargs):
-    """Applies low-pass filter to signal.
+    """Apply low-pass filter to signal.
 
     Parameters
     ----------
@@ -284,12 +266,11 @@ def apply_low_pass_filter(signal, cutoff, **kwargs):
         filtered signal
 
     """
-
     return apply_filter(signal, [None, float(cutoff)], **kwargs)
 
 
 def apply_high_pass_filter(signal, cutoff, **kwargs):
-    """Applies high-pass filter to signal.
+    """Apply high-pass filter to signal.
 
     Parameters
     ----------
@@ -311,7 +292,6 @@ def apply_high_pass_filter(signal, cutoff, **kwargs):
         filtered signal
 
     """
-
     return apply_filter(signal, [float(cutoff), None], **kwargs)
 
 
@@ -339,7 +319,6 @@ def inspect_filter(
         if True, all plots will have both axes grids turned on.
 
     """
-
     # prepare plot
     fig = plt.figure()
 
@@ -413,7 +392,7 @@ def plot_filter_amplitude(
     freq_lim : (min, max)
         Frequency limits for plotting.
     filtfilt : bool
-        Perform bidirectional filtering using `filtfilt`
+        Perform bidirectional filtering using filtfilt
     axes : matplotlib axes
     grid : bool
         Display grid.
@@ -423,7 +402,6 @@ def plot_filter_amplitude(
     axes
 
     """
-
     if axes is None:
         fig = plt.figure()
         axes = mpl_toolkits.axes_grid1.host_subplot(111)
@@ -473,7 +451,6 @@ def plot_filter_phase(
     axes
 
     """
-
     if axes is None:
         fig = plt.figure()
         axes = mpl_toolkits.axes_grid1.host_subplot(111)
@@ -550,13 +527,13 @@ def compute_envelope(
     smooth_options={},
     pad=True,
 ):
-    """Computes average envelope of band-pass filtered signal.
+    """Compute average envelope of band-pass filtered signal.
 
     Parameters
     ----------
     signals : array
-        either array with raw signals (`isfiltered`==False) or
-        pre-filtered signals (`isfiltered`==True). Can also be a sequence
+        either array with raw signals (isfiltered==False) or
+        pre-filtered signals (isfiltered==True). Can also be a sequence
         of such signals.
     freq_band : str or 2-element sequence, optional
         frequency band (in case signal needs to filtered)
@@ -567,13 +544,18 @@ def compute_envelope(
     isfiltered : bool, optional
     filter_options : dict, optional
         dictionary with options for filtering (if signal is not already filtered).
-        See `apply_filter` and `construct_filter`.
     smooth_options : dict, optional
         dictionary with optional kernel and bandwidth keys for envelope
-        smoothing (see `fklab.signals.smooth.smooth1d`)
+        smoothing
     pad : bool, optional
         allow zero-padding of signal to nearest power of 2 or 3 in order
         to speed up computation
+
+    See Also
+    --------
+    apply_filter
+    construct_filter
+    xfklab.signals.smooth.smooth1d
 
     Returns
     -------
@@ -644,13 +626,13 @@ def compute_sliding_rms(
     filter_options={},
     smooth_options={},
 ):
-    """Computes root-mean-square of band-pass filtered signal.
+    """Compute root-mean-square of band-pass filtered signal.
 
     Parameters
     ----------
     signals : array
-        either array with raw signals (`isfiltered`==False) or
-        pre-filtered signals (`isfiltered`==True). Can also be a sequence
+        either array with raw signals (isfiltered==False) or
+        pre-filtered signals (isfiltered==True). Can also be a sequence
         of such signals.
     freq_band : str or 2-element sequence, optional
         frequency band (in case signal needs to filtered)
@@ -661,10 +643,14 @@ def compute_sliding_rms(
     isfiltered : bool, optional
     filter_options : dict, optional
         dictionary with options for filtering (if signal is not already filtered).
-        See `apply_filter` and `construct_filter`.
     smooth_options : dict, optional
         dictionary with optional kernel and bandwidth keys for smoothing
-        (see `fklab.signals.smooth.smooth1d`)
+
+    See Also
+    --------
+    apply_filter
+    construct_filter
+    fklab.signals.smooth.smooth1d
 
     Returns
     -------
@@ -674,7 +660,6 @@ def compute_sliding_rms(
         averaging (i.e. smoothing) is also performed on the squared signal.
 
     """
-
     # filter
     if not isfiltered:
         if freq_band is None:

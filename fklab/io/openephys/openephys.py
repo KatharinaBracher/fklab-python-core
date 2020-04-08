@@ -7,13 +7,7 @@ OpenEphys file utilities (:mod:`fklab.io.openephys`)
 
 Utilities to read Open Ephys data files.
 
-.. autosummary::
-    :toctree: generated/
 
-    get_sample_rate
-    get_event_times
-    get_experiment_start_time
-    check_synchronization
 
 """
 import h5py
@@ -48,7 +42,6 @@ def get_sample_rate(f, recording=0):
     fs : float
         Sample rate
     """
-
     if isinstance(f, str):
         f = h5py.File(f, "r")
 
@@ -77,7 +70,6 @@ def get_event_times(f, TTLchan=0, rising=True):
     event_times : float array
 
     """
-
     if isinstance(f, str):
         f = h5py.File(f, "r")
 
@@ -106,7 +98,6 @@ def get_experiment_start_time(f):
     start_time : float
 
     """
-
     if isinstance(f, str):
         f = h5py.File(f, "r")
 
@@ -147,7 +138,6 @@ def check_synchronization(t1, t2, extrapolate=False):
 
 
     """
-
     # compute clock event intervals
     intervals1 = np.diff(t1)
     intervals2 = np.diff(t2)

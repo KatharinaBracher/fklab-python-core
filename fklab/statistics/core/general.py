@@ -7,12 +7,6 @@ General utilities (:mod:`fklab.statistics.core.general`)
 
 General utilities.
 
-.. autosummary::
-    :toctree: generated/
-
-    monte_carlo_pvalue
-    find_mode
-    beta_reparameterize
 
 """
 from fklab.version._core_version._version import __version__
@@ -44,7 +38,6 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
         Monte Carlo p-value
 
     """
-
     simulated = np.atleast_1d(simulated)
     test = np.atleast_1d(test)
 
@@ -86,7 +79,7 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
 
 
 def find_mode(x, axis=0, gridsize=201):
-    """Find mode in observations
+    """Find mode in observations.
 
     To determine the mode of a set of observations, a kernel
     density estimate (kde) of the distribution is computed and
@@ -106,7 +99,6 @@ def find_mode(x, axis=0, gridsize=201):
     mode : array
 
     """
-
     shape = x.shape
     ndim = x.ndim
 
@@ -133,7 +125,7 @@ def find_mode(x, axis=0, gridsize=201):
 
 
 def beta_reparameterize(mode=0.5, concentration=4):
-    """Reparameterization of beta distribution
+    """Reparameterization of beta distribution.
 
     Parameters
     ----------
@@ -145,5 +137,4 @@ def beta_reparameterize(mode=0.5, concentration=4):
     alpha, beta : float
 
     """
-
     return (mode * (concentration - 2) + 1, (1 - mode) * (concentration - 2) + 1)

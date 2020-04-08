@@ -7,28 +7,6 @@ General plotting functions (:mod:`fklab.plot.plots.plots`)
 
 Function for plotting multiple signals, events, segments and rasters.
 
-plotting functions
-==================
-
-.. autosummary::
-    :toctree: generated/
-
-    plot_signals
-    plot_events
-    plot_segments
-    plot_raster
-    plot_spectrogram
-    plot_1d_maps
-    plot_2d_maps
-    enhanced_scatter
-    add_scalebar
-    add_static_scalebar
-    add_axes_message
-
-    labeled_vmarker
-    labeled_hmarker
-
-
 """
 import itertools
 
@@ -75,7 +53,7 @@ def enhanced_scatter(*args, rotations=None, alphas=None, axes=None, **kwargs):
 
     Parameters
     ----------
-    *args, **kwargs :
+    \*args, \*\*kwargs :
         Arguments for the matplotlib `scatter` function
     rotations : scalar or 1d array-like
         Marker rotations.
@@ -87,7 +65,6 @@ def enhanced_scatter(*args, rotations=None, alphas=None, axes=None, **kwargs):
     PathCollection
 
     """
-
     if axes is None:
         axes = plt.gca()
 
@@ -180,7 +157,7 @@ def plot_1d_maps(
         multiple of *roundto*.
     emin, emax : scalar
         Extra space in the y dimensions below/above the data.
-    **kwargs :
+    \*\*kwargs :
         Extra keyword arguments for *setup_axes_grid* function.
 
     Returns
@@ -189,7 +166,6 @@ def plot_1d_maps(
     axes : (nrows, ncols) array of Axes
 
     """
-
     nmaps = len(maps)
 
     fig, axes = setup_axes_grid(nmaps, **kwargs)
@@ -316,7 +292,7 @@ def plot_2d_maps(
     roundto : scalar
         Round down/up the minimum and maximum color values to the nearest
         multiple of *roundto*.
-    **kwargs :
+    \*\*kwargs :
         Extra keyword arguments for *setup_axes_grid* function.
 
     Returns
@@ -325,7 +301,6 @@ def plot_2d_maps(
     axes : (nrows, ncols) array of Axes
 
     """
-
     nmaps = len(maps)
 
     if nmaps < 1:
@@ -432,7 +407,6 @@ def plot_signals(*args, **kwargs):
     collection of lines
 
     """
-
     if len(args) < 1 or len(args) > 2:
         raise ValueError("Expecting one or two positional data arguments")
 
@@ -571,14 +545,13 @@ def plot_events(events, **kwargs):
     fullheight : bool, optional
     axes : Axes object
     colormap : str or matplotlib colormap object
-    kwargs : EventCollection or FastRaster options
+    \*\*kwargs : EventCollection or FastRaster options
 
     Returns
     -------
     collection of events
 
     """
-
     if not isinstance(events, list):
         events = [events]
 
@@ -676,7 +649,6 @@ def plot_segments(s, **kwargs):
     collection of BrokenBarHCollection
 
     """
-
     if not isinstance(s, list):
         s = [s]
 
@@ -755,7 +727,6 @@ def plot_raster(events, **kwargs):
     collection of rasters
 
     """
-
     kwargs["kind"] = "raster"
     return plot_events(events, **kwargs)
 
@@ -775,7 +746,6 @@ def plot_spectrogram(signal, **kwargs):
     spectrogram image
 
     """
-
     if not signal.ndim == 1:
         raise ValueError("Invalid signal vector")
 
@@ -794,7 +764,7 @@ def plot_spectrogram(signal, **kwargs):
 
 
 def add_static_scalebar(ax, hidex=True, hidey=True, **kwargs):
-    """Add static scalebar to axes
+    """Add static scalebar to axes.
 
     Parameters
     ----------
@@ -806,7 +776,6 @@ def add_static_scalebar(ax, hidex=True, hidey=True, **kwargs):
     StaticScaleBar
 
     """
-
     sb = StaticScaleBar(**kwargs)
     ax.add_artist(sb)
 
@@ -819,7 +788,7 @@ def add_static_scalebar(ax, hidex=True, hidey=True, **kwargs):
 
 
 def add_axes_message(ax, **kwargs):
-    """Add message artist to axes
+    """Add message artist to axes.
 
     Parameters
     ----------
@@ -831,7 +800,6 @@ def add_axes_message(ax, **kwargs):
     AxesMessage
 
     """
-
     item = AxesMessage(**kwargs)
     ax.add_artist(item)
 
@@ -839,7 +807,7 @@ def add_axes_message(ax, **kwargs):
 
 
 def add_scalebar(ax, matchx=True, matchy=True, hidex=True, hidey=True, **kwargs):
-    """Add scalebars to axes
+    """Add scalebars to axes.
 
     Adds a set of scale bars to *ax*, matching the size to the ticks of the plot
     and optionally hiding the x and y axes
@@ -850,7 +818,7 @@ def add_scalebar(ax, matchx=True, matchy=True, hidex=True, hidey=True, **kwargs)
     matchx,matchy : if True, set size of scale bars to spacing between ticks
                     if False, size should be set using sizex and sizey params
     hidex,hidey : if True, hide x-axis and y-axis of parent
-    **kwargs : additional arguments passed to AnchoredScaleBars
+    \*\*kwargs : additional arguments passed to AnchoredScaleBars
 
     Returns
     -------

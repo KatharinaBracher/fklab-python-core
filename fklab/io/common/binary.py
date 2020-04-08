@@ -6,12 +6,6 @@ Binary file reading (:mod:`fklab.io.common.binary`)
 .. currentmodule:: fklab.io.common.binary
 
 General class for reading binary files.
-
-.. autosummary::
-    :toctree: generated/
-
-    BinaryFileReader
-
 """
 from fklab.version._core_version._version import __version__
 
@@ -191,9 +185,9 @@ class accessor:
 
 
 class BinaryFileReader(object):
-    """Clas for reading generic binary files.
+    """Read generic binary files.
 
-    Parameters
+    Attributes
     ----------
     filename : str
     dtype : numpy dtype
@@ -253,6 +247,13 @@ class BinaryFileReader(object):
         self.add_accessors(accessors)
 
     def add_accessors(self, accessors={}):
+        """Add an accessor.
+
+        Parameters
+        ----------
+        accessors
+
+        """
         # set up access to individual fields
         for k, v in accessors.items():
             self.__setattr__(k, self._klass(self._source, *v))
@@ -267,6 +268,10 @@ class BinaryFileReader(object):
 
     @property
     def shape(self):
+        """Set the shape of the file.
+
+        Default if define in the accessor or the raw shape.
+        """
         if "default" in self._accessors:
             return self.default.shape
         else:

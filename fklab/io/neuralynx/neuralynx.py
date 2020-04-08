@@ -9,53 +9,10 @@ Classes and functions to read Neuralynx data files.
 
 Constants
 =========
-
 ==================  ================================
-`NLXHEADERSIZE`     Length in bytes of file header
-`NLXCSCBUFFERSIZE`  Size of CSC buffers in samples
+NLXHEADERSIZE     Length in bytes of file header
+NLXCSCBUFFERSIZE  Size of CSC buffers in samples
 ==================  ================================
-
-Functions
-=========
-
-.. autosummary::
-    :toctree: generated/
-
-    NlxOpen
-    NlxTimestamp2Seconds
-    NlxSeconds2Timestamp
-    NlxEventTimes
-
-File classes
-============
-
-.. autosummary::
-    :toctree: generated/
-
-    NlxFileSpike
-    NlxFileTahiti
-    NlxFileCSC
-    NlxFileEvent
-    NlxFileVideo
-
-Auxillary classes
-=================
-
-.. autosummary::
-    :toctree: generated/
-
-    NlxHeader
-    NlxVideoPoints
-
-Exceptions
-==========
-
-.. autosummary::
-    :toctree: generated/
-
-    NeuralynxError
-    NeuralynxIOError
-
 """
 import numbers
 import os
@@ -97,13 +54,13 @@ __all__ = [
 
 
 class NeuralynxError(Exception):
-    """Base class for exceptions in this module."""
+    """Define base class for exceptions in this module."""
 
     pass
 
 
 class NeuralynxIOError(NeuralynxError):
-    """Exception raised when attempting to read from non-Neuralynx type data file."""
+    """Raise an exception when attempting to read from non-Neuralynx type data file."""
 
     def __init__(self, filename, msg):
         self.filename = filename
@@ -142,7 +99,7 @@ def NlxSeconds2Timestamp(time):
 
 
 def _NlxBoolHandler(value):
-    """Convert string with true/false to bool"""
+    """Convert string with true/false to bool."""
     return str(value).lower() == "true"
 
 
@@ -162,7 +119,7 @@ def _NlxStringHandler(value):
 
 
 def _NlxFeatureHandler(value):
-    """Return input unmodified"""
+    """Return input unmodified."""
     return value
 
 
@@ -172,7 +129,7 @@ def _NlxEnableHandler(value):
 
 
 def _NlxColorTrackingHandler(value):
-    """Convert color tracking string to (boolean,threshold)"""
+    """Convert color tracking string to (boolean,threshold)."""
     val = np.fromstring(value, dtype=int, sep=" ")
     return (val[0] == 1, val[1])
 
@@ -263,7 +220,7 @@ _units_scale_factor = {"V": 1, "mV": 1000, "uV": 1000000}
 
 
 def nlx_parse_log(root):
-    """Parse Cheetah log messages
+    """Parse Cheetah log messages.
 
     Parameters
     ----------
@@ -276,7 +233,6 @@ def nlx_parse_log(root):
         list of log records, each of which is a dictionary
 
     """
-
     import pathlib
     import re
 
@@ -326,7 +282,7 @@ def nlx_parse_log(root):
 
 
 def nlx_parse_lost_records(root):
-    """Parse Cheetah lost records log
+    """Parse Cheetah lost records log.
 
     Parameters
     ----------
@@ -338,7 +294,6 @@ def nlx_parse_lost_records(root):
     dict
 
     """
-
     import pathlib
 
     path = pathlib.Path(root).joinpath("CheetahLostADRecords.txt")
@@ -393,7 +348,6 @@ def nlx_parse_cheetah_errors(root, time_window=None):
         time windows and corresponding number of lost AD records
 
     """
-
     pattern_timestamp = "(t|T)imestamp: (?P<timestamp>[0-9]+)"
     pattern_sources = [
         "Data Source Name: (?P<source>[0-9a-zA-Z_\-]+)",
@@ -468,7 +422,7 @@ def nlx_parse_cheetah_errors(root, time_window=None):
 
 
 def readheader(file):
-    """Reads Neuralynx data file header and determines file type.
+    """Read Neuralynx data file header and determines file type.
 
     Neuralynx data files contain a fixed length text header. This function will
     read the header and determine the file type based on the FileType header
@@ -484,10 +438,9 @@ def readheader(file):
     hdr : list of str
         header lines
     filetype : str
-        One of ``CSC``, ``Spike``, ``Event`` or ``Video`` or ``MOZ``.
+        One of CSC, Spike, Event or Video or MOZ.
 
     """
-
     # read fixed size text header
     with open(file, "rb") as f:
         hdr = f.read(NLXHEADERSIZE)
@@ -527,13 +480,12 @@ def parseheader(hdr):
 
     Neuralynx data files contain a text header, where each line defines a
     parameter and its value. Value strings are automatically converted to the
-    desired data type using value handler functions as defined in
-    `_NLXVALUEHANDLERS`.
+    desired data type using value handler functions as defined in NLXVALUEHANDLERS.
 
     Parameters
     ----------
     hdr : list of str
-        Header lines as returned by `readheader`.
+        Header lines as returned by readheader.
 
     Returns
     -------
@@ -541,7 +493,6 @@ def parseheader(hdr):
         Header parameter/value pairs.
 
     """
-
     import re
 
     # define regular expression to find parameter/value pairs
@@ -586,11 +537,11 @@ def parseheader(hdr):
 
 
 class NlxHeader(object):
-    """Neuralynx data file header object.
+    """Handle Neuralynx data file header object.
 
     NlxHeader(filename)
 
-    Returns a `NlxHeader` object that represents the header parameter/value
+    Returns a NlxHeader object that represents the header parameter/value
     pairs in a Neuralynx data file.
 
     Parameters
@@ -648,28 +599,8 @@ class NlxFileBase(object):
     Parameters
     ----------
     source : NlxHeader or str
-        Either the name and path of the file or an existing `NlxHeader`
+        Either the name and path of the file or an existing NlxHeader
         instance.
-
-    Attributes
-    ----------
-    data
-    filesize
-    nrecords
-    recordsize
-    header
-    fullpath
-    starttimestamp
-    endtimestamp
-    starttime
-    endtime
-
-    Methods
-    -------
-    info()
-        Display file information.
-    readdata(start,stop)
-        Read data from file between start and stop time.
 
     """
 
@@ -739,6 +670,7 @@ class NlxFileBase(object):
     __repr__ = __str__
 
     def info(self):
+        """Display file information."""
         s = str(self) + "\n"
         s += "record size = " + str(self._recordsize) + " bytes\n"
         s += "record dtype = " + str(self._record_dtype) + "\n"
@@ -796,6 +728,7 @@ class NlxFileBase(object):
         return slice(start, stop)
 
     def readdata(self, start=None, stop=None):
+        """Read data from file between start and stop time."""
         return self.data.default[self.timeslice(start, stop)]
 
     @property
@@ -816,7 +749,7 @@ class NlxFileBase(object):
 
 
 class NlxFileTimedBuffers(NlxFileBase):
-    """Base class for Neuralynx data files with timestamped data records.
+    """Define base class for Neuralynx data files with timestamped data records.
 
     Parameters
     ----------
@@ -833,16 +766,6 @@ class NlxFileTimedBuffers(NlxFileBase):
         Selection of units for scaling.
     clip : bool
         Set clipped valued to NaN
-
-    Attributes
-    ----------
-    nchannels
-    nsamples
-    correct_inversion
-    scale_data
-    units
-    clip
-
     """
 
     def __init__(self, source, dtype, **kwargs):
@@ -865,18 +788,15 @@ class NlxFileTimedBuffers(NlxFileBase):
             )
 
     def sample2record(self, sample):
-        """Convert sample indices to record indices.
-        """
+        """Convert sample indices to record indices."""
         return np.floor(sample / self.nsamples)
 
     def record2sample(self, record):
-        """Convert record indices to sample indices.
-        """
+        """Convert record indices to sample indices."""
         return np.int(record * self.nsamples)
 
     def aliasing(self):
-        """Check if data suffers from potential aliasing.
-        """
+        """Check if data suffers from potential aliasing."""
         try:
             fs = self.header["SamplingFrequency"]
             hc = self.header["DspHighCutFrequency"]
@@ -977,7 +897,7 @@ class NlxFileTimedBuffers(NlxFileBase):
 
 
 class NlxFileSpike(NlxFileTimedBuffers):
-    """Neuralynx spike data file (*.ntt)
+    r"""Handle Neuralynx spike data file (.ntt).
 
     Parameters
     ----------
@@ -990,16 +910,6 @@ class NlxFileSpike(NlxFileTimedBuffers):
         Selection of units for scaling (default: uV)
     clip : bool
         Set clipped valued to NaN (default: True)
-
-    Attributes
-    ----------
-    nchannels
-    nsamples
-    correct_inversion
-    scale_data
-    units
-    clip
-
     """
 
     def __init__(self, source, *args, **kwargs):
@@ -1111,7 +1021,7 @@ class NlxFileSpike(NlxFileTimedBuffers):
 
 
 class NlxFileTahiti(NlxFileTimedBuffers):
-    """Tahiti data file."""
+    """Handle Tahiti data file."""
 
     def __init__(self, source="", *args, **kwargs):
 
@@ -1235,7 +1145,7 @@ class NlxFileTahiti(NlxFileTimedBuffers):
 
 
 class NlxFileCSC(NlxFileTimedBuffers):
-    """Neuralynx continuous signal data file (*.ncs)
+    r"""Handle Neuralynx continuous signal data file (.ncs).
 
     Parameters
     ----------
@@ -1248,15 +1158,6 @@ class NlxFileCSC(NlxFileTimedBuffers):
         Selection of units for scaling (default: uV)
     clip : bool
         Set clipped valued to NaN (default: True)
-
-    Attributes
-    ----------
-    nchannels
-    nsamples
-    correct_inversion
-    scale_data
-    units
-    clip
 
     """
 
@@ -1364,7 +1265,7 @@ class NlxFileCSC(NlxFileTimedBuffers):
 
 
 class NlxFileEvent(NlxFileBase):
-    """Neuralynx event data file (*.nev)
+    r"""Handle Neuralynx event data file (.nev).
 
     Parameters
     ----------
@@ -1433,7 +1334,6 @@ def NlxEventTimes(
         Event times for specified event string.
 
     """
-
     if os.path.isdir(filename):
         filename = os.path.join(filename, "Events.nev")
 
@@ -1486,7 +1386,7 @@ class NlxVideoPoints:
 
 
 class NlxFileVideo(NlxFileBase):
-    """Neuralynx video tracking data file (*.nvt)
+    r"""Handle Neuralynx video tracking data file (.nvt).
 
     Parameters
     ----------
@@ -1569,20 +1469,24 @@ class NlxFileVideo(NlxFileBase):
 
 
 def NlxOpen(filename="", *args, **kwargs):
-    """Open Neuralynx data file.
+    r"""Open Neuralynx data file.
 
     This function will determine the type of Neuralynx data file and
-    construct the appropriate Neuralynx file object. See `NlxFileCSC`,
-    `NlxFileEvent`, `NlxFileVideo`, and `NlxFileSpike`.
+    construct the appropriate Neuralynx file object.
+
+    See Also
+    --------
+    NlxFileCSC
+    NlxFileEvent
+    NlxFileVideo
+    NlxFileSpike
 
     Parameters
     ----------
     filename : str
-    *args, **kwargs : additional arguments that are passed to Neuralynx
-                      file class constructor.
+    \*args, \*\*kwargs : additional arguments that are passed to Neuralynx file class constructor.
 
     """
-
     hdr = NlxHeader(filename)
     if hdr.filetype == "Spike":
         return NlxFileSpike(hdr, *args, **kwargs)

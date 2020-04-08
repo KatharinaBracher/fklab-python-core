@@ -7,22 +7,6 @@ Basic algorithms (:mod:`fklab.signals.core.basic_algorithms`)
 
 Basic algorithms for detecting extremes, zero crossing, etc. in data.
 
-.. autosummary::
-    :toctree: generated/
-
-    localextrema
-    localminima
-    localmaxima
-    zerocrossing
-    detect_mountains
-    remove_artefacts
-
-    generate_windows
-    extract_data_windows
-    generate_trigger_windows
-    extract_trigger_windows
-    event_triggered_average
-
 """
 import numpy as np
 import scipy as sp
@@ -58,7 +42,7 @@ __all__ = [
 
 
 def compute_threshold(time, signal, threshold, segments=None, kind="raw"):
-    """Computes thresholds for other signal detection algorithms.
+    """Compute thresholds for other signal detection algorithms.
 
     Parameters
     ----------
@@ -83,7 +67,6 @@ def compute_threshold(time, signal, threshold, segments=None, kind="raw"):
     threshold : 1d array
 
     """
-
     if segments is None:
         segments = [-np.inf, np.inf]
 
@@ -108,7 +91,7 @@ def compute_threshold(time, signal, threshold, segments=None, kind="raw"):
 
 
 def compute_threshold_zscore(multipliers=None):
-    """Creates callable for computing thresholds based on zscore.
+    """Create callable for computing thresholds based on zscore.
 
     Parameters
     ----------
@@ -120,7 +103,6 @@ def compute_threshold_zscore(multipliers=None):
     mean(signal) + multipliers * standard_deviation(signal)
 
     """
-
     if multipliers is None:
         multipliers = 1
 
@@ -135,8 +117,7 @@ def compute_threshold_zscore(multipliers=None):
 
 
 def compute_threshold_median(multipliers=None):
-    """Creates callable for computing thresholds based on median and
-    upper quartile range.
+    """Create callable for computing thresholds based on median and upper quartile range.
 
     Parameters
     ----------
@@ -162,7 +143,7 @@ def compute_threshold_median(multipliers=None):
 
 
 def compute_threshold_percentile(percentiles=None):
-    """Creates callable for computing thresholds based on percentiles.
+    """Create callable for computing thresholds based on percentiles.
 
     Parameters
     ----------
@@ -174,7 +155,6 @@ def compute_threshold_percentile(percentiles=None):
     percentiles.
 
     """
-
     if percentiles is None:
         percentiles = [50, 90]
 
@@ -195,7 +175,7 @@ def detect_mountains(
     allowable_gap=None,
     minimum_duration=None,
 ):
-    """Detects segments with above-threshold values 1D data array.
+    """Detect segments with above-threshold values 1D data array.
 
     Parameters
     ----------
@@ -220,7 +200,6 @@ def detect_mountains(
         list of segments that meet the threshold conditions
 
     """
-
     # define indices, if not given
     if x is None:
         x = np.arange(len(y))
@@ -266,7 +245,7 @@ def detect_mountains(
 def localextrema(
     y, x=None, method="discrete", kind="extrema", yrange=None, interp="linear"
 ):
-    """Detects local extrema (maxima and/or minima) in 1D data array.
+    """Detect local extrema (maxima and/or minima) in 1D data array.
 
     Parameters
     ----------
@@ -299,7 +278,6 @@ def localextrema(
         interpolated y-values at the detected extrema.
 
     """
-
     # compute the local extrema
     if method in ["gradient"]:
         imax, imin = _localextrema_gradient(y)
@@ -338,33 +316,31 @@ def localextrema(
 
 
 def localmaxima(y, **kwargs):
-    """Detects local maxima in 1D data array.
+    """Detect local maxima in 1D data array.
 
-    See also
+    See Also
     --------
     localextrema
 
     """
-
     kwargs["kind"] = "max"
     return localextrema(y, **kwargs)
 
 
 def localminima(y, **kwargs):
-    """Detects local minima in 1D data array.
+    """Detect local minima in 1D data array.
 
-    See also
+    See Also
     --------
     localextrema
 
     """
-
     kwargs["kind"] = "min"
     return localextrema(y, **kwargs)
 
 
 def zerocrossing(y, x=None):
-    """Detects zero crossings in 1D data array.
+    """Detect zero crossings in 1D data array.
 
     Parameters
     ----------
@@ -421,7 +397,6 @@ def remove_artefacts(
     signal : 1D array
 
     """
-
     # check arguments
     signal = np.array(signal, copy=True)
     artefacts = np.asarray(artefacts).ravel()
@@ -737,7 +712,6 @@ def generate_windows(
         Window sample index generator
 
     """
-
     window_shift = np.round((1.0 - window_overlap) * float(window_size) * fs)
     window_size = np.round(float(window_size) * fs)
 
@@ -805,7 +779,6 @@ def extract_data_windows(data, *args, **kwargs):
         Windowed data
 
     """
-
     n = len(data)
 
     nidx, t, idx = generate_windows(n, *args, **kwargs)
@@ -845,7 +818,6 @@ def generate_trigger_windows(n, triggers, window, fs=1.0, start_time=0.0, epochs
         Window sample index generator
 
     """
-
     triggers = np.array(triggers, dtype=np.float).ravel()
 
     if not epochs is None:
@@ -907,7 +879,6 @@ def extract_trigger_windows(data, *args, **kwargs):
         Windowed data
 
     """
-
     n = len(data)
 
     nidx, t, idx = generate_trigger_windows(n, *args, **kwargs)
@@ -959,7 +930,6 @@ def event_triggered_average(
         vector of lags
 
     """
-
     events = check_events(events, copy=False)
 
     if lags is None:

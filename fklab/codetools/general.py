@@ -41,9 +41,12 @@ def deprecated(instructions="Please avoid use in the future."):
     """
 
     def decorator(func):
-        """This is a decorator which can be used to mark functions
+        """Define the deprecated decorator.
+
+        This is a decorator which can be used to mark functions
         as deprecated. It will result in a warning being emitted
-        when the function is used."""
+        when the function is used.
+        """
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):

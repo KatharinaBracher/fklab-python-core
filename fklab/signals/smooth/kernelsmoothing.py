@@ -7,31 +7,6 @@ Kernel density smoothing (:mod:`fklab.signals.smooth.kernelsmoothing`)
 
 Classes and function for data smoothing.
 
-Kernels
-=======
-
-.. autosummary::
-    :toctree: generated/
-
-    LinearKernelBase
-    GaussianKernel
-    EpanechnikovKernel
-    UniformKernel
-    TriangularKernel
-    MixedKernel
-    NoKernel
-
-Smoothing
-=========
-
-.. autosummary::
-    :toctree: generated/
-
-    create_smoother
-    Smoother
-    smooth1d
-    smooth2d
-
 """
 import numpy as np
 import scipy.signal
@@ -66,7 +41,6 @@ def create_smoother(
 
     Parameters
     ----------
-
     ndim : int
         Number of data dimensions.
 
@@ -102,14 +76,12 @@ def create_smoother(
 
     Returns
     -------
-
     smoother(data, delta=None)
         Function that smooths a *ndim* array with the given parameters.
         Optionally, the delta keyword argument can be set to override the
         delta parameter supplied to the *create* function.
 
     """
-
     # CHECK ARGUMENTS
 
     ndim = int(ndim)
@@ -210,7 +182,7 @@ class KernelBase(object):
 
 
 class LinearKernelBase(KernelBase):
-    """Base class for linear kernel functions.
+    """Define base class for linear kernel functions.
 
     Parameters
     ----------
@@ -218,20 +190,6 @@ class LinearKernelBase(KernelBase):
     covariance : 2D array, optional
     correlation : 2D array, optional
     kerneltype : {'symmetrical', 'multiplicative'}
-
-
-    Attributes
-    ----------
-    kerneltype
-    support
-    ndim
-    bandwidth
-    correlation
-    covariance
-
-    Methods
-    -------
-    __call__(dx)
 
     """
 
@@ -309,7 +267,7 @@ class LinearKernelBase(KernelBase):
 
     @property
     def support(self):
-        """Finite support"""
+        """Finite support."""
         return self._support
 
     @support.setter
@@ -440,8 +398,7 @@ class LinearKernelBase(KernelBase):
         return u, npoints.astype(np.int) * 2 + 1
 
     def __call__(self, dx):
-        """
-        Evaluate kernel function.
+        """Evaluate kernel function.
 
         Parameters
         ----------
@@ -473,10 +430,9 @@ class LinearKernelBase(KernelBase):
 
 
 class GaussianKernel(LinearKernelBase):
-    """
-    GaussianKernel(support=4, bandwidth=None, covariance=None, correlation=None, kerneltype='symmetrical')
+    """Define Gaussian kernel function.
 
-    Gaussian kernel function.
+    GaussianKernel(support=4, bandwidth=None, covariance=None, correlation=None, kerneltype='symmetrical')
 
     Parameters
     ----------
@@ -485,19 +441,6 @@ class GaussianKernel(LinearKernelBase):
     covariance : 2D array, optional
     correlation : 2D array, optional
     kerneltype : {'symmetrical', 'multiplicative'}
-
-    Attributes
-    ----------
-    kerneltype
-    support
-    ndim
-    bandwidth
-    correlation
-    covariance
-
-    Methods
-    -------
-    __call__(dx)
 
     """
 
@@ -510,10 +453,9 @@ class GaussianKernel(LinearKernelBase):
 
 
 class EpanechnikovKernel(LinearKernelBase):
-    """
-    EpanechnikovKernel(bandwidth=None, covariance=None, correlation=None, kerneltype='symmetrical')
+    """Define Epanechnikov kernel function.
 
-    Epanechnikov kernel function.
+    EpanechnikovKernel(bandwidth=None, covariance=None, correlation=None, kerneltype='symmetrical')
 
     Parameters
     ----------
@@ -521,18 +463,6 @@ class EpanechnikovKernel(LinearKernelBase):
     covariance : 2D array, optional
     correlation : 2D array, optional
     kerneltype : {'symmetrical', 'multiplicative'}
-
-    Attributes
-    ----------
-    kerneltype
-    ndim
-    bandwidth
-    correlation
-    covariance
-
-    Methods
-    -------
-    __call__(dx)
 
     """
 
@@ -544,10 +474,9 @@ class EpanechnikovKernel(LinearKernelBase):
 
 
 class UniformKernel(LinearKernelBase):
-    """
-    UniformKernel(bandwidth=None, covariance=None, correlation=None, kerneltype='symmetrical')
+    """Define Uniform kernel function.
 
-    Uniform kernel function.
+    UniformKernel(bandwidth=None, covariance=None, correlation=None, kerneltype='symmetrical')
 
     Parameters
     ----------
@@ -555,18 +484,6 @@ class UniformKernel(LinearKernelBase):
     covariance : 2D array, optional
     correlation : 2D array, optional
     kerneltype : {'symmetrical', 'multiplicative'}
-
-    Attributes
-    ----------
-    kerneltype
-    ndim
-    bandwidth
-    correlation
-    covariance
-
-    Methods
-    -------
-    __call__(dx)
 
     """
 
@@ -577,10 +494,9 @@ class UniformKernel(LinearKernelBase):
 
 
 class TriangularKernel(LinearKernelBase):
-    """
-    TriangularKernel(bandwidth=None, covariance=None, correlation=None, kerneltype='symmetrical')
+    """Define Triangular kernel function.
 
-    Triangular kernel function.
+    TriangularKernel(bandwidth=None, covariance=None, correlation=None, kerneltype='symmetrical')
 
     Parameters
     ----------
@@ -588,18 +504,6 @@ class TriangularKernel(LinearKernelBase):
     covariance : 2D array, optional
     correlation : 2D array, optional
     kerneltype : {'symmetrical', 'multiplicative'}
-
-    Attributes
-    ----------
-    kerneltype
-    ndim
-    bandwidth
-    correlation
-    covariance
-
-    Methods
-    -------
-    __call__(dx)
 
     """
 
@@ -615,19 +519,11 @@ class VonMisesKernel(KernelBase):
 
 
 class MixedKernel(KernelBase):
-    """Mixed kernel function.
+    """Define Mixed kernel function.
 
     Parameters
     ----------
     *args : kernel objects
-
-    Attributes
-    ----------
-    ndim
-
-    Methods
-    -------
-    __call__(dx)
 
     """
 
@@ -679,15 +575,11 @@ class MixedKernel(KernelBase):
 
 
 class NoKernel(KernelBase):
-    """Non-smoothing dummy kernel.
+    """Define Non-smoothing dummy kernel.
 
     Parameters
     ----------
     ndim : integer
-
-    Attributes
-    ----------
-    ndim
 
     """
 
@@ -708,7 +600,7 @@ class NoKernel(KernelBase):
 
 
 class Smoother(object):
-    """Smoothing class.
+    """Define Smoothing class.
 
     Parameters
     ----------
@@ -719,17 +611,6 @@ class Smoother(object):
         Treat NaN in data as zeros
     normalize : bool or {'sum','max','none'}
         Method of kernel normalization.
-
-    Attributes
-    ----------
-    kernel
-    unbiased
-    nansaszero
-    normalization
-
-    Methods
-    -------
-    __call__(data, dx)
 
     """
 
@@ -807,7 +688,6 @@ class Smoother(object):
         ndarray
 
         """
-
         data = np.array(data)
         if len(data) == 0:
             return data
@@ -874,7 +754,6 @@ def smooth1d(data, axis=-1, kernel="gaussian", bandwidth=1.0, delta=1.0, **kwarg
         smoothed data array
 
     """
-
     data = np.asarray(data)
 
     K = [NoKernel()] * data.ndim
@@ -914,7 +793,6 @@ def smooth2d(
         smoothed data array
 
     """
-
     data = np.asarray(data)
 
     bandwidth = np.array(bandwidth).ravel()

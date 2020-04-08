@@ -7,10 +7,6 @@ Circular data simulation (:mod:`fklab.statistics.circular.simulation`)
 
 Tool to create a dataset with circular dependent variable
 
-.. autosummary::
-    :toctree: generated/
-
-    generate_linear_circular_dataset
 """
 import numpy as np
 
@@ -45,7 +41,6 @@ def generate_linear_circular_dataset(
     x, theta : 1d array
 
     """
-
     if slope is None and period is None:
         slope = 3 * np.pi / (xmax - xmin)
     elif slope is None:

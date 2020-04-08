@@ -1,7 +1,7 @@
 
 #include <utility>
 #include <vector>
-#include <limits>   
+#include <limits>
 #include <cmath>
 #include <stdexcept>
 
@@ -27,7 +27,7 @@ double interp_col( Interpolation interp, double * data, unsigned int nrows, unsi
 class Radon {
 public:
     Radon( double dx = 1., double dy = 1., Interpolation interpolation = Interpolation::Linear, Constraint constraint = Constraint::No, IntegralMethod integral = IntegralMethod::Sum, bool valid = false, bool intercept = false );
-    
+
     Interpolation interpolation() const;
     Constraint constraint() const;
     IntegralMethod integral_method() const;
@@ -35,7 +35,7 @@ public:
     bool intercept() const;
     double dx() const;
     double dy() const;
-    
+
     void set_interpolation( Interpolation val );
     void set_interpolation( std::string val );
     void set_constraint( Constraint val );
@@ -46,16 +46,16 @@ public:
     void set_intercept( bool val );
     void set_dx( double val );
     void set_dy( double val );
-    
+
     void transform( double * data, unsigned int nrows, unsigned int ncols,
                     double * theta, unsigned int ntheta,
                     double * rho, unsigned int nrho,
                     double * result, uint16_t * range) const;
-    
-    void slice( double * data,  unsigned int nrows, unsigned int ncols, 
+
+    void slice( double * data,  unsigned int nrows, unsigned int ncols,
                 double theta, double rho,
                 std::vector<double> & result, IndexPair & range ) const;
-    
+
 protected:
     double dx_;
     double dy_;
@@ -65,4 +65,3 @@ protected:
     bool valid_;
     bool intercept_;
 };
-

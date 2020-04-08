@@ -7,12 +7,6 @@ Neuralynx (:mod:`fklab.io.neuralynx.Nlx2Kilosort`)
 
 Utilities collection for Neuralynx acquisition system
 
-.. autosummary::
-    :toctree: generated/
-
-        data_generation
-        tetrode
-
 """
 
 __all__ = ["data_generation", "tetrode"]
@@ -32,11 +26,10 @@ from fklab.version._internal_version._version import __version__
 def data_generation(
     name, destination, file_names=None, sort="natural", time_window=None
 ):
-    """ generate .dat file for kilosort from CSC files
+    """Generate .dat file for kilosort from CSC files.
 
     Parameters
     ----------
-
     name: str
           name of the output file
 
@@ -89,7 +82,7 @@ def data_generation(
 
 
 class tetrode(template_probe):
-    """ Tetrode hardware definition - called from the probe class when giving the "tetrode" keyword in input
+    """Tetrode hardware definition - called from the probe class when giving the "tetrode" keyword in input.
 
     Parameters
     ----------
@@ -110,13 +103,7 @@ class tetrode(template_probe):
         self._filename = filename
 
     def create_channel_map(self):
-
-        """ generate channelmap files for Kilosort
-            for tetrodes recordings,
-            each tetrode channels is positionned on a single row
-
-        """
-
+        """Generate channelmap files for Kilosort for tetrodes recordings, each tetrode channels is positionned on a single row."""
         self._chanMap = np.arange(self.n_tetrodes * 4) + 1
         self._chanMap0ind = np.arange(self.n_tetrodes * 4)
         self._connected = np.zeros(len(self._chanMap))

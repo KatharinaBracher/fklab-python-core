@@ -7,11 +7,6 @@ Bootstrap (:mod:`fklab.statistics.core.bootstrap`)
 
 Bootstrapping utilities.
 
-.. autosummary::
-    :toctree: generated/
-
-    ci
-
 """
 import numpy as np
 
@@ -39,7 +34,6 @@ def ci(
     low,high : confidence interval
 
     """
-
     if not isinstance(data, (list, tuple)):
         data = (data,)
 
@@ -71,8 +65,7 @@ def ci(
 
 
 def bootstrap_indexes(n, nsamples=10000):
-    """Generator for bootstrap indices.
-    """
+    """Generate bootstrap indices."""
     if not isinstance(n, (list, tuple)):
         n = (n,)
 

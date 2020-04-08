@@ -7,8 +7,6 @@ Low-level plots (:mod:`fklab.plot.plots`)
 
 Low-level plots.
 
-.. automodule:: fklab.plot.plots.plots
-
 """
 from .plots import *
 from .polar import *

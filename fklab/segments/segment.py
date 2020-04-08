@@ -9,22 +9,6 @@ Provides a container class for a list of segments. Each segment is defined by
 a start and end point (usually in units of time). Basic operations on lists
 of segments are implemented as methods of the class.
 
-Class
-=====
-
-.. autosummary::
-    :toctree: generated/
-
-    Segment
-
-Exceptions
-==========
-
-.. autosummary::
-    :toctree: generated/
-
-    SegmentError
-
 """
 import numpy as np
 import scipy.interpolate
@@ -58,7 +42,7 @@ __all__ = ["SegmentError", "Segment"]
 
 
 class SegmentError(Exception):
-    """Exception raised if array does not represent segments"""
+    """Exception raised if array does not represent segments."""
 
     def __init__(self, msg):
         self.msg = msg
@@ -87,8 +71,7 @@ class Segment(object):
 
     @classmethod
     def issegment(cls, x):
-        """Test is `x` is valid segment array."""
-
+        """Test is x is valid segment array."""
         if isinstance(x, Segment):
             return True
 
@@ -124,14 +107,13 @@ class Segment(object):
             Any sequenceof True values that is flanked by False values is
             converted into a segment.
         x : 1d array like, optional
-            The segment indices from `y` will be used to index into `x`.
+            The segment indices from y will be used to index into x.
 
         Returns
         -------
         Segment
 
         """
-
         y = np.asarray(y == True, dtype=np.int8).ravel()
 
         if len(y) == 0 or np.all(y == 0):
@@ -171,14 +153,13 @@ class Segment(object):
             Vector of indices. Segments are created from all neighboring
             pairs of values in y (as long as the difference is positive).
         x : 1d array like, optional
-            The segment indices from `y` will be used to index into `x`.
+            The segment indices from y will be used to index into x.
 
         Returns
         -------
         Segment
 
         """
-
         if len(y) == 0:
             return Segment([])
 
@@ -215,7 +196,6 @@ class Segment(object):
         Segment
 
         """
-
         on = np.array(on, dtype=np.float64).ravel()
         off = np.array(off, dtype=np.float64).ravel()
 
@@ -274,21 +254,18 @@ class Segment(object):
         Parameters
         ----------
         anchor : scalar or 1d array like
-            Anchoring points for the new segments. If `reference` is not
-            given, then the anchor determines the segment center.
+            Anchoring points for the new segments. If reference is not given, then the anchor determines the segment center.
         duration : scalar or 1d array like
             Durations of the new segments
         reference : scalar or 1d array like, optional
-            Relative reference point of the anchor in the segment.
-            If `reference` is 0., the anchor defines the segment start,
-            if `reference` is 1., the anchor defines the segment stop.
+            Relative reference point of the anchor in the segment. If reference is 0., the anchor defines the segment start,
+            if reference is 1., the anchor defines the segment stop.
 
         Returns
         -------
         Segment
 
         """
-
         # anchor + duration*[-reference (1-reference)]
         anchor = np.array(anchor, dtype=np.float64).ravel()
         duration = np.array(duration, dtype=np.float64).ravel()
@@ -370,7 +347,6 @@ class Segment(object):
     @center.setter
     def center(self, value):
         """Set new centers of segments."""
-
         value = np.array(value, dtype=np.float64).ravel()
         dur = np.diff(self._data, axis=1).squeeze()
         self._data[:, 0] = value - 0.5 * dur
@@ -817,9 +793,8 @@ class Segment(object):
         Parameters
         ----------
         value : Segment, or scalar or 1d array
-            If `value` is a Segment object, then its segments are
-            concatenated to this Segment. Otherwise,
-            `value` is added as an offset to the segments.
+            If value is a Segment object, then its segments are concatenated to this Segment. Otherwise, value is added
+            as an offset to the segments.
 
         """
         if isinstance(value, Segment):
@@ -828,14 +803,13 @@ class Segment(object):
         return self.ioffset(value)
 
     def __add__(self, value):
-        """Concatenate segments or adds offset.
+        """Concatenate segments or add offset.
 
         Parameters
         ----------
         value : Segment, or scalar or 1d array
-            If `value` is a Segment object, then a new Segment object
-            with a concatenated list of segment is returned. Otherwise,
-            `value` is added as an offset to the segments.
+            If value is a Segment object, then a new Segment object with a concatenated list of segment is returned.
+            Otherwise, value is added as an offset to the segments.
 
         Returns
         -------
@@ -916,32 +890,27 @@ class Segment(object):
     def contains(self, value, issorted=True, expand=None):
         """Test if values are contained in segments.
 
-        Segments are considered left closed and right open intervals. So,
-        a value x is contained in a segment if start<=x and x<stop.
+        Segments are considered left closed and right open intervals. So, a value x is contained in a segment if start<=x and x<stop.
 
         Parameters
         ----------
         value : sorted 1d array
         issorted : bool
-            Assumes vector `x` is sorted and will not sort it internally.
-            Note that even if `issorted` is False, the third output argument
+            Assumes vector x is sorted and will not sort it internally. Note that even if issorted is False, the third output argument
             will still return indices into the (internally) sorted vector.
         expand : bool
-            Will expand the last output to full index arrays into 'x' for
-            each segment. The default is True if `issorted` is False and
-            vice versa. Note that for non-sorted data (`issorted` is False) and
-            `expand`=False, the last output argument will contain start and stop
-            indices into the (internally) sorted input array.
+            Will expand the last output to full index arrays into 'x' for each segment. The default is True if issorted is False and
+            vice versa. Note that for non-sorted data (issorted is False) and expand=False, the last output argument will
+            contain start and stop indices into the (internally) sorted input array.
 
         Returns
         -------
         ndarray
-            True for each value in `x` that is contained within any segment.
+            True for each value in x that is contained within any segment.
         ndarray
-            For each segment the number of values in `x` that it contains.
+            For each segment the number of values in x that it contains.
         ndarray
-            For each segment, the start and end indices of values in `x`
-            that are contained within that segment.
+            For each segment, the start and end indices of values in x that are contained within that segment.
 
         """
         # TODO: test if self is sorted
@@ -962,18 +931,18 @@ class Segment(object):
         Returns
         -------
         ndarray
-            For each value in `x` the number of segments that contain that value.
+            For each value in x the number of segments that contain that value.
 
         """
         return segment_count(self._data, x)
 
     def overlap(self, other=None):
-        """Returns absolute and relative overlaps between segments.
+        """Return absolute and relative overlaps between segments.
 
         Parameters
         ----------
         other : segment array, optional
-            If `other` is not provided, then auto-overlaps are analyzed.
+            If other is not provided, then auto-overlaps are analyzed.
 
         Returns
         -------
@@ -1007,8 +976,7 @@ class Segment(object):
         Parameters
         ----------
         gap : scalar
-            Segments with an interval equal to or smaller than `gap` will be
-            merged.
+            Segments with an interval equal to or smaller than gap will be merged.
 
         """
         self._data = segment_join(self._data, gap=gap)
@@ -1020,8 +988,7 @@ class Segment(object):
         Parameters
         ----------
         gap : scalar
-            Segments with an interval equal to or smaller than `gap` will be
-            merged.
+            Segments with an interval equal to or smaller than gap will be merged.
 
         Returns
         -------
@@ -1042,9 +1009,8 @@ class Segment(object):
         overlap : scalar
             Relative overlap (>=0. and <1.) between split segments.
         join : bool
-            Join all split segments into a single segment array. If `join` is
-            False, a list is returned with split segments for each original
-            segment separately.
+            Join all split segments into a single segment array. If join is False, a list is returned with split segments
+            for each original segment separately.
         tol : scalar
             Tolerance for determining number of bins.
 
@@ -1053,7 +1019,6 @@ class Segment(object):
         Segment or list of Segments
 
         """
-
         seg = segment_split(self._data, size=size, overlap=overlap, join=join, tol=tol)
         if len(seg) == 0:
             return Segment([])
@@ -1079,8 +1044,8 @@ class Segment(object):
             when separate is True)
         *args : ndarray-like
             Data arrays that are segmented (along first dimension) according
-            to the corresponding values in `x` that lie within the segments,
-            and passed to `function`.
+            to the corresponding values in x that lie within the segments,
+            and passed to function.
 
         Returns
         -------
@@ -1093,9 +1058,6 @@ class Segment(object):
     def partition(self, **kwargs):
         """Partition segments into groups.
 
-        See `fklab.general.partitions` and `fklab.general.partition_vector'
-        for more information.
-
         Parameters
         ----------
         nparts : int
@@ -1107,6 +1069,11 @@ class Segment(object):
         -------
         Segment object
             partitioned subset of segments
+
+        See Also
+        --------
+        fklab.general.partitions
+        fklab.general.partition_vector
 
         """
         return partition_vector(self, **kwargs)

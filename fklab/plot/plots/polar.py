@@ -7,20 +7,6 @@ Polar plot utilities (:mod:`fklab.plot.plots.polar`)
 
 Function for polar plots.
 
-plotting functions
-==================
-
-.. autosummary::
-    :toctree: generated/
-
-    polar_colorbar
-    plot_polar_map
-    set_polar_axes
-    setup_polar_axes_grid
-    float_radial_axis
-    style_polar_axes
-    annotate_angles
-
 """
 import fractions
 
@@ -45,7 +31,7 @@ __all__ = [
 
 
 def polar_colorbar(cax=None, cmap="hsv", rotation=0, **kwargs):
-    """Plot circular colorbar
+    """Plot circular colorbar.
 
     Parameters
     ----------
@@ -61,7 +47,6 @@ def polar_colorbar(cax=None, cmap="hsv", rotation=0, **kwargs):
     Axes
 
     """
-
     theta = np.linspace(0 + rotation, 2 * np.pi + rotation, 1001)
     data = theta[None, :]
 
@@ -102,7 +87,6 @@ def plot_polar_map(
     mesh : Mesh
 
     """
-
     if ax is None:
         ax = plt.subplot(projection="polar")
 
@@ -183,7 +167,6 @@ def set_polar_axes(axes, **kwargs):
     angle_tick_params : dict
 
     """
-
     if not isinstance(axes, (tuple, list, np.ndarray)):
         axes = [axes]
 
@@ -320,7 +303,6 @@ def setup_polar_axes_grid(
     ax : array of Axes
 
     """
-
     ntotal = int(n) + int(show_reference)
 
     fig, axes = setup_axes_grid(ntotal, subplot_kw={"projection": "polar"}, **kwargs)
@@ -368,7 +350,6 @@ def float_radial_axis(host, label="", offset=5, y=0, tickprops={}, labelprops={}
     Axes
 
     """
-
     if not hasattr(host, "extra_properties"):
         setattr(host, "extra_properties", {})
 
@@ -448,7 +429,6 @@ def compass_formatter(upper=True):
     Formatter
 
     """
-
     _map = {
         0: "N",
         45: "NE",
@@ -494,7 +474,6 @@ def egocentric_formatter(labels=None):
     Formatter
 
     """
-
     _map = {0: "front", 90: "left", 180: "back", 270: "right"}
 
     if not labels is None:
@@ -566,9 +545,7 @@ def style_polar_axes(ax, style="math", **kwargs):
         "navigation-degrees", "compass", "egocentric".
     **kwargs
         Extra keyword arguments that are passed to the formatter.
-
     """
-
     if style is None or style == "default":
         style = "math"
 
@@ -615,7 +592,6 @@ def annotate_angles(
         Extra keyword arguments for *set_polar_axes* (e.g. to polar plot style)
 
     """
-
     set_polar_axes(ax, **kwargs)
 
     ax.grid(False)

@@ -12,558 +12,20 @@ based on the open-source Chronux Matlab toolbox (http://www.chronux.org).
 Spectral analysis
 =================
 
-.. autosummary::
-    :toctree: generated/
-
-    mtspectrum
-    mtspectrogram
-    mtcoherence
-    mtcoherogram
-
-Plots
-=====
-
-.. autosummary::
-    :toctree: generated/
-
-    plot_spectrum
-    plot_spectrogram
-    plot_coherence
-    plot_coherogram
-
-Utilities
-=========
-
-.. autosummary::
-    :toctree: generated/
-
-    nextpow2
-    mtfft
-    mtoptions
-
 """
-import math
-import warnings
-
 import numpy as np
 import scipy as sp
-import scipy.signal
 import scipy.stats
 
-import fklab.segments as seg
+from .utilities import mtfft
+from .utilities import mtoptions
+from .utilities import nextpow2
 from fklab.signals.core import extract_data_windows
 from fklab.signals.core import extract_trigger_windows
 from fklab.signals.core import generate_windows
-from fklab.utilities.general import inrange
-from fklab.version._core_version._version import __version__
 
-# import functools
-# import spectrum
 
-
-__all__ = [
-    "nextpow2",
-    "mtfft",
-    "mtspectrum",
-    "mtspectrogram",
-    "mtcoherence",
-    "mtcoherogram",
-    "plot_spectrum",
-    "plot_spectrogram",
-    "plot_coherence",
-    "plot_coherogram",
-    "mtoptions",
-]
-
-
-def nextpow2(n):
-    """
-    Compute the first power of 2 larger than a given value.
-
-    Parameters
-    ----------
-    n : number
-
-    Returns
-    -------
-    exponent : integer
-        The smallest integer such that 2**exponent is larger than `n`.
-
-    """
-    n = np.abs(n)
-    val, p = 1, 0
-    while val < n:
-        val = val * 2
-        p += 1
-    return p
-
-
-def _compute_nfft(n, pad=0):
-    """Compute padded number of samples for FFT.
-
-    Parameters
-    ----------
-    n : int
-        number of samples to pad
-    pad : int, optional
-        amount of padding to a higher power of 2. Zero means no padding.
-
-    Returns
-    -------
-    n : int
-        padded number of samples
-
-    """
-
-    return max(2 ** (nextpow2(n + 1) + pad - 1), n)
-
-
-def _allowable_bandwidth(n, fs=1.0):
-    """Multitape bandwidth limits.
-
-    Parameters
-    ----------
-    n : int
-        Number of samples in signal
-    fs : float, optional
-        Sampling frequency of signal
-
-    Returns
-    -------
-    [min, max]
-        minimum and maximum allowable bandwidths
-
-    """
-
-    return [fs / n, 0.5 * fs * (n - 1) / n]
-
-
-# @functools.lru_cache(maxsize=2)
-def _check_bandwidth(bw, n, fs=1.0, correct=False):
-    """Check and correct multitaper bandwidth.
-
-    Parameters
-    ----------
-    bw : float
-        Requested bandwidth
-    n : int
-        Number of samples in signal
-    fs : float, optional
-        Sampling frequency
-    correct : bool, optional
-        Correct bandwidth if requested value is out of range.
-
-    Returns
-    -------
-    bw : float
-        Multitaper bandwidth
-
-    """
-    if bw is None:
-        TW = min(3, (n - 1) / 2.0)
-        bw = TW * fs / n
-    else:
-        bw = float(bw)
-        limits = _allowable_bandwidth(n, fs)
-
-        if bw < limits[0] or bw > limits[1]:
-            if correct:
-                bw = max(min(limits[1], bw), limits[0])
-            else:
-                raise ValueError(
-                    "Bandwidth out of range. Minimum bandwidth = {minbw} Hz. Maximum bandwidth = {maxbw} Hz.".format(
-                        minbw=limits[0], maxbw=limits[-1]
-                    )
-                )
-
-    return bw
-
-
-# @functools.lru_cache(maxsize=2)
-def _check_ntapers(ntapers, n, bw=None, fs=1.0, correct=False):
-    """Check and correct number of tapers.
-
-    Parameters
-    ----------
-    ntapers : int
-        Requested number of tapers
-    n : int
-        Number of samples in signal
-    bw : float, optional
-        Requested bandwidth
-    fs : float, optional
-        Sampling frequency
-    correct : bool
-        Correct number of tapers and bandwidth if requested values are
-        out of range.
-
-    Returns
-    -------
-    ntapers : int
-        Number of tapers
-    bw : float
-        Multitaper bandwidth
-
-    """
-
-    bw = _check_bandwidth(bw, n, fs, correct)
-
-    TW = bw * n / fs
-    maxtapers = int(math.floor(2 * TW - 1))
-
-    if ntapers is None:
-        ntapers = maxtapers
-    else:
-        ntapers = int(ntapers)
-        if ntapers < 1 or ntapers > maxtapers:
-            if correct:
-                ntapers = max(min(maxtapers, ntapers), 1)
-            else:
-                raise ValueError(
-                    "Invalid number of tapers. Maximum number of tapers = {maxtapers}".format(
-                        maxtapers=maxtapers
-                    )
-                )
-
-    return ntapers, bw
-
-
-# @functools.lru_cache(maxsize=2)
-def _compute_tapers(bw, n, fs, ntapers, correct=False):
-    """Compute tapers.
-
-    Parameters
-    ----------
-    bw : float
-        Requested bandwidth
-    n : int
-        Number of samples in signal
-    fs : float
-        Sampling frequency
-    ntapers : int
-        Requested number of tapers
-    correct : bool
-        Correct number of tapers and bandwidth if requested values are
-        out of range.
-
-    Returns
-    -------
-    tapers : ndarray
-
-    """
-
-    ntapers, bw = _check_ntapers(ntapers, n, bw, fs, correct)
-    # tapers = spectrum.dpss( int(n), int( bw*n/fs ), int(ntapers) )[0] * np.sqrt(fs)
-    tapers = sp.signal.windows.dpss(int(n), int(bw * n / fs), int(ntapers)) * np.sqrt(
-        fs
-    )
-    tapers = tapers.T
-
-    return tapers
-
-
-class mtoptions(object):
-    """Class to manage multitaper options.
-
-    Parameters
-    ----------
-    bandwidth : scalar
-    fpass : scalar or [min, max]
-    error : {'none', 'theory', 'jackknife'}
-    pvalue : scalar
-    pad : int
-    ntapers : int
-
-    Attributes
-    ----------
-    bandwidth
-    fpass
-    error
-    pvalue
-    pad
-    ntapers
-
-    Methods
-    -------
-    bandwidth_range(nsamples, fs)
-    nfft(nsamples)
-    frequencies(nsamples, fs)
-    validate(nsamples, fs, correct)
-    tapers(nsamples, fs, correct)
-
-    """
-
-    def __init__(
-        self, bandwidth=None, fpass=None, error="none", pvalue=0.05, pad=0, ntapers=None
-    ):
-        self.bandwidth = bandwidth
-        self.fpass = fpass
-        self.error = error
-        self.pvalue = pvalue
-        self.pad = pad
-        self.ntapers = ntapers
-
-    def keys(self):
-        return ["bandwidth", "fpass", "error", "pvalue", "pad", "ntapers"]
-
-    def __getitem__(self, key):
-        if key in list(self.keys()):
-            return object.__getattribute__(self, key)
-        else:
-            raise KeyError("Unknown key")
-
-    def bandwidth_range(self, nsamples, fs=1.0):
-        """Permissible range of bandwidths.
-
-        Parameters
-        ----------
-        nsamples : int
-            Number of samples in signal
-        fs : float, optional
-            Sampling frequency of signal
-
-        Returns
-        -------
-        [min, max]
-            minimum and maximum allowable bandwidths
-
-        """
-        return _allowable_bandwidth(nsamples, fs)
-
-    def nfft(self, nsamples):
-        """Compute padded number of samples for FFT.
-
-        Parameters
-        ----------
-        n : int
-            number of samples to pad
-
-        Returns
-        -------
-        n : int
-            padded number of samples
-
-        """
-        return _compute_nfft(nsamples, self._pad)
-
-    def frequencies(self, nsamples, fs=1.0):
-        """Compute frequency vector.
-
-        Parameters
-        ----------
-        nsamples : int
-            Number of samples
-        fs : scalar
-            Sampling frequency
-
-        Returns
-        -------
-        f : 1d array
-            Frequencies
-        fidx : 1d array
-            Indices of selected frequencies that fall within the `fpass`
-            setting.
-
-        """
-        nfft = self.nfft(nsamples)
-        f = fs * np.arange(nfft) / nfft
-
-        if self._fpass is None:
-            fpass = [0.0, fs / 2.0]
-        else:
-            fpass = self._fpass
-
-        fidx = np.logical_and(f >= fpass[0], f <= fpass[1])
-
-        return f, fidx
-
-    def validate(self, nsamples, fs=1.0, correct=False):
-        """Validate multitaper options.
-
-        Parameters
-        ----------
-        nsamples : int
-            Number of samples
-        fs : scalar
-            Sampling frequency
-        correct : bool
-            Correct bandwidth and tapers if needed.
-
-        Returns
-        -------
-        dict
-            Validated multitaper options and pre-computed tapers.
-
-        """
-
-        nsamples = int(nsamples)
-        if nsamples < 3:
-            raise ValueError("Number of samples should be at least 3.")
-
-        fs = float(fs)
-        if fs <= 0.0:
-            raise ValueError("Sampling frequency should be larger than zero.")
-
-        d = dict(
-            sampling_frequency=fs,
-            nsamples=nsamples,
-            error=self._error,
-            pvalue=self._pvalue,
-            pad=self.pad,
-            nfft=self.nfft(nsamples),
-        )
-
-        d["ntapers"], d["bandwidth"] = _check_ntapers(
-            self._ntapers, nsamples, bw=self._bw, fs=fs, correct=correct
-        )
-        d["frequencies"], d["fpass"] = self.frequencies(nsamples, fs)
-
-        d["tapers"] = self.tapers(nsamples, fs, correct)
-
-        return d
-
-    def tapers(self, nsamples, fs=1.0, correct=False):
-        """Compute tapers.
-
-        Parameters
-        ----------
-        nsamples : int
-            Number of samples in signal
-        fs : float
-            Sampling frequency
-        correct : bool
-            Correct number of tapers and bandwidth if requested values are
-            out of range.
-
-        Returns
-        -------
-        tapers : ndarray
-
-        """
-        return _compute_tapers(self._bw, nsamples, fs, self._ntapers, correct)
-
-    @property
-    def bandwidth(self):
-        """Bandwidth for tapers."""
-        return self._bw
-
-    @bandwidth.setter
-    def bandwidth(self, val):
-        if not val is None:
-            val = float(val)
-            if val <= 0.0:
-                raise ValueError()
-        self._bw = val
-
-    @property
-    def fpass(self):
-        """Selection of frequency band of interest."""
-        return self._fpass
-
-    @fpass.setter
-    def fpass(self, val):
-        if not val is None:
-            val = list(np.array(val, dtype=np.float64).ravel())
-            if len(val) == 1:
-                val = [0.0, val[0]]
-            elif not len(val) == 2:
-                raise ValueError("FPass should be a scalar or 2-element sequence.")
-
-            if val[0] < 0.0 or val[0] > val[1]:
-                raise ValueError(
-                    "FPass values should be larger than zero and strictly monotonically increasing."
-                )
-
-        self._fpass = val
-
-    @property
-    def error(self):
-        """Type of error to compute ('none', 'theory', 'jackknife')"""
-        return self._error
-
-    @error.setter
-    def error(self, val):
-        if val is None or not val:
-            val = "none"
-        elif not val in ("none", "theory", "jackknife"):
-            raise ValueError("Error should be one of 'none', 'theory', 'jackknife'.")
-        self._error = val
-
-    @property
-    def pvalue(self):
-        """P-value for error computation."""
-        return self._pvalue
-
-    @pvalue.setter
-    def pvalue(self, val):
-        val = float(val)
-        if val <= 0.0 or val >= 1:
-            raise ValueError("p-Value should be between zero and one.")
-
-        self._pvalue = val
-
-    @property
-    def pad(self):
-        """Amount of padding."""
-        return self._pad
-
-    @pad.setter
-    def pad(self, val):
-        if not val is None:
-            val = int(val)
-            if val < 0:
-                raise ValueError("Pad should be equal to or larger than zero.")
-
-        self._pad = val
-
-    @property
-    def ntapers(self):
-        """Number of tapers."""
-        return self._ntapers
-
-    @ntapers.setter
-    def ntapers(self, val):
-        if not val is None:
-            val = int(val)
-            if val < 1:
-                raise ValueError("Number of tapers should be larger than zero.")
-
-        self._ntapers = val
-
-
-def mtfft(data, tapers, nfft, fs):
-    """Multi-tapered FFT.
-
-    Parameters
-    ----------
-    data : 2d array
-        data array with samples along first axis and signals along the second axis
-    tapers: 2d array
-        tapers with samples along first axis and tapers along the second axis
-    nfft : integer
-        number of points for FFT calculation
-    fs : float
-        sampling frequency of data
-
-    Returns
-    -------
-    J : 3d array
-        FFT of tapered signals. Shape of the array is (samples, tapers, signals)
-
-    """
-    # TODO: check shape of m and tapers
-
-    data = np.array(data)
-    tapers = np.array(tapers)
-
-    nfft = int(nfft)
-    fs = float(fs)
-
-    data_proj = data[:, None, :] * tapers[:, :, None]
-
-    J = np.fft.fft(data_proj, nfft, axis=0) / fs
-
-    return J
+__all__ = ["mtspectrum", "mtspectrogram", "mtcoherence", "mtcoherogram"]
 
 
 def _spectrum_error(S, J, errtype, pval, avg, numsp=None):
@@ -662,8 +124,8 @@ def _mtspectrum_single(data, fs=1.0, average=False, **kwargs):
     pvalue : float, optional
         P-value for the error estimate
     pad : int, optional
-        Amount of signal padding for fft computation. `pad`=0 means no
-        padding, `pad`=1 means pad to the next power of 2 larger than
+        Amount of signal padding for fft computation. pad=0 means no
+        padding, pad=1 means pad to the next power of 2 larger than
         the length of the signal, etc.
     ntapers : int, optional
         Desired number of tapers
@@ -682,7 +144,6 @@ def _mtspectrum_single(data, fs=1.0, average=False, **kwargs):
     options : dict
 
     """
-
     # TODO: check data
     data = np.array(data)
     N = data.shape[0]
@@ -744,8 +205,8 @@ def mtspectrum(
     pvalue : float, optional
         P-value for the error estimate
     pad : int, optional
-        Amount of signal padding for fft computation. `pad`=0 means no
-        padding, `pad`=1 means pad to the next power of 2 larger than
+        Amount of signal padding for fft computation. pad=0 means no
+        padding, pad=1 means pad to the next power of 2 larger than
         the length of the signal, etc.
     ntapers : int, optional
         Desired number of tapers
@@ -765,7 +226,6 @@ def mtspectrum(
     options : dict
 
     """
-
     # check data
     data = np.array(data)
     if data.ndim != 1:
@@ -827,8 +287,8 @@ def mtspectrogram(
     pvalue : float, optional
         P-value for the error estimate
     pad : int, optional
-        Amount of signal padding for fft computation. `pad`=0 means no
-        padding, `pad`=1 means pad to the next power of 2 larger than
+        Amount of signal padding for fft computation. pad=0 means no
+        padding, pad=1 means pad to the next power of 2 larger than
         the length of the signal, etc.
     ntapers : int, optional
         Desired number of tapers
@@ -849,7 +309,6 @@ def mtspectrogram(
     options : dict
 
     """
-
     data = np.array(data)
 
     if triggers is None:
@@ -1049,8 +508,8 @@ def _mtcoherence_single(x, y, fs=1.0, average=False, **kwargs):
     pvalue : float, optional
         P-value for the error estimate
     pad : int, optional
-        Amount of signal padding for fft computation. `pad`=0 means no
-        padding, `pad`=1 means pad to the next power of 2 larger than
+        Amount of signal padding for fft computation. pad=0 means no
+        padding, pad=1 means pad to the next power of 2 larger than
         the length of the signal, etc.
     ntapers : int, optional
         Desired number of tapers
@@ -1144,8 +603,8 @@ def mtcoherence(
     pvalue : float, optional
         P-value for the error estimate
     pad : int, optional
-        Amount of signal padding for fft computation. `pad`=0 means no
-        padding, `pad`=1 means pad to the next power of 2 larger than
+        Amount of signal padding for fft computation. pad=0 means no
+        padding, pad=1 means pad to the next power of 2 larger than
         the length of the signal, etc.
     ntapers : int, optional
         Desired number of tapers
@@ -1165,7 +624,6 @@ def mtcoherence(
     options : dict
 
     """
-
     # check data
     x = np.array(x)
     y = np.array(y)
@@ -1236,8 +694,8 @@ def mtcoherogram(
     pvalue : float, optional
         P-value for the error estimate
     pad : int, optional
-        Amount of signal padding for fft computation. `pad`=0 means no
-        padding, `pad`=1 means pad to the next power of 2 larger than
+        Amount of signal padding for fft computation. pad=0 means no
+        padding, pad=1 means pad to the next power of 2 larger than
         the length of the signal, etc.
     ntapers : int, optional
         Desired number of tapers
@@ -1260,7 +718,6 @@ def mtcoherogram(
     options : dict
 
     """
-
     x = np.array(x)
     y = np.array(y)
 
@@ -1356,275 +813,3 @@ def mtcoherogram(
         #    pass
 
     return coh, phi, t, f, (None, None, None), options
-
-
-import matplotlib.pyplot as plt
-
-
-def plot_spectrum(
-    data, t=None, axes=None, units=None, db=True, color="black", **kwargs
-):
-    """Plot power spectral density of data vector.
-
-    Parameters
-    ----------
-    data : 1d array
-    t : 1d array, optional
-        Time vector. Start time and sampling frequency are automatically
-        calculated from the time vector.
-    axes : Axes, optional
-        Destination axes.
-    units : str, optional
-        Units of the data (e.g. mV)
-    db : bool, optional
-        Plot density in dB.
-    color : any matplotlib color, optional
-        Color of plot.
-    kwargs : mtspectrum parameters
-
-    Returns
-    -------
-    axes : matplotlib Axes object
-    artists : list of plot elements
-    (s,f,err,options) : output of mtspectrum
-
-    """
-
-    if not t is None:
-        kwargs["start_time"] = kwargs.get("start_time", t[0])
-        kwargs["fs"] = kwargs.get("fs", 1.0 / np.mean(np.diff(t)))
-
-    S, f, err, options = mtspectrum(data, **kwargs)
-
-    if db:
-        S = 10.0 * np.log10(S)
-        err = 10.0 * np.log10(err)
-
-    if axes is None:
-        axes = plt.gca()
-
-    artists = []
-
-    if not err is None:
-        artists.append(
-            axes.fill_between(f, err[0, :, 0], err[1, :, 0], facecolor=color, alpha=0.2)
-        )
-
-    artists.extend(plt.plot(f, S, axes=axes, color=color))
-
-    if units is None or units == "":
-        units = "1"
-    else:
-        units = str(units)
-        units = units + "*" + units
-
-    plt.xlabel("frequency [Hz]")
-    plt.ylabel(
-        "power spectral density [{units}/Hz] {db}".format(
-            units=units, db="in db" if db else ""
-        )
-    )
-
-    return axes, artists, (S, f, err, options)
-
-
-def plot_spectrogram(
-    data, t=None, axes=None, units=None, db=True, colorbar=True, **kwargs
-):
-    """Plot spectrogram of data vector.
-
-    Parameters
-    ----------
-    data : 1d array
-    t : 1d array, optional
-        Time vector. Start time and sampling frequency are automatically
-        calculated from the time vector.
-    axes : Axes, optional
-        Destination axes.
-    units : str, optional
-        Units of the data (e.g. mV)
-    db : bool, optional
-        Plot density in dB.
-    kwargs : mtspectrogram parameters
-
-    Returns
-    -------
-    axes : matplotlib Axes object
-    artists : plot elements
-    (s,t,f,err,options) : output of mtspectrogram
-
-    """
-
-    if not t is None:
-        kwargs["start_time"] = kwargs.get("start_time", t[0])
-        kwargs["fs"] = kwargs.get("fs", 1.0 / np.mean(np.diff(t)))
-
-    winsize = kwargs.get("window_size")
-
-    S, t, f, err, options = mtspectrogram(data, **kwargs)
-
-    if db:
-        S = 10.0 * np.log10(S)
-
-    if axes is None:
-        axes = plt.gca()
-
-    artists = []
-
-    artists.append(
-        axes.imshow(
-            S.T,
-            cmap="YlOrRd",
-            aspect="auto",
-            origin="lower",
-            extent=[t[0, 0], t[-1, 1], f[0], f[-1]],
-            interpolation="nearest",
-        )
-    )
-
-    axes.set_ylabel("frequency [Hz]")
-    axes.set_xlabel(
-        "{label} [s]".format(
-            label="time" if kwargs.get("triggers", None) is None else "latency"
-        )
-    )
-
-    if colorbar:
-        cbar = plt.colorbar(artists[0])
-        artists.append(cbar)
-
-        if units is None or units == "":
-            units = "1"
-        else:
-            units = str(units)
-            units = units + "*" + units
-
-        cbar.set_label(
-            "power spectral density [{units}/Hz] {db}".format(
-                units=units, db="in db" if db else ""
-            )
-        )
-
-    plt.draw()
-
-    return axes, artists, (S, t, f, err, options)
-
-
-def plot_coherence(signal1, signal2, t=None, axes=None, color="black", **kwargs):
-    """Plot coherence between two data vectors.
-
-    Parameters
-    ----------
-    signal1 : 1d array
-    signal2 : 1d array
-    t : 1d array, optional
-        Time vector. Start time and sampling frequency are automatically
-        calculated from the time vector.
-    axes : Axes, optional
-        Destination axes
-    color : any matplotlib color, optional
-        Color of plot.
-    kwargs : mtcoherence parameters
-
-    Returns
-    -------
-    axes : matplotlib Axes object
-    artists : plot elements
-    (coh,phi,f,err,options) : output of mtcoherence
-
-    """
-
-    if not t is None:
-        kwargs["start_time"] = kwargs.get("start_time", t[0])
-        kwargs["fs"] = kwargs.get("fs", 1.0 / np.mean(np.diff(t)))
-
-    coh, phi, f, err, options = mtcoherence(signal1, signal2, **kwargs)
-
-    if axes is None:
-        axes = plt.gca()
-
-    artists = []
-
-    if not err[2] is None:
-        artists.append(
-            axes.fill_between(
-                f, err[2][0, :, 0], err[2][1, :, 0], facecolor=color, alpha=0.2
-            )
-        )
-
-    artists.extend(plt.plot(f, coh, axes=axes, color=color))
-
-    if not err[0] is None:
-        artists.append(plt.axhline(y=err[0], color="red", linestyle=":"))
-
-    plt.xlabel("frequency [Hz]")
-    plt.ylabel("coherence")
-
-    plt.ylim(0, 1)
-
-    return axes, artists, (coh, phi, f, err, options)
-
-
-def plot_coherogram(signal1, signal2, t=None, axes=None, **kwargs):
-    """Plot coherogram of two data vectors.
-
-    Parameters
-    ----------
-    signal1 : 1d array
-    signal2 : 1d array
-    t : 1d array, optional
-        Time vector. Start time and sampling frequency are automatically
-        calculated from the time vector.
-    axes : Axes, optional
-        Destination axes
-    kwargs : mtcoherogram parameters
-
-    Returns
-    -------
-    axes : matplotlib Axes object
-    artists : plot elements
-    (coh,phi,t,f,err,options) : output of mtcoherence
-
-    """
-
-    if not t is None:
-        kwargs["start_time"] = kwargs.get("start_time", t[0])
-        kwargs["fs"] = kwargs.get("fs", 1.0 / np.mean(np.diff(t)))
-
-    winsize = kwargs.get("window_size")
-
-    coh, phi, t, f, err, options = mtcoherogram(signal1, signal2, **kwargs)
-
-    if axes is None:
-        axes = plt.gca()
-
-    artists = []
-
-    artists.append(
-        plt.imshow(
-            coh.T,
-            axes=axes,
-            cmap="YlOrRd",
-            aspect="auto",
-            origin="lower",
-            extent=[t[0, 0], t[-1, 1], f[0], f[-1]],
-            interpolation="nearest",
-        )
-    )
-    plt.clim(0.0, 1.0)
-
-    plt.ylabel("frequency [Hz]")
-    plt.xlabel(
-        "{label} [s]".format(
-            label="time" if kwargs.get("triggers", None) is None else "latency"
-        )
-    )
-
-    cbar = plt.colorbar()
-    cbar.set_label("coherence")
-
-    artists.append(cbar)
-
-    plt.draw()
-
-    return axes, artists, (coh, phi, t, f, err, options)

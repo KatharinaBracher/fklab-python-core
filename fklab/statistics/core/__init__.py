@@ -7,11 +7,9 @@ Statistical functions (:mod:`fklab.statistics.core`)
 
 Collection of statistical functions.
 
-.. automodule:: fklab.statistics.core.bootstrap
 
 """
-
-from .general import *
 from .bootstrap import *
+from .general import *
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith("_")]

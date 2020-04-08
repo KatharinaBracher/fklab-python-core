@@ -7,12 +7,6 @@ Plot utilities (:mod:`fklab.plot.plots.utilities`)
 
 Utility plot functions.
 
-.. autosummary::
-    :toctree: generated/
-
-    axes_annotation
-    setup_axes_grid
-    fixed_colorbar
 
 """
 import math
@@ -45,7 +39,6 @@ def axes_annotation(ax, text, hloc="right", vloc="top out", **kwargs):
     Text
 
     """
-
     if "right" in hloc:
         x = 1
         ha = "left" if "out" in hloc else "right"
@@ -101,7 +94,6 @@ def setup_axes_grid(
     ax : array of Axes
 
     """
-
     if grid is None:
         grid = (None, None)
     elif isinstance(grid, int):

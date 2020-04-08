@@ -1,28 +1,11 @@
 """
-=================================================================
+================================================
 Interaction (:mod:`fklab.plot.core.interaction`)
-=================================================================
+================================================
 
 .. currentmodule:: fklab.plot.core.interaction
 
 Utilities for interaction with matplotlib figures
-
-.. autosummary::
-    :toctree: generated/
-
-    ScrollPanZoom
-    interactive_figure
-    create_square
-    create_rectangle
-    create_circle
-    create_ellipse
-    create_polyline
-    create_polygon
-    iEllipse
-    iRectangle
-    iPolyline
-    iPolygon
-
 """
 import functools
 import itertools
@@ -55,8 +38,7 @@ __all__ = [
 
 
 class ScrollPanZoom:
-    """
-    Adds pan/zoom mouse interaction to axes.
+    """Add pan/zoom mouse interaction to axes.
 
     Zooming and panning is performed using the mouse wheel.
     To zoom, press Shift key. Use x and y keys to switch between horizontal
@@ -69,13 +51,6 @@ class ScrollPanZoom:
         Scaling step for zooming in/out.
     shift : float
         Offset step for panning.
-
-    Methods
-    -------
-    enable()
-        Enables panning/zooming
-    disable()
-        Disables panning/zooming
 
     """
 
@@ -93,6 +68,7 @@ class ScrollPanZoom:
         self.enable()
 
     def enable(self):
+        """Enable panning/zooming."""
         fig = self._axes.get_figure()  # get the figure of interest
         self._callbacks = (
             fig.canvas.mpl_connect("scroll_event", self.panzoom),
@@ -101,6 +77,7 @@ class ScrollPanZoom:
         )
 
     def disable(self):
+        """Disable panning/zooming."""
         fig = self._axes.get_figure()  # get the figure of interest
         for c in self._callbacks:
             fig.canvas.mpl_disconnect(c)
@@ -308,7 +285,7 @@ def _on_release(event, shape=None):
 
 
 class iEllipse(Ellipse):
-    """Interactive ellipse.
+    """Create Interactive ellipse.
 
     Creates an ellipse that can be moved and resized through interaction
     handles. Rotation of the ellipse is done by pressing the Ctrl-key and
@@ -511,7 +488,7 @@ class iEllipse(Ellipse):
 
 
 class iRectangle(Rectangle):
-    """Interactive rectangle.
+    """Create Interactive rectangle.
 
     Creates an rectangle that can be moved and resized through interaction
     handles. Rotation of the rectangle is done by pressing the Ctrl-key and
@@ -762,7 +739,7 @@ class iRectangle(Rectangle):
 
 
 class iPolyline(Line2D):
-    """Interactive polyline.
+    """Create Interactive polyline.
 
     Creates a polyline that can be manipulated through interaction
     handles. Rotation of the polyline is done by pressing the Ctrl-key
@@ -915,7 +892,7 @@ class iPolyline(Line2D):
 
 
 class iPolygon(Polygon):
-    """Interactive polygon.
+    """Create Interactive polygon.
 
     Creates a polygon that can be manipulated through interaction
     handles. Rotation of the polygon is done by pressing the Ctrl-key
@@ -1227,7 +1204,7 @@ boxed_shape_method = {
 
 
 def create_boxed_shape(ax, method="center-size", shape="rectangle"):
-    """User-drawn box-like shape.
+    """Create user-drawn box-like shape.
 
     Parameters
     ----------
@@ -1243,7 +1220,6 @@ def create_boxed_shape(ax, method="center-size", shape="rectangle"):
     orientation : in radians
 
     """
-
     _method = boxed_shape_method[method][1]
     msg_string = boxed_shape_method[method][2]
     N = boxed_shape_method[method][0]
@@ -1341,7 +1317,7 @@ def create_boxed_shape(ax, method="center-size", shape="rectangle"):
 
 
 def create_circle(ax):
-    """User-drawn circle.
+    """Create a user-drawn circle.
 
     Parameters
     ----------
@@ -1358,7 +1334,7 @@ def create_circle(ax):
 
 
 def create_ellipse(ax, method="center-axes"):
-    """User-drawn ellipse.
+    """Create a user-drawn ellipse.
 
     Parameters
     ----------
@@ -1373,12 +1349,11 @@ def create_ellipse(ax, method="center-axes"):
     orientation : in radians
 
     """
-
     return create_boxed_shape(ax, method, shape="ellipse")
 
 
 def create_square(ax):
-    """User-drawn square.
+    """Create a user-drawn square.
 
     Parameters
     ----------
@@ -1391,12 +1366,11 @@ def create_square(ax):
     orientation : in radians
 
     """
-
     return create_boxed_shape(ax, method="center-size", shape="rectangle")
 
 
 def create_rectangle(ax, method="center-axes"):
-    """User-drawn rectangle.
+    """Create user-drawn rectangle.
 
     Parameters
     ----------
@@ -1411,12 +1385,11 @@ def create_rectangle(ax, method="center-axes"):
     orientation : in radians
 
     """
-
     return create_boxed_shape(ax, method, shape="rectangle")
 
 
 def create_polyline(ax):
-    """User-drawn polyline.
+    """Create a user-drawn polyline.
 
     Parameters
     ----------
@@ -1427,7 +1400,6 @@ def create_polyline(ax):
     nodes : (N,2) array
 
     """
-
     hRubber = Line2D([], [], linestyle="dotted")
     ax.add_line(hRubber)
     hRubber.set_animated(True)
@@ -1476,7 +1448,7 @@ def create_polyline(ax):
 
 
 def create_polygon(ax):
-    """User-drawn polygon.
+    """Create a user-drawn polygon.
 
     Parameters
     ----------
@@ -1487,7 +1459,6 @@ def create_polygon(ax):
     nodes : (N,2) array
 
     """
-
     hRubber = Line2D([], [], linestyle="dotted")
     ax.add_line(hRubber)
     hRubber.set_animated(True)
@@ -1561,9 +1532,7 @@ class BlockingCreateShape(BlockingInput):
         )
 
     def post_event(self):
-        """
-        This will be called to process events
-        """
+        """Process events."""
         assert len(self.events) > 0, "No events yet"
 
         if self.events[-1].name == "key_press_event":
@@ -1572,8 +1541,7 @@ class BlockingCreateShape(BlockingInput):
             self.mouse_event()
 
     def mouse_event(self):
-        """Process a mouse click event"""
-
+        """Process a mouse click event."""
         event = self.events[-1]
 
         if event.inaxes != self._axes:
@@ -1596,11 +1564,10 @@ class BlockingCreateShape(BlockingInput):
             BlockingInput.pop(self, -1)  # remove event
 
     def key_event(self):
-        """
-        Process a key click event.  This maps certain keys to appropriate
-        mouse click events.
-        """
+        """Process a key click event.
 
+        This maps certain keys to appropriate mouse click events.
+        """
         event = self.events[-1]
         if event.key is None:
             # at least in mac os X gtk backend some key returns None.
@@ -1690,10 +1657,7 @@ class BlockingCreateShape(BlockingInput):
     def __call__(
         self, n=0, update_shape=None, cleanup_shape=None, update_animation=None
     ):
-        """
-        Blocking call to retrieve n coordinate pairs through mouse
-        clicks.
-        """
+        """Blocking call to retrieve n coordinate pairs through mouse clicks."""
         if n == 0:
             self._manual_stop = True
         else:

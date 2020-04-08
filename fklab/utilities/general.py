@@ -1,37 +1,8 @@
 """
-========================================================
-General utilities (:mod:`fklab.utilities.general`)
-========================================================
-
 .. currentmodule:: fklab.utilities.general
 
 General utiltity functions.
 
-.. autosummary::
-    :toctree: generated/
-
-    check_vector
-    check_vector_list
-
-    issorted
-    isascending
-    isdescending
-
-    partition_vector
-    partitions
-    blocks
-    slices
-    slicedarray
-
-    inrange
-    natural_sort
-
-    randomize
-
-    map_dict
-    map_dicts
-    zip_mappings
-    dict_merge
 
 """
 import re
@@ -79,7 +50,6 @@ def check_vector(x, copy=True, real=True):
     1d array
 
     """
-
     try:
         x = np.array(x, copy=copy)
     except TypeError:
@@ -115,7 +85,6 @@ def check_vector_list(x, copy=True, same_shape=False, real=True):
     tuple of 1d arrays
 
     """
-
     if isinstance(x, np.ndarray):
         x = (check_vector(x, copy=copy, real=real),)
     else:
@@ -129,8 +98,7 @@ def check_vector_list(x, copy=True, same_shape=False, real=True):
 
 
 def issorted(x, strict=False):
-    """
-    Tests if vector is sorted.
+    """Test if vector is sorted.
 
     Parameters
     ----------
@@ -157,7 +125,7 @@ def issorted(x, strict=False):
 
 def isascending(x, strict=False):
     """
-    Tests if values in vector are in ascending order.
+    Test if values in vector are in ascending order.
 
     Parameters
     ----------
@@ -183,8 +151,7 @@ def isascending(x, strict=False):
 
 
 def isdescending(x, strict=False):
-    """
-    Tests if values in vector are in descending order.
+    """Test if values in vector are in descending order.
 
     Parameters
     ----------
@@ -288,7 +255,7 @@ def _isdescending(x, strict):
 
 
 def partition_vector(v, **kwargs):
-    """Partitions vector into subvectors.
+    """Partition vector into subvectors.
 
     See :func:`partitions` for detailed help on keyword arguments.
 
@@ -384,7 +351,7 @@ def partitions(
 
 
 def blocks(nitems=1, blocksize=1):
-    """Iterates over a smaller blocks of a large number of items.
+    """Iterate over a smaller blocks of a large number of items.
 
     Parameters
     ----------
@@ -411,7 +378,6 @@ def blocks(nitems=1, blocksize=1):
             0.56265324,  0.58711927,  0.59307625,  0.58343556,  0.56201659]) #random
 
     """
-
     start = 0
     n = blocksize if blocksize < nitems else nitems
 
@@ -422,7 +388,7 @@ def blocks(nitems=1, blocksize=1):
 
 
 def slices(n, size=1, start=0, shift=None, step=None, strictsize=False):
-    """ Iterates over slices in a range.
+    """Iterate over slices in a range.
 
     Parameters
     ----------
@@ -460,7 +426,6 @@ def slices(n, size=1, start=0, shift=None, step=None, strictsize=False):
     [[5, 6, 7, 8, 9], [8, 9, 10, 11, 12], [11, 12, 13, 14, 15], [14, 15, 16, 17, 18]]
 
     """
-
     try:
         n = len(n)
     except TypeError:
@@ -491,7 +456,7 @@ def slices(n, size=1, start=0, shift=None, step=None, strictsize=False):
 
 
 def slicedarray(x, size=1, axis=0, **kwargs):
-    """Iterates over sub-arrays.
+    """Iterate over sub-arrays.
 
     Parameters
     ----------
@@ -522,7 +487,6 @@ def slicedarray(x, size=1, axis=0, **kwargs):
     slices
 
     """
-
     x = np.asarray(x)
 
     indices = [slice(None)] * x.ndim
@@ -533,7 +497,7 @@ def slicedarray(x, size=1, axis=0, **kwargs):
 
 
 def inrange(x, low=None, high=None, include_boundary=True):
-    """Tests if values are in range.
+    """Test if values are in range.
 
     The range is defined by a lower (`low`) and upper (`high`) boundary.
     A value of None indicates no boundary. If the upper boundary is
@@ -575,7 +539,6 @@ def inrange(x, low=None, high=None, include_boundary=True):
     array([ True,  True, False,  True,  True], dtype=bool)
 
     """
-
     x = np.asarray(x)
 
     if include_boundary:
@@ -602,7 +565,7 @@ def inrange(x, low=None, high=None, include_boundary=True):
 
 
 def natural_sort(iter, reverse=False):
-    """Sorts iterable with strings in natural order.
+    """Sort iterable with strings in natural order.
 
     Parameters
     ----------
@@ -614,7 +577,6 @@ def natural_sort(iter, reverse=False):
     sorted list
 
     """
-
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]
 
@@ -644,7 +606,6 @@ def randomize(a, axis=0, group=None, method="shuffle"):
         returns the randomized array.
 
     """
-
     if group is None:
         group = []
     elif not isinstance(group, (list, tuple)):
@@ -709,7 +670,6 @@ def map_dict(fcn, d, dest=None):
     dest
 
     """
-
     if dest is None:
         dest = d
 
@@ -725,7 +685,7 @@ def map_dict(fcn, d, dest=None):
 
 
 def map_dicts(fcn, *d, dest=None, missing=MissingValue, kind="union"):
-    """Apply function to aggregated values across multiple mappings
+    """Apply function to aggregated values across multiple mappings.
 
     Parameters
     ----------
@@ -744,7 +704,6 @@ def map_dicts(fcn, *d, dest=None, missing=MissingValue, kind="union"):
     dest
 
     """
-
     if dest is None:
         dest = d[0]
 
@@ -764,7 +723,7 @@ def map_dicts(fcn, *d, dest=None, missing=MissingValue, kind="union"):
 
 
 def zip_mappings(*mappings, kind="union", missing=MissingKey):
-    """Make an iterator that aggregates elements from mappings
+    """Make an iterator that aggregates elements from mappings.
 
     Parameters
     ----------
@@ -818,7 +777,6 @@ def dict_merge(*args, key="", merge=None):
     dict
 
     """
-
     if len(args) == 0:
         return {}
 

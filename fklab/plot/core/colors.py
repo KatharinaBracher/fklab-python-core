@@ -4,4 +4,4 @@ COLORS = {
     #'context:label': '#eeeeee',
 }
 
-install_custom_colors(COLORS, 'fklab')
+install_custom_colors(COLORS, "fklab")

@@ -1,19 +1,11 @@
 """
-=================================================================
+============================================
 Utilities (:mod:`fklab.plot.core.utilities`)
-=================================================================
+============================================
 
 .. currentmodule:: fklab.plot.core.utilities
 
 Plotting utilities
-
-.. autosummary::
-    :toctree: generated/
-
-    LinearOffsetCollection
-    RangeVector
-    ColumnView
-
 """
 import atexit as _atexit
 import pathlib as _pathlib
@@ -63,8 +55,7 @@ def install_custom_colors(colors, name=None):
 
 
 class LinearOffsetCollection:
-    """
-    Helper class to layout artists in axes.
+    """Helper class to layout artists in axes.
 
     Parameters
     ----------
@@ -158,8 +149,7 @@ class LinearOffsetCollection:
 
 
 class RangeVector:
-    """
-    A lazily computed range of values.
+    """Handle lazily computed range of values.
 
     Parameters
     ----------
@@ -205,7 +195,7 @@ class RangeVector:
 
 
 class ColumnView(object):
-    """A column view on a numpy 2d array
+    """Handle column view on a numpy 2d array.
 
     A ColumnView object represents a read-only column in a 2d numpy array.
     This class is needed for HDF5 data arrays that do not provide views,

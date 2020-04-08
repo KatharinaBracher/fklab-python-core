@@ -1,19 +1,10 @@
-"""
-=======================================
-Event class (:mod:`fklab.events.event`)
-=======================================
+"""Define the Event container.
 
 .. currentmodule:: fklab.events.event
 
 Provides a container class for a vector of event times. Event vectors
 can be created and manipulated through the class. Basic event algorithms
 are implemented as methods of the class.
-
-.. autosummary::
-    :toctree: generated/
-
-    Event
-
 """
 import numpy as np
 
@@ -52,19 +43,13 @@ class AttributeMixIn:
 
 
 class Event(AttributeMixIn):
-    """Event class.
-
-    Parameters
-    ----------
-    data : 1d array like
-        Vector of event times.
-    copy : bool
-        Create copy of input.
+    """Define the event class.
 
     Attributes
     ----------
+    data: numpy.array
 
-
+    copy: bool, opt
     """
 
     def __init__(self, data=[], copy=True):
@@ -81,8 +66,7 @@ class Event(AttributeMixIn):
 
     @classmethod
     def isevent(cls, x):
-        """Check if `x` is event-like"""
-
+        """Check if x is event-like."""
         if isinstance(x, Event):
             return True
 
@@ -137,11 +121,11 @@ class Event(AttributeMixIn):
         return self._data.__len__() == 0
 
     def truth(self):
-        """Test if one or more events are defined"""
+        """Test if one or more events are defined."""
         return self._data.__len__() > 0
 
     def __eq__(self, other):
-        """Test if both objects contain the same event data"""
+        """Test if both objects contain the same event data."""
         if not isinstance(other, Event):
             other = Event(other)
         return (self._data.shape == other._data.shape) and np.all(
@@ -149,7 +133,7 @@ class Event(AttributeMixIn):
         )
 
     def __ne__(self, other):
-        """Test if objects contain dissimilar event data"""
+        """Test if objects contain dissimilar event data."""
         if not isinstance(other, Event):
             other = Event(other)
         return (self._data.shape != other._data.shape) and np.any(
@@ -225,7 +209,7 @@ class Event(AttributeMixIn):
 
         Parameters
         ----------
-        *others : event vectors
+        \*others : event vectors
 
         Returns
         -------
@@ -242,10 +226,9 @@ class Event(AttributeMixIn):
 
         Parameters
         ----------
-        *others : event vectors
+        \*others : event vectors
 
         """
-
         if len(others) == 0:
             return self
 
@@ -262,7 +245,7 @@ class Event(AttributeMixIn):
         return self
 
     def count(self, x):
-        """Returns the cumulative count of events.
+        """Return the cumulative count of events.
 
         Parameters
         ----------
@@ -292,13 +275,12 @@ class Event(AttributeMixIn):
         Returns
         -------
         intervals : 1d array
-            the requested interval for each event in the input vector `events`.
+            the requested interval for each event in the input vector events.
             Intervals to events in the past have a negative sign.
         index : 1d array
             index of the event to which the interval was determined
 
         """
-
         return event_intervals(self._data, other=other, kind=kind)
 
     def bin(self, bins, kind="count"):
@@ -312,8 +294,8 @@ class Event(AttributeMixIn):
             end times.
         kind : {'count','binary','rate'}, optional
             determines what count to return for each bin. This can be the
-            number of events (`count`), the presence or absence of events
-            (`binary`) or the local event rate in the time bin (`rate`).
+            number of events (count), the presence or absence of events
+            (binary) or the local event rate in the time bin (rate).
 
         Returns
         -------
@@ -321,11 +303,10 @@ class Event(AttributeMixIn):
             event counts for each bin
 
         """
-
         return event_bin(self._data, bins, kind=kind)
 
     def meanrate(self, segments=None):
-        """Return mean rate of events
+        """Return mean rate of events.
 
         Parameters
         ----------
@@ -338,12 +319,11 @@ class Event(AttributeMixIn):
         -------
         rate : array
             Mean firing rate for each of the input event time vectors.
-            If `separate`=True, then a 2d array is returned, where `rate[i,j]`
-            represents the mean firing rate for event vector `i` and
-            segment `j`.
+            If separate=True, then a 2d array is returned, where rate[i,j]
+            represents the mean firing rate for event vector i and
+            segment j.
 
         """
-
         return event_rate(self._data, segments=segments, separate=False)
 
     def peri_event_histogram(
@@ -361,14 +341,12 @@ class Event(AttributeMixIn):
         ----------
         reference : 1d array or sequence of 1d arrays, optional
             vector(s) of sorted reference event times (in seconds).
-            If not provided, then `events` are used as a reference.
+            If not provided, then events are used as a reference.
         lags : 1d array, optional
             vector of sorted lag times that specify the histogram time bins
         segments : (n,2) array or Segment, optional
             array of time segment start and end times
-        normalization : {'none', 'coef', 'rate', 'conditional mean intensity',
-                         'product density', 'cross covariance',
-                         'cumulant density', 'zscore'}, optional
+        normalization : {'none', 'coef', 'rate', 'conditional mean intensity','product density', 'cross covariance','cumulant density', 'zscore'}, optional
             type of normalization
         unbiased : bool, optional
             only include reference events for which data is available at all lags
@@ -381,7 +359,6 @@ class Event(AttributeMixIn):
             peri-event histogram of shape (lags, events, references)
 
         """
-
         return peri_event_histogram(
             self._data,
             reference=reference,
@@ -414,7 +391,6 @@ class Event(AttributeMixIn):
             in burst, 2=event in burst, 3=last event in burst
 
         """
-
         return event_bursts(
             self._data, intervals=intervals, nevents=nevents, amplitude=amplitude
         )
@@ -426,7 +402,7 @@ class Event(AttributeMixIn):
         Parameters
         ----------
         bursts : 1d array, optional
-            burst indicator vector as returned by `event_bursts` function.
+            burst indicator vector as returned by event_bursts function.
             If not provided, it will be computed internally (parameters to
             the event_bursts function can be provided as extra keyword arguments)
         method : {'none', 'reduce', 'remove', 'isolate', 'isolatereduce'}
@@ -436,7 +412,6 @@ class Event(AttributeMixIn):
             events, 'isolatereduce': only keep first event in bursts.
 
         """
-
         events, idx = filter_bursts(self._data, bursts=bursts, method=method, **kwargs)
         self._data = events
         return self
@@ -450,24 +425,22 @@ class Event(AttributeMixIn):
         mininterval : scalar, optional
 
         """
-
         events, idx = filter_intervals(self._data, mininterval=mininterval)
         self._data = events
         return self
         # TODO: filter attributes
 
     def density(self, x=None, kernel="gaussian", bandwidth=0.1, rtol=0.05, **kwargs):
-        """Kernel density estimation.
+        """Estimate the Kernel density.
 
         Parameters
         ----------
         x : ndarray
-            Time points at which to evaluate density. If `x` is None, then
-            a KernelDensity object is returned.
+            Time points at which to evaluate density. If x is None, then a KernelDensity object is returned.
         kernel : str
         bandwidth : scalar
             Kernel bandwidth
-        rtol, **kwargs : extra arguments for sklearn.neighbor.kde.KernelDensity.
+        rtol, \*\*kwargs : extra arguments for sklearn.neighbor.kde.KernelDensity.
 
         Returns
         -------
@@ -503,7 +476,6 @@ class Event(AttributeMixIn):
         scalar
 
         """
-
         return float(
             complex_spike_index(self._data, spike_amp=amplitude, intervals=intervals)
         )
@@ -511,7 +483,7 @@ class Event(AttributeMixIn):
     def average(
         self, time, data, lags=None, fs=None, interpolation="linear", function=None
     ):
-        """Event triggered average.
+        """Average Event triggered.
 
         Parameters
         ----------
@@ -522,14 +494,16 @@ class Event(AttributeMixIn):
         lags : 2-element sequence, optional
             minimum and maximum lags over which to compute average
         fs : float, optional
-            sampling frequency of average. If not provided, will be calculated
-            from time vector `t`
+            sampling frequency of average. If not provided, will be calculated from time vector t
         interpolation : string or integer, optional
-            kind of interpolation. See `scipy.interpolate.interp1d` for more
-            information.
+            kind of interpolation.
         function : callable, optional
             function to apply to data samples (e.g. to compute something else
             than the average)
+
+        See Also
+        --------
+        scipy.interpolate.interp1d
 
         Returns
         -------

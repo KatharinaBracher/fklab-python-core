@@ -6,22 +6,6 @@ Event algorithms (:mod:`fklab.events.basic_algorithms`)
 .. currentmodule:: fklab.events.basic_algorithms
 
 Provides basic algorithms for event time vectors.
-
-.. autosummary::
-    :toctree: generated/
-
-    split_eventstrings
-    event_rate
-    event_bin
-    event_bursts
-    filter_bursts
-    filter_bursts_length
-    event_count
-    event_intervals
-    filter_intervals
-    complex_spike_index
-    peri_event_histogram
-
 """
 import math
 
@@ -72,7 +56,6 @@ def split_eventstrings(timestamp, eventstrings):
     dict
 
     """
-
     events = np.unique(eventstrings)
     d = {e: timestamp[eventstrings == e] for e in events}
 
@@ -93,7 +76,6 @@ def check_events(x, copy=True):
     1d array
 
     """
-
     return fklab.utilities.general.check_vector(x, copy=copy, real=True)
 
 
@@ -111,12 +93,11 @@ def check_events_list(x, copy=True):
     tuple of 1d arrays
 
     """
-
     return fklab.utilities.general.check_vector_list(x, copy=copy, real=True)
 
 
 def event_rate(events, segments=None, separate=False):
-    """Return mean rate of events
+    """Return mean rate of events.
 
     Parameters
     ----------
@@ -130,13 +111,10 @@ def event_rate(events, segments=None, separate=False):
     Returns
     -------
     rate : array
-        Mean firing rate for each of the input event time vectors.
-        If `separate`=True, then a 2d array is returned, where `rate[i,j]`
-        represents the mean firing rate for event vector `i` and
-        segment `j`.
+        Mean firing rate for each of the input event time vectors.  If separate=True, then a 2d array is returned, where
+        rate[i,j] represents the mean firing rate for event vector i and segment j
 
     """
-
     events = check_events_list(events)
     n = len(events)
 
@@ -177,8 +155,8 @@ def event_bin(events, bins, kind="count"):
         end times.
     kind : {'count','binary','rate'}, optional
         determines what count to return for each bin. This can be the
-        number of events (`count`), the presence or absence of events
-        (`binary`) or the local event rate in the time bin (`rate`).
+        number of events (count), the presence or absence of events
+        (binary) or the local event rate in the time bin (rate).
 
     Returns
     -------
@@ -186,7 +164,6 @@ def event_bin(events, bins, kind="count"):
         event counts for each bin
 
     """
-
     events = check_events_list(events)
 
     bins = check_segments(bins)
@@ -249,7 +226,6 @@ def event_bursts(events, intervals=None, nevents=None, marks=None):
         in burst, 2=event in burst, 3=last event in burst
 
     """
-
     events = check_events(events, copy=False)
     n = len(events)
 
@@ -343,7 +319,7 @@ def filter_bursts(events, bursts=None, method="none", **kwargs):
     events : 1d array
         vector of sorted event times (in seconds)
     bursts : 1d array, optional
-        burst indicator vector as returned by `event_bursts` function.
+        burst indicator vector as returned by event_bursts function.
         If not provided, it will be computed internally (parameters to
         the event_bursts function can be provided as extra keyword arguments)
     method : {'none', 'reduce', 'remove', 'isolate', 'isolatereduce'}
@@ -360,7 +336,6 @@ def filter_bursts(events, bursts=None, method="none", **kwargs):
         selection filter
 
     """
-
     if bursts is None:
         bursts = event_bursts(events, **kwargs)
 
@@ -386,10 +361,9 @@ def filter_bursts_length(bursts, nevents=None):
     Parameters
     ----------
     bursts : 1d array
-        burst indicator vector as returned by `event_bursts` function.
+        burst indicator vector as returned by event_bursts function.
     nevents : scalar or 2-element sequence
-        range of burst lengths that will be filtered out. If `nevents`
-        is a scalar, the range is [nevents, Inf].
+        range of burst lengths that will be filtered out. If nevents is a scalar, the range is [nevents, Inf].
 
     Returns
     -------
@@ -397,7 +371,6 @@ def filter_bursts_length(bursts, nevents=None):
         filtered burst indicator vector
 
     """
-
     if nevents is None:
         nevents = 2
 
@@ -425,7 +398,7 @@ def filter_bursts_length(bursts, nevents=None):
 
 
 def event_count(events, x=None):
-    """Cumulative event count.
+    """Calculate the cumulative event count.
 
     Parameters
     ----------
@@ -440,7 +413,6 @@ def event_count(events, x=None):
         event counts
 
     """
-
     events = check_events(events, copy=False)
     ne = len(events)
 
@@ -471,20 +443,17 @@ def event_intervals(events, other=None, kind="post"):
     other : 1d array, optional
         vector of sorted event times (in seconds)
     kind : {'pre', '<', 'post', '>', 'smallest', 'largest'}
-        type of interval to return. 'pre' or '<': interval to previous event,
-        'post' or '>': interval to next event, 'smallest' or 'largest':
+        type of interval to return. 'pre' or '<': interval to previous event,'post' or '>': interval to next event, 'smallest' or 'largest':
         smallest/largest of the intervals to the previous and next events.
 
     Returns
     -------
     intervals : 1d array
-        the requested interval for each event in the input vector `events`.
-        Intervals to events in the past have a negative sign.
+        the requested interval for each event in the input vector events. Intervals to events in the past have a negative sign.
     index : 1d array
         index of the event to which the interval was determined
 
     """
-
     events = check_events(events, copy=False)
     n = len(events)
 
@@ -577,7 +546,6 @@ def filter_intervals(events, mininterval=0.003):
         index into original vector of all removed events
 
     """
-
     events = check_events(events, copy=True)
     d = np.diff(events)
     idx = np.flatnonzero(d < mininterval) + 1
@@ -605,7 +573,6 @@ def complex_spike_index(spike_times, spike_amp=None, intervals=None):
         vectors
 
     """
-
     if intervals is None:
         intervals = [0.003, 0.015]
 
@@ -891,29 +858,30 @@ def peri_event_histogram(
     ----------
     events : 1d array or sequence of 1d arrays
         vector(s) of sorted event times (in seconds)
+
     reference : 1d array or sequence of 1d arrays, optional
-        vector(s) of sorted reference event times (in seconds).
-        If not provided, then `events` are used as a reference.
+        vector(s) of sorted reference event times (in seconds). If not provided, then events are used as a reference.
+
     lags : 1d array, optional
         vector of sorted lag times that specify the histogram time bins
+
     segments : (n,2) array or Segment, optional
         array of time segment start and end times
-    normalization : {'none', 'coef', 'rate', 'conditional mean intensity',
-                     'product density', 'cross covariance', 'standard cross covariance',
-                     'cumulant density', 'zscore'}, optional
+
+    normalization : {'none', 'coef', 'rate', 'conditional mean intensity', 'product density', 'cross covariance', 'standard cross covariance', 'cumulant density', 'zscore'}, optional
         type of normalization
+
     unbiased : bool, optional
         only include reference events for which data is available at all lags
+
     remove_zero_lag : bool, optional
         remove zero lag event counts
 
     Returns
     -------
-    3d array
-        peri-event histogram of shape (lags, events, references)
+    3d array: peri-event histogram of shape (lags, events, references)
 
     """
-
     events = check_events_list(events, copy=False)
 
     if reference is None:
@@ -1035,7 +1003,7 @@ def peri_event_histogram(
 
 
 def spike_time_tiling_coefficient(a, b, dt=0.1, epochs=None):
-    """Compute spike time tiling coefficient
+    """Compute spike time tiling coefficient.
 
     This computes a measure of correlation between two spike
     trains. The measure is not dependent on firing rate. It was
@@ -1057,7 +1025,6 @@ def spike_time_tiling_coefficient(a, b, dt=0.1, epochs=None):
     float
 
     """
-
     a = np.sort(np.asarray(a).ravel())
     b = np.sort(np.asarray(b).ravel())
 
@@ -1112,24 +1079,31 @@ def event_average(
     ----------
     events : 1d array
         vector of sorted event times (in seconds)
+
     t : 1d array
         vector of sample times for data array
+
     data : ndarray
         array of data samples. First dimension should be time.
+
     lags : 2-element sequence, optional
         minimum and maximum lags over which to compute average
+
     fs : float, optional
-        sampling frequency of average. If not provided, will be calculated
-        from time vector `t`
+        sampling frequency of average. If not provided, will be calculated from time vector t
+
     interpolation : string or integer, optional
-        kind of interpolation. See `scipy.interpolate.interp1d` for more
-        information.
+        kind of interpolation.
+
     method : {'fast'}, optional
-        method for calculating event triggered average. Currently, only
-        the 'fast' method is implemented.
+        method for calculating event triggered average. Currently, only the 'fast' method is implemented.
+
     function : callable, optional
-        function to apply to data samples (e.g. to compute something else
-        than the average)
+        function to apply to data samples (e.g. to compute something else than the average)
+
+    See Also
+    --------
+    scipy.interpolate.interp1d
 
     Returns
     -------
@@ -1137,7 +1111,6 @@ def event_average(
         event triggered average of data
 
     """
-
     events = check_events(events, copy=False)
 
     if lags is None:

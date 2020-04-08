@@ -7,11 +7,6 @@ Open Ephys (:mod:`fklab.plot.openephys.openephys`)
 
 Convenience functions for plotting open ephys data
 
-.. autosummary::
-    :toctree: generated/
-
-    plot_recording
-
 """
 import h5py
 import matplotlib.pyplot as plt
@@ -57,7 +52,6 @@ def plot_recording(
     LinearOffsetCollection and ScrollPanZoom objects
 
     """
-
     f = h5py.File(filename, mode="r")
 
     if channels is None:

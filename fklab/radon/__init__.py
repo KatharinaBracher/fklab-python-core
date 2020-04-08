@@ -8,11 +8,9 @@ Radon transform (:mod:`fklab.radon`)
 Radon transform functions and line fitting.
 
 .. automodule:: fklab.radon.radon
-    
-"""
 
+"""
+from . import radon
 from .radon import *
 
-from . import radon
-
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith("_")]

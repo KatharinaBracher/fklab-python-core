@@ -7,14 +7,6 @@ Multi-rate functions (:mod:`fklab.signals.multirate.multirate`)
 
 Functions to increase or decrease a signal's sampling rate.
 
-.. autosummary::
-    :toctree: generated/
-
-    upsample
-    interp
-    interp_time_vector
-    decimate
-    resample
 
 """
 from fklab.version._core_version._version import __version__
@@ -43,7 +35,6 @@ def upsample(x, factor, axis=-1):
     ndarray
 
     """
-
     x = np.asarray(x)
 
     shape = list(x.shape)
@@ -91,7 +82,6 @@ def interp(x, factor, axis=-1, L=4, alpha=0.5, window="blackman"):
     ndarray
 
     """
-
     # upsample data
     y = upsample(x, factor, axis=axis)
 
@@ -160,7 +150,6 @@ def interp_time_vector(t, dt, factor):
     1d array
 
     """
-
     ts = np.arange(factor).reshape(1, factor) * dt / factor
     ts = ts + t.reshape(t.size, 1)
     ts = ts.flatten()

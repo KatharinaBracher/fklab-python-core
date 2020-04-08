@@ -6,16 +6,12 @@ Information (:mod:`fklab.statistics.information.information`)
 .. currentmodule:: fklab.statistics.information.information
 
 Information theoretic functions.
-
-.. autosummary::
-    :toctree: generated/
-
-    spatial_information
-
 """
 import numpy as np
 
 from fklab.version._core_version._version import __version__
+
+__all__ = ["spatial_information"]
 
 
 def spatial_information(spike_rate, occupancy, units="bits/spike"):
@@ -32,7 +28,6 @@ def spatial_information(spike_rate, occupancy, units="bits/spike"):
     scalar or list of scalars
 
     """
-
     if not isinstance(spike_rate, (list, tuple)):
         spike_rate = [spike_rate]
 

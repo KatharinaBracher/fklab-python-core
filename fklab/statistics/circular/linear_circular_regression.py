@@ -7,11 +7,6 @@ Circular Linear regression (:mod:`fklab.statistics.circular.linear_circular_regr
 
 regression tool
 
-.. autosummary::
-    :toctree: generated/
-
-    linear_circular_regression
-    CircularLinearRegression
 """
 import numba
 import numpy as np
@@ -28,7 +23,7 @@ __all__ = ["CircularLinearRegression", "linear_circular_regression"]
 
 
 class CircularLinearRegression(BaseEstimator):
-    """ Circular Linear Regression.
+    """Circular Linear Regression class used in combination with scikit-learn tools.
 
     Parameters
     ----------
@@ -49,7 +44,7 @@ class CircularLinearRegression(BaseEstimator):
         self.regularization = regularization
 
     def fit(self, X, y):
-        """A reference implementation of a fitting function.
+        """Follow the reference implementation of a fitting function.
 
         Parameters
         ----------
@@ -63,7 +58,6 @@ class CircularLinearRegression(BaseEstimator):
         self : object
             Returns self.
         """
-
         X, y = check_X_y(X, y, accept_sparse=True)
 
         self.coef_, self.r_, *_ = linear_circular_regression(
@@ -91,11 +85,13 @@ class CircularLinearRegression(BaseEstimator):
         return r2
 
     def predict(self, X):
-        """ Predicting function.
+        """Predicting function.
+
         Parameters
         ----------
         X : {array-like, sparse matrix}, shape (n_samples, 1)
             The training input samples.
+
         Returns
         -------
         y : ndarray, shape (n_samples,)
@@ -132,7 +128,7 @@ def linear_circular_regression(
     regularization=0.0,
     strategy="best1bin",
 ):
-    """Linear-circular regression.
+    """Compute the Linear-circular regression.
 
     Computes the regression of circular variable *theta* on linear regressor
     *x*. The model is: theta = A + Bx modulus 2pi. The function will calculate
@@ -178,7 +174,6 @@ def linear_circular_regression(
         Residuals.
 
     """
-
     # check arguments
 
     x = np.asarray(x).ravel()

@@ -1,7 +1,5 @@
 """
-==================================
-YAML (:mod:`fklab.utilities.yaml`)
-==================================
+
 
 .. currentmodule:: fklab.utilities.yaml
 

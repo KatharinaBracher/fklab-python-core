@@ -6,30 +6,6 @@ MWL file import (:mod:`fklab.io.mwl`)
 .. currentmodule:: fklab.io.mwl
 
 Classes and function to read MWL data files used in the Wilson Lab at MIT.
-
-Functions
-=========
-
-.. autosummary::
-    :toctree: generated/
-
-    MwlOpen
-    MwlTimestamp2Seconds
-    MwlSeconds2Timestamp
-
-File classes
-============
-
-.. autosummary::
-    :toctree: generated/
-
-    MwlFileDiode
-    MwlFileEeg
-    MwlFileEvent
-    MwlFileFeature
-    MwlFileCluster
-    MwlFileWaveform
-
 """
 import ast
 import os
@@ -128,8 +104,7 @@ _mwl_type_map_inverse = dict((v, k) for k, v in _mwl_type_map.items())
 
 # functions for conversion between numpy dtype and header Fields parameter
 def mwl2dtype(s):
-    """convert a fields string from mwl file header to numpy dtype."""
-
+    """Convert a fields string from mwl file header to numpy dtype."""
     # assume new style field descriptors: FIELD1 [tab] FIELD2 [tab] FIELD3
     # where FIELDn: name,type_code,type_size,shape
     # where shape: integer>0 or [p,q,r] or [p q r]
@@ -162,7 +137,6 @@ def mwl2dtype(s):
 
 def dtype2str(dt, name=None):
     """Convert simple dtype to mwl field string."""
-
     if dt.fields is not None:
         raise ValueError
 
@@ -193,7 +167,7 @@ def dtype2str(dt, name=None):
 
 
 def dtype2mwl(dt):
-    """convert numpy dtype to fields string in mwl file header."""
+    """Convert numpy dtype to fields string in mwl file header."""
     s = []
 
     if dt.fields is None:
@@ -240,7 +214,7 @@ def filter2code(f):
 
 # utility functions
 def header2filetype(h):
-    """Determines the MWL file type from file header.
+    """Determine the MWL file type from file header.
 
     The type is determined as follows: If the header contains the
     parameter 'File Format', then the file type is the value of this
@@ -252,7 +226,6 @@ def header2filetype(h):
     'waveform', 'diode', 'feature', 'cluster', 'clbound', 'ad', 'unknown'
 
     """
-
     if h.has_parameter("File Format"):
         return h["File Format"]
 
@@ -304,7 +277,7 @@ def MwlSeconds2Timestamp(time):
 
 
 def ad_bit_volts(gain=1):
-    """Computes bit-to-volt scaling factor."""
+    """Compute bit-to-volt scaling factor."""
     vrange = 10.0  # amplifier voltage range
     nlevels = 2048  # number of bit levels (12)
 
@@ -315,8 +288,7 @@ def ad_bit_volts(gain=1):
 
 # functions and class to deal with mwl file text headers
 def readheader(filename):
-    """Reads text header of mwl file."""
-
+    """Read text header of mwl file."""
     header_lines = []
     header_size = 0
     magic_start = b"%%BEGINHEADER"
@@ -362,8 +334,7 @@ def readheader(filename):
 
 
 def parseheader(h):
-    """Parses parameter/value pairs in mwl text header."""
-
+    """Parse parameter/value pairs in mwl text header."""
     pattern = re.compile(
         "(?P<param>[A-Za-z]([A-Za-z0-9 \[\]_.])*):( |\t)+(?P<value>[A-Za-z0-9 \-_:;/,.\t()\[\]]+)"
     )
@@ -418,7 +389,7 @@ class mwlheader(header):
 
 # classes that represent mwl data files
 class MwlFileBase(object):
-    """Base class for MWL data files."""
+    """Define base class for MWL data files."""
 
     _expected_file_type = None
     _default_extension = "mwl"
@@ -519,7 +490,7 @@ class MwlFileBase(object):
 
 
 class MwlFileFixedRecord(MwlFileBase):
-    """Base class for MWL data files with fixed record sizes."""
+    """Define base class for MWL data files with fixed record sizes."""
 
     _expected_record_dtype = None
     _cast_record_dtype = None
@@ -600,7 +571,7 @@ class MwlFileFixedRecord(MwlFileBase):
 
 
 class MwlFileDiode(MwlFileFixedRecord):
-    """MWL diode file (*.p)"""
+    """MWL diode file (.p)."""
 
     _expected_record_dtype = np.dtype(
         [
@@ -640,7 +611,7 @@ class MwlFileDiode(MwlFileFixedRecord):
 
 
 class MwlFileEeg(MwlFileFixedRecord):
-    """MWL eeg file (*.eeg)"""
+    """Read MWL eeg file (.eeg)."""
 
     _expected_file_type = "eeg"
     _default_extension = "eeg"
@@ -809,7 +780,7 @@ class MwlFileEeg(MwlFileFixedRecord):
 
 
 class MwlFileEvent(MwlFileFixedRecord):
-    """MWL event file (*.evt)"""
+    """Read MWL event file (.evt)."""
 
     _expected_file_type = "event"
     _default_extension = "evt"
@@ -854,7 +825,7 @@ class MwlFileEvent(MwlFileFixedRecord):
 
 
 class MwlFileFeature(MwlFileFixedRecord):
-    """MWL spike feature file (*.pxyabw)"""
+    """Read MWL spike feature file (.pxyabw)."""
 
     _expected_file_type = "feature"
     _default_extension = "pxyabw"
@@ -867,7 +838,7 @@ class MwlFileFeature(MwlFileFixedRecord):
 
 
 class MwlFileCluster(MwlFileFixedRecord):
-    """MWL spike cluster file (*.cluster)"""
+    """MWL spike cluster file (.cluster)."""
 
     _expected_file_type = "cluster"
     _default_extension = "cluster"
@@ -880,7 +851,7 @@ class MwlFileCluster(MwlFileFixedRecord):
 
 
 class MwlFileWaveform(MwlFileFixedRecord):
-    """MWL spike waveform file (*.tt)"""
+    """Read MWL spike waveform file (.tt)."""
 
     _expected_file_type = "waveform"
     _default_extension = "tt"
@@ -1058,7 +1029,7 @@ class MwlFileWaveform(MwlFileFixedRecord):
 
 # convience function for opening mwl files
 def MwlOpen(filename="", *args, **kwargs):
-    """Open MWL data file.
+    r"""Open MWL data file.
 
     This function will determine the type of MWL data file and
     construct the appropriate MWL file object. See `MwlFileWaveform`,
@@ -1068,11 +1039,10 @@ def MwlOpen(filename="", *args, **kwargs):
     Parameters
     ----------
     filename : str
-    *args, **kwargs : additional arguments that are passed to MWL
+    \*args, \*\*kwargs : additional arguments that are passed to MWL
                       file class constructor.
 
     """
-
     hdr = mwlheader.fromfile(filename)
     filetype = header2filetype(hdr)
 

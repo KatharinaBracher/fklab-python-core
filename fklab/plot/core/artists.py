@@ -7,17 +7,6 @@ Artists (:mod:`fklab.plot.core.artists`)
 
 Custom matplotlib artists
 
-.. autosummary::
-    :toctree: generated/
-
-    FastRaster
-    FastLine
-    FastSpectrogram
-    StaticScaleBar
-    AnchoredScaleBar
-    AxesMessage
-    PositionTimeStrip
-
 """
 from fklab.version._core_version._version import __version__
 
@@ -54,10 +43,9 @@ import scipy.interpolate
 
 
 class FastSpectrogram(AxesImage):
-    """
-    Matplotlib image artist that represents a spectrogram.
+    """Create Matplotlib image artist that represents a spectrogram.
 
-    Parameters
+    Attributes
     ----------
     x : 1d array like
         Signal for which to compute the spectrogram.
@@ -283,8 +271,7 @@ class FastSpectrogram(AxesImage):
 
 
 class FastRaster(AxesImage):
-    """
-    Matplotlib image artist that represents an event raster plot.
+    """Create Matplotlib image artist that represents an event raster plot.
 
     Parameters
     ----------
@@ -389,8 +376,7 @@ class FastRaster(AxesImage):
 
 
 class FastLine(Line2D):
-    """
-    Line class that supports automatic downsampling.
+    """Create Line class that supports automatic downsampling.
 
     Parameters
     ----------
@@ -398,7 +384,7 @@ class FastLine(Line2D):
         Number of samples per pixel
     random : bool
         Perform random downsampling of signal
-    *args, **kwargs : Matplotlib Line2D arguments
+    \*args, \*\*kwargs : Matplotlib Line2D arguments
 
     """
 
@@ -482,8 +468,7 @@ class FastLine(Line2D):
 
 
 class StaticScaleBar(matplotlib.artist.Artist):
-    """
-    Fixed length scale bar with label that adapts the axes limits.
+    """Create Fixed length scale bar with label that adapts the axes limits.
 
     Parameters
     ----------
@@ -504,7 +489,7 @@ class StaticScaleBar(matplotlib.artist.Artist):
         Extra properties for the scale bar line.
     textprop : dict
         Extra properties for the scale bar label.
-    *args, **kwargs : extra arguments for Artist
+    \*args, \*\*kwargs : extra arguments for Artist
 
     """
 
@@ -695,8 +680,7 @@ class StaticScaleBar(matplotlib.artist.Artist):
 
 
 class AnchoredScaleBar(AnchoredOffsetbox):
-    """
-    Set of scale bars that match the size of the ticks of the plot.
+    """Set of scale bars that match the size of the ticks of the plot.
 
     Draws a horizontal and/or vertical bar with the size in data coordinates
     of the give axes. A label will be drawn underneath (center-aligned).
@@ -777,8 +761,7 @@ class AnchoredScaleBar(AnchoredOffsetbox):
 
 
 class AxesMessage(matplotlib.artist.Artist):
-    """
-    Display message in Matplotlib axes.
+    """Display message in Matplotlib axes.
 
     Parameters
     ----------
@@ -787,7 +770,7 @@ class AxesMessage(matplotlib.artist.Artist):
     color : Matplotlib color
     textprop : dict
         Extra properties for message text.
-    *args, **kwargs : extra arguments for Artist.
+    \*args, \*\*kwargs : extra arguments for Artist.
 
     Methods
     -------
@@ -928,7 +911,7 @@ class AxesMessage(matplotlib.artist.Artist):
 
 
 class PositionTimeStrip(matplotlib.artist.Artist):
-    """Matplotlib artist that plots a time strip of 2D positions.
+    """Create Matplotlib artist that plots a time strip of 2D positions.
 
     Parameters
     ----------
@@ -940,8 +923,7 @@ class PositionTimeStrip(matplotlib.artist.Artist):
         Region of interest in space. Should be in form: [[xmin, xmax], [ymin, ymax]]
     n : int
         Number of plots in strip
-    *args, **kwargs : extra arguments to Artist base class
-
+    \*args, \*\*kwargs : extra arguments to Artist base class
 
     """
 

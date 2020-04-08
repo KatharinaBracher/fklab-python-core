@@ -7,28 +7,6 @@ Segment algorithms (:mod:`fklab.segments.basic_algorithms`)
 
 Provides basic algorithms for lists of segments.
 
-.. autosummary::
-    :toctree: generated/
-
-    segment_sort
-    segment_has_overlap
-    segment_remove_overlap
-    segment_invert
-    segment_exclusive
-    segment_union
-    segment_difference
-    segment_intersection
-    segment_scale
-    segment_concatenate
-    segment_contains
-    segment_count
-    segment_overlap
-    segment_asindex
-    segment_join
-    segment_split
-    segment_applyfcn
-    segment_uniform_random
-
 """
 import operator
 
@@ -74,7 +52,6 @@ def check_segments(x, copy=False):
     (n,2) array
 
     """
-
     try:
         x = np.array(x, copy=copy)
     except TypeError:
@@ -180,7 +157,6 @@ def segment_remove_overlap(segments, strict=True):
     segments without overlap
 
     """
-
     segments = check_segments(segments, copy=False)
 
     n = segments.shape[0]
@@ -240,7 +216,7 @@ def segment_exclusive(segments, *others):
     Parameters
     ----------
     segments : segment array
-    *others : segment arrays
+    \*others : segment arrays
 
     Returns
     -------
@@ -264,14 +240,13 @@ def segment_union(*args):
 
     Parameters
     ----------
-    *args : segment arrays
+    \*args : segment arrays
 
     Returns
     -------
     segments
 
     """
-
     data = np.zeros((0, 2))
 
     for obj in args:
@@ -283,11 +258,11 @@ def segment_union(*args):
 
 
 def segment_difference(*args):
-    """Difference between segments (logical XOR).
+    """Compute difference between segments (logical XOR).
 
     Parameters
     ----------
-    *args : segment arrays
+    \*args : segment arrays
 
     Returns
     -------
@@ -299,11 +274,11 @@ def segment_difference(*args):
 
 
 def segment_intersection(*args):
-    """Intersection between segments (logical AND).
+    """Compute intersection between segments (logical AND).
 
     Parameters
     ----------
-    *args : segment arrays
+    \*args : segment arrays
 
     Returns
     -------
@@ -391,7 +366,7 @@ def segment_concatenate(*args):
 
     Parameters
     ----------
-    *args : segment arrays
+    \*args : segment arrays
 
     Returns
     -------
@@ -408,36 +383,30 @@ def segment_concatenate(*args):
 def segment_contains(segment, x, issorted=True, expand=None):
     """Test if values are contained in segments.
 
-    Segments are considered left closed and right open intervals. So,
-    a value x is contained in a segment if start<=x and x<stop.
+    Segments are considered left closed and right open intervals. So,a value x is contained in a segment if start<=x and x<stop.
 
     Parameters
     ----------
     segment : segment array
     x : 1d array
     issorted : bool
-        Assumes vector `x` is sorted and will not sort it internally.
-        Note that even if `issorted` is False, the third output argument
+        Assumes vector x is sorted and will not sort it internally. Note that even if issorted is False, the third output argument
         will still return indices into the (internally) sorted vector.
     expand : bool
-        Will expand the last output to full index arrays into 'x' for
-        each segment. The default is True if `issorted` is False and
-        vice versa. Note that for non-sorted data (`issorted` is False) and
-        `expand`=False, the last output argument will contain start and stop
-        indices into the (internally) sorted input array.
+        Will expand the last output to full index arrays into 'x' for each segment. The default is True if issorted is False and
+        vice versa. Note that for non-sorted data (issorted is False) and expand=False, the last output argument will
+        contain start and stop indices into the (internally) sorted input array.
 
     Returns
     -------
     ndarray
-        True for each value in `x` that is contained within any segment.
+        True for each value in x that is contained within any segment.
     ndarray
-        For each segment the number of values in `x` that it contains.
+        For each segment the number of values in x that it contains.
     ndarray
-        For each segment, the start and end indices of values in SORTED
-        vector `x` that are contained within that segment.
+        For each segment, the start and end indices of values in SORTED vector x that are contained within that segment.
 
     """
-
     x = np.array(x).ravel()
 
     if expand is None:
@@ -534,10 +503,9 @@ def segment_count(segments, x):
     Returns
     -------
     ndarray
-        For each value in `x` the number of segments that contain that value.
+        For each value in x the number of segments that contain that value.
 
     """
-
     segments = check_segments(segments, copy=False)
     x = np.array(x)
     x_shape = x.shape
@@ -565,14 +533,13 @@ def segment_count(segments, x):
 
 
 def segment_overlap(segments, other=None):
-    """Returns absolute and relative overlaps between segments.
+    """Return absolute and relative overlaps between segments.
 
     Parameters
     ----------
     segments : segment array
     other : segment array, optional
-        If `other` is not provided, then overlaps within `segments` are
-        analyzed.
+        If other is not provided, then overlaps within segments are analyzed.
 
     Returns
     -------
@@ -584,7 +551,6 @@ def segment_overlap(segments, other=None):
         overlap relative to duration of second segment
 
     """
-
     segments = check_segments(segments, copy=False)
 
     if other is None:
@@ -642,8 +608,7 @@ def segment_join(segments, gap=0):
     ----------
     segments : segment array
     gap : scalar
-        Segments with an interval equal to or smaller than `gap` will be
-        merged.
+        Segments with an interval equal to or smaller than gap will be merged.
 
     Returns
     -------
@@ -671,9 +636,8 @@ def segment_split(segments, size=1, overlap=0, join=True, tol=1e-7):
     overlap : scalar
         Relative overlap (>=0. and <1.) between split segments.
     join : bool
-        Join all split segments into a single segment array. If `join` is
-        False, a list is returned with split segments for each original
-        segment separately.
+        Join all split segments into a single segment array. If join is False, a list is returned with split segments
+        for each original segment separately.
     tol : scalar
         Tolerance for determining number of bins.
 
@@ -733,10 +697,9 @@ def segment_applyfcn(segments, x, *args, **kwargs):
     default : any
         Default value for segments that do not contain data (only used
         when separate is True)
-    *args : ndarray-like
-        Data arrays that are segmented (along first dimension) according
-        to the corresponding values in `x` that lie within the segments,
-        and passed to `function`.
+    \*args : ndarray-like
+        Data arrays that are segmented (along first dimension) according to the corresponding values in x that lie
+        within the segments, and passed to function.
 
     Returns
     -------
@@ -744,7 +707,6 @@ def segment_applyfcn(segments, x, *args, **kwargs):
         Result of applying function to segmented data.
 
     """
-
     b, nn, b2 = segment_contains(segments, x)
 
     separate = bool(kwargs.get("separate", False))
@@ -789,7 +751,6 @@ def segment_uniform_random(segments, size=(1,)):
     ndarray
 
     """
-
     segments = check_segments(segments, copy=False)
 
     # calculate segment durations and cumulative sum

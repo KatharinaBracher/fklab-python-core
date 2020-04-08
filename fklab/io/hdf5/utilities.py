@@ -16,7 +16,6 @@ def map_to_hdf5(fid, data):
         will be traversed and keys are converted to hdf5 groups.
 
     """
-
     for k, v in data.items():
         if isinstance(v, collections.Mapping):
             group = fid.create_group(k)

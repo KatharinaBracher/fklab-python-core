@@ -7,13 +7,7 @@ Nlx_extract_video_image (:mod:`fklab.io.neuralynx.nlx_extract_video_image`)
 
 Processing functions for neuralinx video/images
 
-.. autosummary::
-    :toctree: generated/
 
-    get_nlx_video_time_lut
-    get_nlx_video_time
-    nlx_extract_video_image
-    extract_video_image
 """
 
 __all__ = [
@@ -31,8 +25,7 @@ import scipy.interpolate
 
 
 def get_nlx_video_time_lut(path, target="VT1"):
-    """ load timesample from a time_lut.npy file or open a video file and extract timesample from it
-        transform it in second
+    """Load timesample from a time_lut.npy file or open a video file and extract timesample from it and transform it in second.
 
     Parameters
     ----------
@@ -79,7 +72,9 @@ def get_nlx_video_time_lut(path, target="VT1"):
 
 
 def get_nlx_video_time(path, t, target="VT1"):
-    """ Construct or load the summary file (video_summary.yaml): for each video file with a smi file :
+    """Construct or load the summary file (video_summary.yaml).
+
+    for each video file with a smi file :
     information gathered are: path, basename, video filename, caption filename, time_lut filename, start time and stop time
 
     Parameters
@@ -162,7 +157,7 @@ def get_nlx_video_time(path, t, target="VT1"):
 
 
 def nlx_extract_video_image(path, t, outputfile, overwrite=False):
-    """ Manage which file and if the video time sample exist, before extracting the video
+    """Manage which file and if the video time sample exist, before extracting the video.
 
     Parameters
     ----------
