@@ -111,6 +111,9 @@ def construct_filter(band, fs=1.0, transition_width="25%", attenuation=60):
         raise ValueError("Invalid frequency band")
     else:
         pass_zero = np.diff(band) < 0
+        if len(pass_zero) == 1:
+            pass_zero = pass_zero[0]
+
         if pass_zero:
             band = band[::-1]
         band_width = np.diff(band)
