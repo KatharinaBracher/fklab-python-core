@@ -417,7 +417,7 @@ class _DataProxy_MemoryMap(object):
                     t[0] = unique_inverse
                     t[c.sample_dim() + 1] = sub_indices
 
-                    tmp = tmp[t]
+                    tmp = tmp[tuple(t)]
 
                     result.append(c.process_samples(tmp))
 
