@@ -716,6 +716,8 @@ class AnchoredScaleBar(AnchoredOffsetbox):
         pad=0.1,
         borderpad=0.1,
         sep=2,
+        color='black',
+        lw=1.5,
         prop=None,
         **kwargs
     ):
@@ -732,9 +734,9 @@ class AnchoredScaleBar(AnchoredOffsetbox):
         bars = AuxTransformBox(transform)
 
         if sizex:
-            bars.add_artist(Rectangle((0, 0), sizex, 0, fc="none"))
+            bars.add_artist(Rectangle((0, 0), sizex, 0, fc="none", color=color, lw=lw))
         if sizey:
-            bars.add_artist(Rectangle((0, 0), 0, sizey, fc="none"))
+            bars.add_artist(Rectangle((0, 0), 0, sizey, fc="none", color=color, lw=lw))
 
         if sizex and labelx:
             bars = VPacker(
