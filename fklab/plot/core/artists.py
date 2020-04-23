@@ -701,6 +701,12 @@ class AnchoredScaleBar(AnchoredOffsetbox):
         Separation between labels and bars in points.
     prop : Matplotlib FontProperties
         Font property.
+    color: matplotlib color
+        Bars color
+    lw: scalar
+        Bars width
+    color_txt: matplotlib color
+        Labels color
     **kwargs : additional arguments passed to base class constructor
 
     """
@@ -716,6 +722,9 @@ class AnchoredScaleBar(AnchoredOffsetbox):
         pad=0.1,
         borderpad=0.1,
         sep=2,
+        color='black',
+        lw=1.5,
+        color_txt='black',
         prop=None,
         **kwargs
     ):
@@ -732,20 +741,23 @@ class AnchoredScaleBar(AnchoredOffsetbox):
         bars = AuxTransformBox(transform)
 
         if sizex:
-            bars.add_artist(Rectangle((0, 0), sizex, 0, fc="none"))
+            bars.add_artist(Rectangle((0, 0), sizex, 0, fc="none", color=color, lw=lw))
         if sizey:
-            bars.add_artist(Rectangle((0, 0), 0, sizey, fc="none"))
+            bars.add_artist(Rectangle((0, 0), 0, sizey, fc="none", color=color, lw=lw))
 
         if sizex and labelx:
             bars = VPacker(
-                children=[bars, TextArea(labelx, minimumdescent=False)],
+                children=[bars, TextArea(labelx, minimumdescent=False, textprops=dict(color=color_txt))],
                 align="center",
                 pad=0,
                 sep=sep,
             )
         if sizey and labely:
             bars = HPacker(
-                children=[TextArea(labely), bars], align="center", pad=0, sep=sep
+                children=[TextArea(labely, textprops=dict(color=color_txt)), bars],
+                align="center",
+                pad=0,
+                sep=sep
             )
 
         AnchoredOffsetbox.__init__(
