@@ -50,6 +50,7 @@ standard_frequency_bands = {
     "gamma_high": [60.0, 140.0],
     "ripple": [140.0, 225.0],
     "mua": [300.0, 2000.0],
+    "spikes" : [500., 5000.]
 }
 
 
