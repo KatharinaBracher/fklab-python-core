@@ -50,7 +50,7 @@ standard_frequency_bands = {
     "gamma_high": [60.0, 140.0],
     "ripple": [140.0, 225.0],
     "mua": [300.0, 2000.0],
-    "spikes" : [500., 5000.]
+    "spikes": [500.0, 5000.0],
 }
 
 
@@ -527,6 +527,7 @@ def compute_envelope(
     axis=-1,
     fs=1.0,
     isfiltered=False,
+    median_filter=None,
     filter_options={},
     smooth_options={},
     pad=True,
@@ -546,6 +547,9 @@ def compute_envelope(
     fs : scalar, optional
         sampling frequency
     isfiltered : bool, optional
+    median_filter : None or scalar
+        length of median filter window (in seconds) for removing slow components
+        in ripple envelope. Can be None for no filtering.
     filter_options : dict, optional
         dictionary with options for filtering (if signal is not already filtered).
     smooth_options : dict, optional
@@ -572,7 +576,20 @@ def compute_envelope(
             raise ValueError("Please specify frequency band")
         filter_arg = dict(transition_width="25%", attenuation=60)
         filter_arg.update(filter_options)
-        envelope = apply_filter(signals, freq_band, axis=axis, fs=fs, **filter_arg)
+        envelope_init = apply_filter(signals, freq_band, axis=axis, fs=fs, **filter_arg)
+
+        if not median_filter is None:
+            # determine (odd) number of bins for filter
+            win_size = int(median_filter * fs)
+            if win_size % 2 == 0:
+                win_size = win_size + 1
+            series = pandas.Series(envelope_init).rolling(
+                window=win_size, center=True, min_periods=1
+            )
+            envelope = envelope_init - series.median()
+
+        else:
+            envelope = envelope_init
     else:
         envelope = signals
 
