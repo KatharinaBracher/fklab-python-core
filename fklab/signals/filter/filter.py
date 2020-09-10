@@ -199,7 +199,7 @@ def construct_high_pass_filter(cutoff, **kwargs):
     return construct_filter([float(cutoff), None], **kwargs)
 
 
-def apply_filter(signal, band, median_filter, fs=1.0, axis=-1, **kwargs):
+def apply_filter(signal, band, median_filter=None, fs=1.0, axis=-1, **kwargs):
     """Apply low/high/band-pass filter to signal.
 
     Parameters
@@ -207,7 +207,7 @@ def apply_filter(signal, band, median_filter, fs=1.0, axis=-1, **kwargs):
     signal : array
     band : str, scalar or 2-element sequence
         frequency band, either as a string, a scalar or [low,high] sequence.
-    median_filter : None or scalar
+    median_filter : None or scalar, optional
         length of median filter window (in seconds) for removing slow components
         in ripple envelope. Can be None for no filtering.
     fs : scalar, optional
@@ -610,7 +610,12 @@ def compute_envelope(
         filter_arg.update(filter_options)
 
         envelope = apply_filter(
-            signals, freq_band, median_filter, fs=fs, axis=axis, **filter_arg
+            signals,
+            freq_band,
+            median_filter=median_filter,
+            fs=fs,
+            axis=axis,
+            **filter_arg
         )
     else:
         envelope = signals
