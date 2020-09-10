@@ -29,6 +29,7 @@ __all__ = [
     "construct_low_pass_filter",
     "construct_high_pass_filter",
     "apply_filter",
+    "apply_median_filter",
     "apply_low_pass_filter",
     "apply_high_pass_filter",
     "inspect_filter",
