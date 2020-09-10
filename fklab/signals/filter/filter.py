@@ -198,7 +198,7 @@ def construct_high_pass_filter(cutoff, **kwargs):
     return construct_filter([float(cutoff), None], **kwargs)
 
 
-def apply_filter(signal, band, axis=-1, **kwargs):
+def apply_filter(signal, band, median_filter, fs=1.0, axis=-1, **kwargs):
     """Apply low/high/band-pass filter to signal.
 
     Parameters
@@ -206,14 +206,14 @@ def apply_filter(signal, band, axis=-1, **kwargs):
     signal : array
     band : str, scalar or 2-element sequence
         frequency band, either as a string, a scalar or [low,high] sequence.
+    median_filter : None or scalar
+        length of median filter window (in seconds) for removing slow components
+        in ripple envelope. Can be None for no filtering.
+    fs : scalar, optional
+        sampling frequency
     axis : scalar, optional
         axis along which to filter
-    fs : scalar
-        sampling frequency
-    transition_width : str or scalar
-        size of teransition between stop and pass bands
-    attenuation: scalar
-        stop-band attenuation in dB
+    kwargs: parameters for construct_filter
 
     See Also
     --------
@@ -225,7 +225,8 @@ def apply_filter(signal, band, axis=-1, **kwargs):
         filtered signal
 
     """
-    b = construct_filter(band, **kwargs)
+
+    b = construct_filter(band, fs=fs, **kwargs)
 
     if isinstance(signal, (tuple, list)):
         signal = [
@@ -235,7 +236,38 @@ def apply_filter(signal, band, axis=-1, **kwargs):
         signal = np.asarray(signal)
         signal = scipy.signal.filtfilt(b, 1.0, signal, axis=axis)
 
+    if not median_filter is None:
+        signal = apply_median_filter(signal, median_filter, fs)
+
     return signal
+
+
+def apply_median_filter(signal, median_filter, fs):
+    """Apply median filter to signal.
+
+    Parameters
+    ----------
+    signal : array
+    median_filter : scalar
+        length of median filter window (in seconds) for removing slow components
+        in ripple envelope.
+    fs : scalar
+        sampling frequency
+
+    Returns
+    -------
+    array
+        filtered signal
+
+    """
+
+    win_size = int(median_filter * fs)
+    if win_size % 2 == 0:
+        win_size = win_size + 1
+    series = pandas.Series(signal).rolling(window=win_size, center=True, min_periods=1)
+    signal_filtered = signal - series.median()
+
+    return signal_filtered
 
 
 @deprecated("Please use apply_filter instead.")
@@ -527,7 +559,6 @@ def compute_envelope(
     axis=-1,
     fs=1.0,
     isfiltered=False,
-    median_filter=None,
     filter_options={},
     smooth_options={},
     pad=True,
@@ -547,9 +578,6 @@ def compute_envelope(
     fs : scalar, optional
         sampling frequency
     isfiltered : bool, optional
-    median_filter : None or scalar
-        length of median filter window (in seconds) for removing slow components
-        in ripple envelope. Can be None for no filtering.
     filter_options : dict, optional
         dictionary with options for filtering (if signal is not already filtered).
     smooth_options : dict, optional
@@ -563,6 +591,7 @@ def compute_envelope(
     --------
     apply_filter
     construct_filter
+    apply_median_filter
     xfklab.signals.smooth.smooth1d
 
     Returns
@@ -574,22 +603,14 @@ def compute_envelope(
     if not isfiltered:
         if freq_band is None:
             raise ValueError("Please specify frequency band")
+
+        median_filter = filter_options.pop("median_filter", None)
         filter_arg = dict(transition_width="25%", attenuation=60)
         filter_arg.update(filter_options)
-        envelope_init = apply_filter(signals, freq_band, axis=axis, fs=fs, **filter_arg)
 
-        if not median_filter is None:
-            # determine (odd) number of bins for filter
-            win_size = int(median_filter * fs)
-            if win_size % 2 == 0:
-                win_size = win_size + 1
-            series = pandas.Series(envelope_init).rolling(
-                window=win_size, center=True, min_periods=1
-            )
-            envelope = envelope_init - series.median()
-
-        else:
-            envelope = envelope_init
+        envelope = apply_filter(
+            signals, freq_band, median_filter, fs=fs, axis=axis, **filter_arg
+        )
     else:
         envelope = signals
 
