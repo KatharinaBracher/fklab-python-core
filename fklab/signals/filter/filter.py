@@ -593,7 +593,7 @@ def compute_envelope(
     apply_filter
     construct_filter
     apply_median_filter
-    xfklab.signals.smooth.smooth1d
+    fklab.signals.smooth.smooth1d
 
     Returns
     -------
