@@ -140,7 +140,7 @@ def get_nlx_video_time(path, t, target="VT1"):
     else:
 
         with open(summary_file, "r") as f:
-            summary = yaml.load(f)
+            summary = yaml.safe_load(f)
 
     # TODO: Understand this part ---> What is happening here ??
     # reload timesample for each videofile and check if the time specified in input is in the timestample
@@ -173,7 +173,7 @@ def nlx_extract_video_image(path, t, outputfile, overwrite=False):
     """
     # TODO: Add message error ?
     if os.path.isfile(outputfile) and not overwrite:
-        return
+        raise (ValueError("The file exists and I don't have the right to overwrite it"))
 
     video_t, video = get_nlx_video_time(path, t)
     if video_t is None:
