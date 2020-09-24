@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6]
+### Added
+ - fklab.plot.core.artists: added options to set color and width of scalebar created with AnchoredScaleBar (Fred)
+ - fklab.signals.filter: add 'spikes' : [500., 5000.] to standard_frequency_bands. (JJ)
+ - fklab.sinals.filter: add median filter option in compute envelope - also available as a standalone filter function (Lies)
+
+### Removed
+ - fklab.io : remove the channelmap generation module - transferred in its own repository
+
 ## [1.5]
 ### Added
  - fklab.signals.smooth.kernelsmoothing : add a wrapper method create_smoother
