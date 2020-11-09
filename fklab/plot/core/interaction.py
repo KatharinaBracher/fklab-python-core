@@ -166,6 +166,102 @@ class ScrollPanZoom:
             self._message.show("y-axis", duration=1)
 
 
+class ScrollZoom2D:
+    """Add 2D zoom mouse interaction to axes.
+
+    Zooming is performed using the mouse wheel.
+
+    Parameters
+    ----------
+    ax : Axes
+    scale : float
+        Scaling step for zooming in/out.
+
+    """
+
+    def __init__(self, ax, scale=1.5):
+        self._axes = ax
+        self._scale = float(scale)
+        self._callbacks = ()
+        self._shift_is_held = False
+
+        self._message = AxesMessage()
+        ax.add_artist(self._message)
+
+        self.enable()
+
+    def enable(self):
+        """Enable zooming."""
+        fig = self._axes.get_figure()  # get the figure of interest
+        self._callbacks = (
+            fig.canvas.mpl_connect("scroll_event", self.zoom),
+            fig.canvas.mpl_connect("key_press_event", self.on_key_press),
+            fig.canvas.mpl_connect("key_release_event", self.on_key_release),
+        )
+
+    def disable(self):
+        """Disable panning/zooming."""
+        fig = self._axes.get_figure()  # get the figure of interest
+        for c in self._callbacks:
+            fig.canvas.mpl_disconnect(c)
+
+        self._callbacks = ()
+
+    @property
+    def scale(self):
+        return self._scale
+
+    @scale.setter
+    def scale(self, value):
+        self._scale = abs(float(value))
+
+    def zoom(self, event):
+
+        if event.inaxes != self._axes:
+            return
+
+        cur_xlim = self._axes.get_xlim()
+        cursor_x_loc = event.xdata
+        cur_ylim = self._axes.get_ylim()
+        cursor_y_loc = event.ydata
+
+        new_xlim = self._zoom(cur_xlim, event.button, cursor_x_loc)
+        new_ylim = self._zoom(cur_ylim, event.button, cursor_y_loc)
+
+        self._axes.set_xlim(new_xlim)
+        self._axes.set_ylim(new_ylim)
+
+        self._axes.figure.canvas.draw()
+
+    def _zoom(self, curlim, btn, x):
+        scale_factor = self._scale
+        if self._shift_is_held:
+            scale_factor = 1 + (scale_factor - 1) * 2
+
+        if btn == "down":  # zoom in
+            scale_factor = 1.0 / scale_factor
+
+        new_width = (curlim[1] - curlim[0]) * scale_factor
+        relx = (curlim[1] - x) / (curlim[1] - curlim[0])
+
+        newxlim = [x - new_width * (1 - relx), x + new_width * (relx)]
+
+        return newxlim
+
+    def on_key_press(self, event):
+        if event.inaxes == self._axes and event.key == "shift":
+            self._shift_is_held = True
+            self._message.show("quick zoom", duration=1)
+
+    def on_key_release(self, event):
+        if not event.inaxes == self._axes:
+            return
+
+        if event.key == "shift":
+            self._shift_is_held = False
+            self._message.show("regular zoom", duration=1)
+
+
 def interactive_figure(figure=None):
     """Create interactive figure.
 
@@ -936,7 +1032,7 @@ class iPolygon(Polygon):
         col = self._highlight_color if val else self._handle_color
         self._interaction_handles.set_color(col)
         self._interaction_handles2.set_color(col)
-        self.set_edgecolor(col)
+        self.set_color(col)
 
     def toggle_highlight(self):
         self.set_highlight(not self._highlight)
