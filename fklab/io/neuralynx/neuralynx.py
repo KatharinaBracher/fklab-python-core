@@ -566,6 +566,16 @@ class NlxHeader(object):
     __str__ = __repr__
 
     @property
+    def file(self):
+        """Return file name"""
+        return self._file
+
+    @property
+    def path(self):
+        """Return file name"""
+        return self._path
+
+    @property
     def fullpath(self):
         """Return full path to file."""
         import os
@@ -1189,7 +1199,7 @@ class NlxFileCSC(NlxFileTimedBuffers):
         )
 
         # check if correct file type
-        if self._header.filetype != "CSC":
+        if self._header.filetype not in ["CSC", "NCS"]:
             raise NeuralynxIOError(self._header.file, "Not a valid CSC file")
 
         validsamples = self.data.numvalidsamples[:]
@@ -1490,7 +1500,7 @@ def NlxOpen(filename="", *args, **kwargs):
     hdr = NlxHeader(filename)
     if hdr.filetype == "Spike":
         return NlxFileSpike(hdr, *args, **kwargs)
-    elif hdr.filetype == "CSC":
+    elif hdr.filetype in ["CSC", "NCS"]:
         return NlxFileCSC(hdr, *args, **kwargs)
     elif hdr.filetype == "Event":
         return NlxFileEvent(hdr, *args, **kwargs)
