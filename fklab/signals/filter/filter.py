@@ -199,7 +199,7 @@ def construct_high_pass_filter(cutoff, **kwargs):
     return construct_filter([float(cutoff), None], **kwargs)
 
 
-def apply_filter(signal, band, median_filter=None, fs=1.0, axis=-1, **kwargs):
+def apply_filter(signal, band, fs=1.0, axis=-1, **kwargs):
     """Apply low/high/band-pass filter to signal.
 
     Parameters
@@ -236,9 +236,6 @@ def apply_filter(signal, band, median_filter=None, fs=1.0, axis=-1, **kwargs):
     else:
         signal = np.asarray(signal)
         signal = scipy.signal.filtfilt(b, 1.0, signal, axis=axis)
-
-    if not median_filter is None:
-        signal = apply_median_filter(signal, median_filter, fs)
 
     return signal
 
@@ -609,14 +606,7 @@ def compute_envelope(
         filter_arg = dict(transition_width="25%", attenuation=60)
         filter_arg.update(filter_options)
 
-        envelope = apply_filter(
-            signals,
-            freq_band,
-            median_filter=median_filter,
-            fs=fs,
-            axis=axis,
-            **filter_arg
-        )
+        envelope = apply_filter(signals, freq_band, fs=fs, axis=axis, **filter_arg)
     else:
         envelope = signals
 
@@ -655,6 +645,9 @@ def compute_envelope(
 
     if pad:
         envelope = envelope[:Norig]
+
+    if not median_filter is None:
+        signal = apply_median_filter(signal, median_filter, fs)
 
     # (optional) smooth envelope
     smooth_arg = dict(kernel="gaussian", bandwidth=-1.0)
