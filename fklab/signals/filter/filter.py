@@ -643,7 +643,7 @@ def compute_envelope(
     if pad:
         envelope = envelope[:Norig]
 
-    if not median_filter is None:
+    if median_filter:
         signal = apply_median_filter(signal, median_filter, fs)
 
     # (optional) smooth envelope
