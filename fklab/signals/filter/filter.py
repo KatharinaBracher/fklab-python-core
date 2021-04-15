@@ -557,6 +557,7 @@ def compute_envelope(
     axis=-1,
     fs=1.0,
     isfiltered=False,
+    median_filter=None,
     filter_options={},
     smooth_options={},
     pad=True,
@@ -575,6 +576,8 @@ def compute_envelope(
         axis of the time dimension in the signals array
     fs : scalar, optional
         sampling frequency
+    median_filter: dict, optional
+        dictionary with options for median filtering
     isfiltered : bool, optional
     filter_options : dict, optional
         dictionary with options for filtering (if signal is not already filtered).
@@ -601,8 +604,6 @@ def compute_envelope(
     if not isfiltered:
         if freq_band is None:
             raise ValueError("Please specify frequency band")
-
-        median_filter = filter_options.pop("median_filter", None)
         filter_arg = dict(transition_width="25%", attenuation=60)
         filter_arg.update(filter_options)
 
