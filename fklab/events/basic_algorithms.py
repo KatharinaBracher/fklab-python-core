@@ -879,7 +879,8 @@ def peri_event_histogram(
 
     Returns
     -------
-    3d array: peri-event histogram of shape (lags, events, references)
+    histogram: array with peri-event histogram, shape is (lags, events, references)
+    bins: array with time lag bins used to compute histogram, shape is (nbins,2) 
 
     """
     events = check_events_list(events, copy=False)
