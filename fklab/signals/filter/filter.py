@@ -199,7 +199,7 @@ def construct_high_pass_filter(cutoff, **kwargs):
     return construct_filter([float(cutoff), None], **kwargs)
 
 
-def apply_filter(signal, band, median_filter=None, fs=1.0, axis=-1, **kwargs):
+def apply_filter(signal, band, fs=1.0, axis=-1, **kwargs):
     """Apply low/high/band-pass filter to signal.
 
     Parameters
@@ -207,9 +207,6 @@ def apply_filter(signal, band, median_filter=None, fs=1.0, axis=-1, **kwargs):
     signal : array
     band : str, scalar or 2-element sequence
         frequency band, either as a string, a scalar or [low,high] sequence.
-    median_filter : None or scalar, optional
-        length of median filter window (in seconds) for removing slow components
-        in ripple envelope. Can be None for no filtering.
     fs : scalar, optional
         sampling frequency
     axis : scalar, optional
@@ -237,9 +234,6 @@ def apply_filter(signal, band, median_filter=None, fs=1.0, axis=-1, **kwargs):
         signal = np.asarray(signal)
         signal = scipy.signal.filtfilt(b, 1.0, signal, axis=axis)
 
-    if not median_filter is None:
-        signal = apply_median_filter(signal, median_filter, fs)
-
     return signal
 
 
@@ -250,8 +244,7 @@ def apply_median_filter(signal, median_filter, fs):
     ----------
     signal : array
     median_filter : scalar
-        length of median filter window (in seconds) for removing slow components
-        in ripple envelope.
+        length of median filter window (in seconds) for removing slow components.
     fs : scalar
         sampling frequency
 
@@ -560,6 +553,7 @@ def compute_envelope(
     axis=-1,
     fs=1.0,
     isfiltered=False,
+    median_filter=None,
     filter_options={},
     smooth_options={},
     pad=True,
@@ -578,6 +572,8 @@ def compute_envelope(
         axis of the time dimension in the signals array
     fs : scalar, optional
         sampling frequency
+    median_filter : None or scalar, optional
+        length of median filter window (in seconds) for removing slow components
     isfiltered : bool, optional
     filter_options : dict, optional
         dictionary with options for filtering (if signal is not already filtered).
@@ -604,19 +600,10 @@ def compute_envelope(
     if not isfiltered:
         if freq_band is None:
             raise ValueError("Please specify frequency band")
-
-        median_filter = filter_options.pop("median_filter", None)
         filter_arg = dict(transition_width="25%", attenuation=60)
         filter_arg.update(filter_options)
 
-        envelope = apply_filter(
-            signals,
-            freq_band,
-            median_filter=median_filter,
-            fs=fs,
-            axis=axis,
-            **filter_arg
-        )
+        envelope = apply_filter(signals, freq_band, fs=fs, axis=axis, **filter_arg)
     else:
         envelope = signals
 
@@ -655,6 +642,9 @@ def compute_envelope(
 
     if pad:
         envelope = envelope[:Norig]
+
+    if median_filter:
+        signal = apply_median_filter(signal, median_filter, fs)
 
     # (optional) smooth envelope
     smooth_arg = dict(kernel="gaussian", bandwidth=-1.0)
