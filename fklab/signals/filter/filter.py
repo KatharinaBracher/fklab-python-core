@@ -207,9 +207,6 @@ def apply_filter(signal, band, fs=1.0, axis=-1, **kwargs):
     signal : array
     band : str, scalar or 2-element sequence
         frequency band, either as a string, a scalar or [low,high] sequence.
-    median_filter : None or scalar, optional
-        length of median filter window (in seconds) for removing slow components
-        in ripple envelope. Can be None for no filtering.
     fs : scalar, optional
         sampling frequency
     axis : scalar, optional
@@ -247,8 +244,7 @@ def apply_median_filter(signal, median_filter, fs):
     ----------
     signal : array
     median_filter : scalar
-        length of median filter window (in seconds) for removing slow components
-        in ripple envelope.
+        length of median filter window (in seconds) for removing slow components.
     fs : scalar
         sampling frequency
 
@@ -576,8 +572,8 @@ def compute_envelope(
         axis of the time dimension in the signals array
     fs : scalar, optional
         sampling frequency
-    median_filter: dict, optional
-        dictionary with options for median filtering
+    median_filter : None or scalar, optional
+        length of median filter window (in seconds) for removing slow components
     isfiltered : bool, optional
     filter_options : dict, optional
         dictionary with options for filtering (if signal is not already filtered).
