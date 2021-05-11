@@ -52,7 +52,7 @@ array([[4.74784899e+00, 4.81466103e+00],
 """
 
 from pathlib import Path
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, List, Dict, Optional
 
 import h5py
 import numpy as np
@@ -71,7 +71,7 @@ __all__ = [
 
 
 def nlx_start_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[float, Tuple[float]]:
-    """Get the time stamp for event "Starting Recording".
+    """Get the time stamp for system event "Starting Recording".
 
     Parameters
     ----------
@@ -84,10 +84,7 @@ def nlx_start_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[fl
         time
 
     """
-    nlx_event = _ensure_nlx_event_file(file)
-    event_time = nlx_event.data.time[:]
-    event_str = nlx_event.data.eventstring[:]
-    t = event_time[event_str == b'Starting Recording']
+    t = _nlx_retrieve_sys_event(_ensure_nlx_event_file(file), 'Starting Recording')[:, 0]
     if len(t) == 1:
         return float(t)
     else:
@@ -95,8 +92,7 @@ def nlx_start_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[fl
 
 
 def nlx_stop_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[float, Tuple[float]]:
-    """
-    get the time stamp for event "Stopping Recording".
+    """Get the time stamp for system event "Stopping Recording".
 
     Parameters
     ----------
@@ -109,10 +105,7 @@ def nlx_stop_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[flo
         time
 
     """
-    nlx_event = _ensure_nlx_event_file(file)
-    event_time = nlx_event.data.time[:]
-    event_str = nlx_event.data.eventstring[:]
-    t = event_time[event_str == b'Stopping Recording']
+    t = _nlx_retrieve_sys_event(_ensure_nlx_event_file(file), 'Stopping Recording')[:, 0]
     if len(t) == 1:
         return float(t)
     else:
@@ -130,10 +123,14 @@ def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
 
     >>> nlx_retrieve_event(evt_file)
 
-    Retrieve specific event if user knows its bit mask.
+    Retrieve specific TTL event if user knows its bit mask.
 
     >>> nlx_retrieve_event(evt_file, 8) # port: ignore, bit: 3 -> mask: 8
     >>> nlx_retrieve_event(evt_file, (0, 3)) # port: 0, bit: 3
+
+    Retrieve specific System event
+
+    >>> nlx_retrieve_event(evt_file, 'My Event')
 
     Retrieve specific event by its name
 
@@ -152,6 +149,7 @@ def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
     -------
     np.ndarray
         event time data, 2D matrix with shape (N, 2) contains (time_start, time_stop).
+        For system event, time_stop equals to time_start.
 
     Raises
     ------
@@ -162,41 +160,61 @@ def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
     """
     nlx_event = _ensure_nlx_event_file(file)
 
-    # check ttl_event, get ttl_mask and ttl_port
     if ttl_event is None:
-        ttl_mask = nlx_guess_sync_signal(nlx_event)
-        ttl_port = None
+        return _nlx_retrieve_ttl_event(nlx_event, None, nlx_guess_sync_signal(nlx_event))
 
     elif isinstance(ttl_event, int):  # ttl_event = bit_mask
-        ttl_mask = ttl_event
-        ttl_port = None
+        return _nlx_retrieve_ttl_event(nlx_event, None, ttl_event)
+
+    elif isinstance(ttl_event, str):  # ttl_event = event_name
+        return _nlx_retrieve_sys_event(nlx_event, ttl_event)
 
     elif isinstance(ttl_event, tuple):  # ttl_event = (port, bit) | (config, event_name)
         if len(ttl_event) != 2:
             raise ValueError('tuple length != 2')
 
         if isinstance(ttl_event[0], int) and isinstance(ttl_event[1], int):
-            ttl_port = ttl_event[0]
-            ttl_mask = int(2 ** ttl_event[1])
+            return _nlx_retrieve_ttl_event(nlx_event, ttl_event[0], int(2 ** ttl_event[1]))
+
         elif isinstance(ttl_event[0], dict) and isinstance(ttl_event[1], str):
             # ignore board name.
             ttl_event, _, _ = get_nlx_event_info(ttl_event[0], ttl_event[1])
-            ttl_mask = int(2 ** ttl_event['bits'])
-            ttl_port = ttl_event['port']
+            ttl_mask = ttl_event['bits']
+            if ttl_mask >= 0:
+                return _nlx_retrieve_ttl_event(nlx_event, ttl_event['port'], int(2 ** ttl_mask))
+            else:
+                return _nlx_retrieve_sys_event(nlx_event, ttl_event['_original_name'])
         else:
             raise TypeError(f'cannot understand what inside it is : {ttl_event}')
 
     elif isinstance(ttl_event, dict):  # ttl_event = event_info = {bits, port}
         if 'bits' in ttl_event and 'port' in ttl_event:
-            ttl_mask = int(2 ** ttl_event['bits'])
-            ttl_port = ttl_event['port']
+            ttl_mask = ttl_event['bits']
+            if ttl_mask >= 0:
+                return _nlx_retrieve_ttl_event(nlx_event, ttl_event['port'], int(2 ** ttl_mask))
+            else:
+                return _nlx_retrieve_sys_event(nlx_event, ttl_event['_original_name'])
+
         else:
             raise ValueError('not a EventInfo. lost one of key "port" or "bits"')
 
-    else:
-        raise TypeError()
+    raise TypeError()
 
-    #
+
+def _nlx_retrieve_ttl_event(nlx_event, ttl_port: Optional[int], ttl_mask: int) -> np.ndarray:
+    """Retrieve TTL event from nlx_event
+
+    Parameters
+    ----------
+    nlx_event : NlxFileEvent
+    ttl_port
+    ttl_mask
+
+    Returns
+    -------
+    np.ndarray
+
+    """
     event_time = nlx_event.data.time[:]
     event_ttl = nlx_event.data.nttl[:]
     event_str = nlx_event.data.eventstring[:]
@@ -219,6 +237,31 @@ def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
         elif ttl_value == 0 and pulse != 0:
             ret.append((raising_time, event_time[ti]))
             pulse = 0
+
+    return np.array(ret)
+
+
+def _nlx_retrieve_sys_event(nlx_event, ttl_name: str) -> np.ndarray:
+    """Retrieve System event from nlx_event
+
+    Parameters
+    ----------
+    nlx_event : NlxFileEvent
+    ttl_name
+
+    Returns
+    -------
+
+    """
+    ttl_name = ttl_name.encode()
+    event_time = nlx_event.data.time[:]
+    event_str = nlx_event.data.eventstring[:]
+
+    ret = []
+    for ti, evt_str in enumerate(event_str):  # type: int, (int, bytes)
+        if evt_str == ttl_name:
+            ttl_time = event_time[ti]
+            ret.append((ttl_time, ttl_time))
 
     return np.array(ret)
 
@@ -290,7 +333,7 @@ class NlxEventInfo:
     config: CheetahConfig
         Event config
     events : dict
-        Event data, with shape {board_name:str -> {event_name: str -> np.ndarray}}
+        Event data, with shape {board_name:str -> {event_name: str -> np.ndarray}}.
     """
 
     def __init__(self,
@@ -319,9 +362,6 @@ class NlxEventInfo:
         self.config: CheetahConfig = clone_config(config)
         self.events: Dict[str, Dict[str, np.ndarray]] = {}
 
-        self._start_recording_time = 0
-        self._stop_recording_time = 0
-
         if event is not None:
             self.add_nlx_event(event)
 
@@ -335,7 +375,10 @@ class NlxEventInfo:
         float
             time
         """
-        return self._start_recording_time
+        for events in self.events.values():
+            if 'Starting Recording' in events:
+                return float(events['Starting Recording'][0, 0])
+        return None
 
     @property
     def stop_recording_time(self) -> float:
@@ -346,7 +389,10 @@ class NlxEventInfo:
         float
             time
         """
-        return self._stop_recording_time
+        for events in self.events.values():
+            if 'Stopping Recording' in events:
+                return float(events['Stopping Recording'][0, 0])
+        return None
 
     @property
     def recording_duration(self) -> float:
@@ -360,7 +406,22 @@ class NlxEventInfo:
             time
 
         """
-        return self._stop_recording_time - self._start_recording_time
+        return self.stop_recording_time - self.start_recording_time
+
+    @property
+    def event_names(self) -> List[str]:
+        """List all events.
+
+        Returns
+        -------
+        list
+
+        """
+        ret = set()
+        for events in self.events.values():
+            ret.update(events.keys())
+
+        return list(sorted(ret))
 
     def add_nlx_event(self, file: Union[str, Path, 'NlxFileEvent']):
         """Reset event data with file.
@@ -374,14 +435,11 @@ class NlxEventInfo:
         self.events.clear()
 
         nlx_event = _ensure_nlx_event_file(file)
-        self._start_recording_time = nlx_start_recording_time(nlx_event)
-        self._stop_recording_time = nlx_stop_recording_time(nlx_event)
 
         for board_name, board_info in self.config.items():
             self.events[board_name] = d = {}
             for event_name, event_info in board_info['Events'].items():
-                if event_info['port'] >= 0 and event_info['bits'] >= 0:
-                    d[event_name] = nlx_retrieve_event(nlx_event, event_info)
+                d[event_name] = nlx_retrieve_event(nlx_event, event_info)
 
     def rename_event(self, old_name: str, new_name: str):
         """Rename the event name.
@@ -448,9 +506,6 @@ class NlxEventInfo:
 
         """
         with h5py.File(path, 'w') as f:
-            f.attrs['start_recording_time'] = self._start_recording_time
-            f.attrs['stop_recording_time'] = self._stop_recording_time
-
             for board_name, board_info in self.config.items():
                 g = f.create_group(board_name)
                 self._save_board(g, board_info, self.events[board_name])
@@ -473,17 +528,12 @@ class NlxEventInfo:
         events = {}
 
         with h5py.File(path, 'r') as f:
-            rt1 = f.attrs['start_recording_time']
-            rt2 = f.attrs['stop_recording_time']
-
             for board_name in f:
                 cls._load_board(f[board_name],
                                 config.setdefault(board_name, {}),
                                 events.setdefault(board_name, {}))
 
         ret = NlxEventInfo(config)
-        ret._start_recording_time = rt1
-        ret._stop_recording_time = rt2
         ret.events = events
 
         return ret
