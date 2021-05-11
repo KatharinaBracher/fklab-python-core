@@ -71,8 +71,7 @@ __all__ = [
 
 
 def nlx_start_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[float, Tuple[float]]:
-    """
-    get the time stamp for event "Starting Recording".
+    """Get the time stamp for event "Starting Recording".
 
     Parameters
     ----------
@@ -123,8 +122,23 @@ def nlx_stop_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[flo
 def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
                        ttl_event: Union[int, Tuple[int, int], EventInfo, Tuple[CheetahConfig, str]] = None
                        ) -> np.ndarray:
-    """
-    get event time from Neuralynx Events.nev file.
+    """Get event time from Neuralynx Events.nev file.
+
+    **Example**
+
+    Retrieve TTL event. It only work when this event file has a simple setup (only one TTL event in file).
+
+    >>> nlx_retrieve_event(evt_file)
+
+    Retrieve specific event if user knows its bit mask.
+
+    >>> nlx_retrieve_event(evt_file, 8) # port: ignore, bit: 3 -> mask: 8
+    >>> nlx_retrieve_event(evt_file, (0, 3)) # port: 0, bit: 3
+
+    Retrieve specific event by its name
+
+    >>> nlx_retrieve_event(evt_file, (config, 'event_name'))
+    >>> nlx_retrieve_event(evt_file, get_nlx_event_info(config, 'event_name')[0]) # same as above.
 
     Parameters
     ----------
@@ -148,15 +162,16 @@ def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
     """
     nlx_event = _ensure_nlx_event_file(file)
 
+    # check ttl_event, get ttl_mask and ttl_port
     if ttl_event is None:
         ttl_mask = nlx_guess_sync_signal(nlx_event)
         ttl_port = None
 
-    elif isinstance(ttl_event, int):
+    elif isinstance(ttl_event, int):  # ttl_event = bit_mask
         ttl_mask = ttl_event
         ttl_port = None
 
-    elif isinstance(ttl_event, tuple):
+    elif isinstance(ttl_event, tuple):  # ttl_event = (port, bit) | (config, event_name)
         if len(ttl_event) != 2:
             raise ValueError('tuple length != 2')
 
@@ -171,7 +186,7 @@ def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
         else:
             raise TypeError(f'cannot understand what inside it is : {ttl_event}')
 
-    elif isinstance(ttl_event, dict):
+    elif isinstance(ttl_event, dict):  # ttl_event = event_info = {bits, port}
         if 'bits' in ttl_event and 'port' in ttl_event:
             ttl_mask = int(2 ** ttl_event['bits'])
             ttl_port = ttl_event['port']
@@ -181,10 +196,12 @@ def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
     else:
         raise TypeError()
 
+    #
     event_time = nlx_event.data.time[:]
     event_ttl = nlx_event.data.nttl[:]
     event_str = nlx_event.data.eventstring[:]
 
+    # go through each event.
     ret = []
     pulse = 0
     raising_time = -1
@@ -207,8 +224,7 @@ def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
 
 
 def nlx_guess_sync_signal(file: Union[str, Path, 'NlxFileEvent']) -> int:
-    """
-    Infer a single TTL input's information from Events.nev.
+    """Infer a single TTL input's information from Events.nev.
 
     Parameters
     ----------
@@ -254,7 +270,7 @@ def nlx_guess_sync_signal(file: Union[str, Path, 'NlxFileEvent']) -> int:
                     error = True
                     break
 
-    if cnt_board is None:
+    if cnt_board is None or cnt_bits is None:
         raise RuntimeError('There is no TTL input event in Events.nev, so it is not possible '
                            'to infer correct TTL input source. Please provider a config file.')
     if error:
@@ -265,8 +281,16 @@ def nlx_guess_sync_signal(file: Union[str, Path, 'NlxFileEvent']) -> int:
 
 
 class NlxEventInfo:
-    """
+    """This class handle event config, retrieve all of the events data from Events.nev and package them together.
 
+    User can save it into disk and use it in latter data processing.
+
+    Attributes
+    ----------
+    config: CheetahConfig
+        Event config
+    events : dict
+        Event data, with shape {board_name:str -> {event_name: str -> np.ndarray}}
     """
 
     def __init__(self,
@@ -315,8 +339,7 @@ class NlxEventInfo:
 
     @property
     def stop_recording_time(self) -> float:
-        """
-        get the time stamp for event "Stopping Recording".
+        """Get the time stamp for event "Stopping Recording".
 
         Returns
         -------
@@ -327,8 +350,9 @@ class NlxEventInfo:
 
     @property
     def recording_duration(self) -> float:
-        """
-        duration of this session, which equals to `stop_recording_time - start_recording_time`.
+        """Duration of this session.
+
+        It equals to `stop_recording_time - start_recording_time`.
 
         Returns
         -------
@@ -339,8 +363,7 @@ class NlxEventInfo:
         return self._stop_recording_time - self._start_recording_time
 
     def add_nlx_event(self, file: Union[str, Path, 'NlxFileEvent']):
-        """
-        reset event data with file.
+        """Reset event data with file.
 
         Parameters
         ----------
@@ -361,8 +384,7 @@ class NlxEventInfo:
                     d[event_name] = nlx_retrieve_event(nlx_event, event_info)
 
     def rename_event(self, old_name: str, new_name: str):
-        """
-        rename the event name.
+        """Rename the event name.
 
         Parameters
         ----------
@@ -392,8 +414,7 @@ class NlxEventInfo:
         raise KeyError()
 
     def nlx_retrieve_event(self, event_name: str) -> np.ndarray:
-        """
-        get event time from Neuralynx Events.nev file.
+        """Get event time from Neuralynx Events.nev file.
 
         Parameters
         ----------
@@ -418,8 +439,7 @@ class NlxEventInfo:
         raise KeyError()
 
     def save(self, path: Union[str, Path]):
-        """
-        save this object into '.h5' file.
+        """Save this object into '.h5' file.
 
         Parameters
         ----------
@@ -437,8 +457,7 @@ class NlxEventInfo:
 
     @classmethod
     def load(cls, path: Union[str, Path]) -> 'NlxEventInfo':
-        """
-        load data from '.h5' file.
+        """Load data from '.h5' file.
 
         Parameters
         ----------

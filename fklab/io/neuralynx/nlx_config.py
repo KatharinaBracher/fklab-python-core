@@ -147,14 +147,6 @@ There is some issue here, according to Neuralynx Documents of file Format[1]. Th
 `nttl` field is *int16* (16-bits), which is impossible to contains 4 ports 8-bits event value
 (it needs at least 32 bits). ...
 
-## Command Line Interface.
-
-This module provide a simple cli let read a config or a log file and print the parsed config.
-
-::
-
-    $ python -m fklab.io.neuralynx,nlx_config Cheetah.cfg Events.nev > config.yaml
-
 [1]: https://neuralynx.com/software/category/development
 
 """
@@ -162,7 +154,7 @@ This module provide a simple cli let read a config or a log file and print the p
 import math
 import sys
 from pathlib import Path
-from typing import Union, Tuple, Dict, TypedDict, Literal, IO, List
+from typing import Union, Tuple, Dict, TypedDict, Literal, IO
 
 import yaml
 
@@ -216,8 +208,7 @@ def create_default_config(total_ports=4, *,
                           bits_per_port=8,
                           scan_delay=1,
                           pulse_duration=15) -> CheetahConfig:
-    """
-    Create a default config data structure with default fields and value.
+    """Create a default config with default fields and value.
 
     Parameters
     ----------
@@ -256,6 +247,17 @@ def create_default_config(total_ports=4, *,
 
 
 def clone_config(config: CheetahConfig) -> CheetahConfig:
+    """Clone config.
+
+    Parameters
+    ----------
+    config
+
+    Returns
+    -------
+    CheetahConfig
+
+    """
     return {
         board_name: {
             'DigitalIOInputScanDelay': board['DigitalIOInputScanDelay'],
@@ -285,24 +287,35 @@ def clone_config(config: CheetahConfig) -> CheetahConfig:
 def create_nlx_event(port: int, bits: int, name: str,
                      type: Literal['user', 'system'] = 'user',
                      direct: Literal['input', 'output'] = 'input') -> EventInfo:
-    """
-    constructor-like function to create EventInfo.
+    """Create a EventInfo.
 
     Parameters
     ----------
     port
+        port number
     bits
+        bit number
     name
+        original event name.
     type
-        default 'user'
+        event type. default 'user'
     direct
-        default 'input'
+        event IO direct. default 'input'
 
     Returns
     -------
     EventInfo
 
     """
+    if port < -1:  # -1 for unknown
+        raise ValueError(f'negative port number : {port}')
+    if bits < -1:  # -1 for unknown
+        raise ValueError(f'negative bits number : {bits}')
+    if type not in ('user', 'system'):
+        raise ValueError(f'illegal event type : {type}')
+    if direct not in ('input', 'output'):
+        raise ValueError(f'illegal event direct : {direct}')
+
     return EventInfo(
         port=port,
         bits=bits,
@@ -313,8 +326,7 @@ def create_nlx_event(port: int, bits: int, name: str,
 
 
 def read_nlx_config(file: Union[str, Path], config: CheetahConfig = None) -> CheetahConfig:
-    """
-    read event information from Neuralynx/Cheetah config (*.cfg) file.
+    """Read event information from Neuralynx/Cheetah config (*.cfg) file.
 
     Parameters
     ----------
@@ -347,8 +359,7 @@ def read_nlx_config(file: Union[str, Path], config: CheetahConfig = None) -> Che
 
 
 def read_nlx_log(file: Union[str, Path], config: CheetahConfig = None) -> CheetahConfig:
-    """
-    read event information from Neuralynx/Cheetah log (CheetahLogFile.txt) file.
+    """Read event information from Neuralynx/Cheetah log (CheetahLogFile.txt) file.
 
     Parameters
     ----------
@@ -391,8 +402,7 @@ def read_nlx_log(file: Union[str, Path], config: CheetahConfig = None) -> Cheeta
 
 
 def _config_set_command(config: CheetahConfig, line: str):
-    """
-    parse event relate command to config.
+    """Parse event relate command to config.
 
     Parameters
     ----------
@@ -452,8 +462,7 @@ def _config_set_command(config: CheetahConfig, line: str):
 
 
 def read_nlx_event(file: Union[str, Path, 'NlxFileEvent'], config: CheetahConfig = None) -> CheetahConfig:
-    """
-    read event information from Neuralynx Event file (Events.nev).
+    """Read event information from Neuralynx Event file (Events.nev).
 
     This method will read and set the lost information from event file,
     includes system event (Starting/Stopping Recording) and TTL Input
@@ -506,10 +515,9 @@ def read_nlx_event(file: Union[str, Path, 'NlxFileEvent'], config: CheetahConfig
 
 def _parse_ttl_input(e_str: str,
                      on_error: Literal['error', 'warning', 'ignore'] = 'error') -> Tuple[str, int, int]:
-    """
-    parse TTL Input event string.
+    """Parse TTL Input event string.
 
-    There is one TTL Input event string example::
+    There is one TTL Input event string example:
 
          TTL Input on AcqSystem1_0 board 0 port 0 value (0x0040).
 
@@ -528,7 +536,7 @@ def _parse_ttl_input(e_str: str,
     int
         port number
     int
-        bits number. -1 for failing edge event.
+        bits number. None for failing edge event.
 
     Raises
     ------
@@ -543,6 +551,7 @@ def _parse_ttl_input(e_str: str,
     bits = None
 
     try:
+        # TTL Input on AcqSystem1_0 board 0 port 0 value (0x0040).
         board = p[3]
 
         port = int(p[7])
@@ -582,8 +591,7 @@ def _parse_ttl_input(e_str: str,
 
 
 def save_nlx_config(config: CheetahConfig, file: Union[str, Path, IO] = None):
-    """
-    save config in yaml-format file.
+    """Save config in yaml-format file.
 
     Parameters
     ----------
@@ -605,8 +613,7 @@ def save_nlx_config(config: CheetahConfig, file: Union[str, Path, IO] = None):
 
 
 def load_nlx_config(file: Union[str, Path, IO]) -> CheetahConfig:
-    """
-    load config file from disk.
+    """Load config file from disk.
 
     Parameters
     ----------
@@ -642,8 +649,7 @@ def _ensure_nlx_event_file(file: Union[str, Path, 'NlxFileEvent']) -> 'NlxFileEv
 
 
 def get_nlx_event_info(config: CheetahConfig, event_name: str) -> Tuple[EventInfo, str, str]:
-    """
-    get event info from config by name.
+    """Get event info from config by name.
 
     This method will try to find the first name matched (include name and _original_name) event.
 
@@ -682,8 +688,7 @@ def get_nlx_event_info(config: CheetahConfig, event_name: str) -> Tuple[EventInf
 
 
 def get_event_mask(board: SystemBoard) -> Dict[int, str]:
-    """
-    get mask values for all events in config.
+    """Get mask values for all events in config.
 
     Parameters
     ----------
@@ -708,24 +713,3 @@ def _unquote(s: str) -> str:
         return s[1:-1]
     else:
         return s
-
-
-def _main(args: List[str]):
-    f = args[0]
-    if f.endswith('.cfg'):
-        r = read_nlx_config(f)
-    elif f.endswith('.txt'):
-        r = read_nlx_log(f)
-    elif f.endswith('.nev'):
-        r = read_nlx_event(f)
-    else:
-        raise ValueError(f'unknown file type : {f}')
-
-    for f in args[1:]:
-        r = read_nlx_event(f, r)
-
-    save_nlx_config(r)
-
-
-if __name__ == '__main__':
-    _main(sys.argv[1:])
