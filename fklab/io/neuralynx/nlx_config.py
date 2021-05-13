@@ -1,156 +1,3 @@
-"""
-# Neuralynx Event Info
-
-This module is used for parsing `Cheetah.cfg` or `CheetahLogFile.txt` to fetch
-the TTL event setting, which is used for fetch the TTL event from `Events.nev`.
-
-## Event Configuration
-
-::
-
-    AcqSystem1_0:                      # System board name
-      DigitalIOBitsPerPort: 8               # bits per port
-      DigitalIOInputScanDelay: 1            #
-      Events:                               # event information
-        custom event:                           # event name, use can change its name
-          _original_name: custom event              # original event name recorded in file. shouldn't be changed.
-          bits: 1                                   # bit/pin number (0~DigitalIOBitsPerPort-1)
-          port: 0                                   # port number (0~3)
-          direct: input                             # input/output
-          type: user                                # event type
-        Starting Recording:                     # system event
-          _original_name: Starting Recording
-          bits: -1                                  # system event doesn't use bits
-          port: -1                                  # system event doesn't use port
-          direct: input
-          type: system
-        Stopping Recording:                     # system event
-          _original_name: Stopping Recording
-          bits: -1
-          port: -1
-          direct: input
-          type: system
-        TTL Input on AcqSystem1_0 board 0 port 0 value (0x0040).:   # TTL event
-          _original_name: TTL Input on AcqSystem1_0 board 0 port 0 value (0x0040).
-          bits: 6
-          port: 0
-          direct: input
-          type: user
-      Ports:                                # port information
-        0:                                      # port number
-          DigitalIOEventsEnabled: true              #
-          DigitalIOPortDirection: input             # input/output
-          DigitalIOPulseDuration: 15                #
-          DigitalIOUseStrobeBit: false              #
-        1:
-          DigitalIOEventsEnabled: true
-          DigitalIOPortDirection: input
-          DigitalIOPulseDuration: 15
-          DigitalIOUseStrobeBit: false
-        2:
-          DigitalIOEventsEnabled: true
-          DigitalIOPortDirection: input
-          DigitalIOPulseDuration: 15
-          DigitalIOUseStrobeBit: false
-        3:
-          DigitalIOEventsEnabled: true
-          DigitalIOPortDirection: input
-          DigitalIOPulseDuration: 15
-          DigitalIOUseStrobeBit: false
-
-User can modify this config by changing the name of the event (the event name
-at key posistion, not the value of _original_name) to make the following
-work more easily (??).
-
-## Usage Example
-
-### Use command line to get the config file from cheetah.cfg
-
-    python -m fklab.io.neuralynx.nlx_config cheetah.cfg Events.nev
-
-You can `Events.nev` here, but neither `Cheetah.cfg` nor `CheetahLogFile.txt`
-contains the 'TTL Input ...' event, so you need to add other `Events.nev` file
-to make config file more complete.
-
-### Use in python
-
->>> from fklab.io.neuralynx.nlx_config import *
->>> cheetah_cfg_file = 'Cheetah.cfg'
->>> cheetah_log_file = 'CheetahLogFile.txt'
->>> cheetah_nev_file = 'Events.nev'
-
-Create config
-
->>> config = read_nlx_config(cheetah_cfg_file)
->>> # config = read_nlx_log(cheetah_cfg_file) # either cfg or log
->>> config = read_nlx_event(cheetah_nev_file, config)
-
-Save and laod
-
->>> save_nlx_config(config, 'event_config.yaml')
->>> config = load_nlx_config('event_config.yaml')
-
-menipulate it. `config` is just a dictionary and its data structure
-follow the `CheetahConfig` declaration.
-
->>> config['AcqSystem1_0']['Events'].keys()
-dict_keys(['custom event', 'Starting Recording', 'Stopping Recording', 'TTL Input on AcqSystem1_0 board 0 port 0 value (0x0040).'])
-
-### Create Config in python
-
-create a config template with default value.
-
->>> config = create_default_config()
-
-add an event with name 'My Event'.
-
->>> config['AcqSystem1_0']['Events']['My Event'] = create_nlx_event(
-...     port=0,
-...     bits=1,
-...     name='My Event',
-...     # default input direction and user type.
-... )
-
-You can use literal dict to create a EventInfo instead of calling function `create_nlx_event`,
-but you need to provide all necessaey fields and value required by EventInfo declaration.
-
-## Event
-
-From Neuralynx Documents, section `4.2.3 TTL I/O Ports`
-
-::
-
-    The Digital Lynx provides 32 TTLs. They are configurable as inputs or outputs in four
-    groups of eight. TTL I/O Ports 0 through 3 (Figure 4-9) represent the four groups of
-    eight TTLs. When configured as outpus, the TTLs can be set high or low and pulsed high
-    or low for pulse durations of 1 millisecond to 10,000 milliseconds. Port direction and
-    other TTL settings are configured using the Cheetah DAS.
-
-    The TTLs are accessible from two 34-pin connectors on the SX Motherboard fron panel.
-    Each 34-pin port includes two 8-bit TTL ports (Figure 4-9).
-
-For each TTL events, there are three value definie its source: board, port and bits. For
-the 'custom event' in previous config as example, its source board is 'AcqSystem1_0',
-port is 0 and bits is 1. You can see the similar things in un-named event, like
-'TTL Input on AcqSystem1_0 board 0 port 0 value (0x0040).'.
-
-All those information will become one bit in the TTL event in the `Events.nev` files. You
-can use the bit mask (2 ** bits) to filter out the event in nttl field from the NlxFileEvent.
-
->>> import numpy as np
->>> from fklab.io.neuralynx import NlxOpen
->>> nlx_event = NlxOpen('Events.nev')
->>> np.unique(nlx_event.data.nttl[:])
-[ 0  2  64 66]
-
-There is some issue here, according to Neuralynx Documents of file Format[1]. The type of
-`nttl` field is *int16* (16-bits), which is impossible to contains 4 ports 8-bits event value
-(it needs at least 32 bits). ...
-
-[1]: https://neuralynx.com/software/category/development
-
-"""
-
 import math
 import sys
 from pathlib import Path
@@ -159,11 +6,6 @@ from typing import Union, Tuple, Dict, TypedDict, Literal, IO
 import yaml
 
 __all__ = [
-    # type
-    'EventInfo',
-    'PortInfo',
-    'SystemBoard',
-    'CheetahConfig',
     # IO functions
     'read_nlx_config',
     'read_nlx_log',
@@ -288,6 +130,17 @@ def create_nlx_event(port: int, bits: int, name: str,
                      type: Literal['user', 'system'] = 'user',
                      direct: Literal['input', 'output'] = 'input') -> EventInfo:
     """Create a EventInfo.
+
+    **Use Example**
+
+    add a event into CheetahConfig.
+
+    >>> config['AcqSystem1_0']['Events']['My Event'] = create_nlx_event(
+    ...     port=0,
+    ...     bits=1,
+    ...     name='My Event',
+    ...     # default input direction and user type.
+    ... )
 
     Parameters
     ----------
@@ -614,6 +467,60 @@ def save_nlx_config(config: CheetahConfig, file: Union[str, Path, IO] = None):
 
 def load_nlx_config(file: Union[str, Path, IO]) -> CheetahConfig:
     """Load config file from disk.
+
+    **Event Configuration Example**
+
+    .. code-block:: yaml
+
+        AcqSystem1_0:                      # System board name
+          DigitalIOBitsPerPort: 8               # bits per port
+          DigitalIOInputScanDelay: 1            #
+          Events:                               # event information
+            custom event:                           # event name, use can change its name
+              _original_name: custom event              # original event name recorded in file. shouldn't be changed.
+              bits: 1                                   # bit/pin number (0~DigitalIOBitsPerPort-1)
+              port: 0                                   # port number (0~3)
+              direct: input                             # input/output
+              type: user                                # event type
+            Starting Recording:                     # system event
+              _original_name: Starting Recording
+              bits: -1                                  # system event doesn't use bits
+              port: -1                                  # system event doesn't use port
+              direct: input
+              type: system
+            Stopping Recording:                     # system event
+              _original_name: Stopping Recording
+              bits: -1
+              port: -1
+              direct: input
+              type: system
+            TTL Input on AcqSystem1_0 board 0 port 0 value (0x0040).:   # TTL event
+              _original_name: TTL Input on AcqSystem1_0 board 0 port 0 value (0x0040).
+              bits: 6
+              port: 0
+              direct: input
+              type: user
+          Ports:                                # port information
+            0:                                      # port number
+              DigitalIOEventsEnabled: true              #
+              DigitalIOPortDirection: input             # input/output
+              DigitalIOPulseDuration: 15                #
+              DigitalIOUseStrobeBit: false              #
+            1:
+              DigitalIOEventsEnabled: true
+              DigitalIOPortDirection: input
+              DigitalIOPulseDuration: 15
+              DigitalIOUseStrobeBit: false
+            2:
+              DigitalIOEventsEnabled: true
+              DigitalIOPortDirection: input
+              DigitalIOPulseDuration: 15
+              DigitalIOUseStrobeBit: false
+            3:
+              DigitalIOEventsEnabled: true
+              DigitalIOPortDirection: input
+              DigitalIOPulseDuration: 15
+              DigitalIOUseStrobeBit: false
 
     Parameters
     ----------

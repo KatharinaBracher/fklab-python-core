@@ -1,56 +1,3 @@
-"""
-# Neuralynx Synchronize
-
-## Usage Example
-
-get event pulse data.
-
->>> from fklab.io.neuralynx.nlx_sync import *
->>> nlx_nev_file = 'Events.nev'
->>> nlx_sync = nlx_retrieve_event(nlx_nev_file)
-
-Previous code may raise an Error if this event contains too many events
-and unable to figure out which one signal is important. If it happened,
-you need to provider the port number and the bit number. Here we show
-how to fetch the event pulse data from prot 0 and bit 2 (ttl mask 0x0004).
-
->>> nlx_sync = nlx_retrieve_event(nlx_nev_file, (0, 2))
-
-Or you can provider the complete Event info from CheetahConfig. Here we
-show show to fetch the 'custom event'.
-
->>> from fklab.io.neuralynx.nlx_config import *
->>> config = load_nlx_config('event_config.yaml')
->>> nlx_sync = nlx_retrieve_event(nlx_nev_file, (config, 'custom event'))
-
-`nlx_sync` is a 2D numpy matrix with shape (N, 2).
-
->>> nlx_sync
-array([[4.74784899e+00, 4.81466103e+00],
-       [5.81459904e+00, 5.92166114e+00],
-       [6.81453609e+00, 6.96356797e+00],
-       ...,
-       [7.28734876e+03, 7.28756376e+03],
-       [7.28799141e+03, 7.28802776e+03],
-       [7.28802782e+03, 7.28802791e+03]])
-
-
-## Use NlxEvent
-
->>> nlx_event_info = NlxEventInfo(config, nlx_nev_file)
->>> nlx_event_info.save('EventInfo.h5')
->>> nlx_event_info.events['AcqSystem1_0']['custom event']
->>> nlx_event_info.start_recording_time
->>> nlx_event_info.nlx_retrieve_event('custom event')
-
-
-## Limitation
-
-1.  port source issue.
-2.  board source issue.
-
-"""
-
 from pathlib import Path
 from typing import Union, Tuple, List, Dict, Optional
 
@@ -58,6 +5,7 @@ import h5py
 import numpy as np
 
 from .nlx_config import *
+from .nlx_config import CheetahConfig, SystemBoard, EventInfo
 from .nlx_config import _ensure_nlx_event_file, _parse_ttl_input
 
 __all__ = [
@@ -70,7 +18,7 @@ __all__ = [
 ]
 
 
-def nlx_start_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[float, Tuple[float]]:
+def nlx_start_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> float:
     """Get the time stamp for system event "Starting Recording".
 
     Parameters
@@ -84,14 +32,10 @@ def nlx_start_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[fl
         time
 
     """
-    t = _nlx_retrieve_sys_event(_ensure_nlx_event_file(file), 'Starting Recording')[:, 0]
-    if len(t) == 1:
-        return float(t)
-    else:
-        return tuple(t)
+    return float(_nlx_retrieve_sys_event(_ensure_nlx_event_file(file), 'Starting Recording')[0, 0])
 
 
-def nlx_stop_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[float, Tuple[float]]:
+def nlx_stop_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> float:
     """Get the time stamp for system event "Stopping Recording".
 
     Parameters
@@ -105,11 +49,7 @@ def nlx_stop_recording_time(file: Union[str, Path, 'NlxFileEvent']) -> Union[flo
         time
 
     """
-    t = _nlx_retrieve_sys_event(_ensure_nlx_event_file(file), 'Stopping Recording')[:, 0]
-    if len(t) == 1:
-        return float(t)
-    else:
-        return tuple(t)
+    return float(_nlx_retrieve_sys_event(_ensure_nlx_event_file(file), 'Stopping Recording')[0, 0])
 
 
 def nlx_retrieve_event(file: Union[str, Path, 'NlxFileEvent'],
@@ -330,7 +270,7 @@ class NlxEventInfo:
 
     Attributes
     ----------
-    config: CheetahConfig
+    config : CheetahConfig
         Event config
     events : dict
         Event data, with shape {board_name:str -> {event_name: str -> np.ndarray}}.
@@ -339,6 +279,15 @@ class NlxEventInfo:
     def __init__(self,
                  config: Union[str, Path, CheetahConfig],
                  event: Union[str, Path, 'NlxFileEvent'] = None):
+        """Create NlxEventInfo.
+
+        Parameters
+        ----------
+        config
+            Nerualynx config path (*.cfg), log file (*.log) or event config file (*.yaml) or CheetahConfig.
+        event
+            Nerualynx event file (Events.nev) or NlxFileEvent.
+        """
         if isinstance(config, str):
             config = Path(config)
 
@@ -367,8 +316,7 @@ class NlxEventInfo:
 
     @property
     def start_recording_time(self) -> float:
-        """
-        get the time stamp for event "Starting Recording".
+        """Get the time stamp for event "Starting Recording".
 
         Returns
         -------
@@ -415,6 +363,7 @@ class NlxEventInfo:
         Returns
         -------
         list
+            labels name list
 
         """
         ret = set()
