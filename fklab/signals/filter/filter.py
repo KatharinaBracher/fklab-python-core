@@ -10,6 +10,7 @@ Utilities for the design, application and inspection of digital filters.
 Filter utilities
 ================
 """
+import warnings
 from functools import reduce
 
 import matplotlib.pyplot as plt
@@ -205,6 +206,11 @@ def _filter(b, signal, axis=0, pad=True):
     # filter will be applied along axis
     # odd type reflective padding is used
 
+    warnings.warn(
+        "This new implementation (since version 1.7) does not perform a backward filter pass like previously, which could introduce difference in the result. It should not be necessary for (symmetrical) FIR filter but if needed, you could obtained a similar effect as before by calling apply_filter twice.",
+        UserWarning,
+    )
+
     # expand dimensionality of b to match signal dimensionality
     if signal.ndim > 1:
         d = np.arange(signal.ndim)
@@ -246,6 +252,10 @@ def apply_filter(signal, band, fs=1.0, axis=-1, **kwargs):
     -------
     array
         filtered signal
+
+    Notes
+    -----
+    The new implementation does not perform a backward filter pass like that of filtfilt, because for (symmetrical) FIR filters this is not necessary. This means that there will be a difference in the output from before version 1.8, as the filter is applied once. One could obtain the same effect as before by calling apply_filter twice, but in practice (with a well designed filter), this should not be necessary.
 
     """
 
