@@ -10,6 +10,7 @@ Utilities for the design, application and inspection of digital filters.
 Filter utilities
 ================
 """
+import warnings
 from functools import reduce
 
 import matplotlib.pyplot as plt
@@ -199,8 +200,38 @@ def construct_high_pass_filter(cutoff, **kwargs):
     return construct_filter([float(cutoff), None], **kwargs)
 
 
+def _filter(b, signal, axis=0, pad=True):
+    # b is 1D filter kernel with odd length (e.g. from construct_filter)
+    # signal is nD signal, with n>=1
+    # filter will be applied along axis
+    # odd type reflective padding is used
+
+    warnings.warn(
+        "This new implementation (since version 1.7) does not perform a backward filter pass like previously, which could introduce difference in the result. It should not be necessary for (symmetrical) FIR filter but if needed, you could obtained a similar effect as before by calling apply_filter twice.",
+        UserWarning,
+    )
+
+    # expand dimensionality of b to match signal dimensionality
+    if signal.ndim > 1:
+        d = np.arange(signal.ndim)
+        d = [k for k in d if k != d[axis]]
+        b = np.expand_dims(b, axis=d)
+
+    # pad along axis
+    if pad:
+        n = int((len(b) - 1) / 2)
+        pad_width = [(0, 0)] * signal.ndim
+        pad_width[axis] = (n, n)
+        signal = np.pad(signal, pad_width, mode="reflect", reflect_type="odd")
+
+    # convolve signal with filter kernel
+    signal = scipy.signal.convolve(signal, b, mode="valid" if pad else "same")
+
+    return signal
+
+
 def apply_filter(signal, band, fs=1.0, axis=-1, **kwargs):
-    """Apply low/high/band-pass filter to signal.
+    """Apply low/high/band-pass FIR filter to signal.
 
     Parameters
     ----------
@@ -222,17 +253,19 @@ def apply_filter(signal, band, fs=1.0, axis=-1, **kwargs):
     array
         filtered signal
 
+    Notes
+    -----
+    The new implementation does not perform a backward filter pass like that of filtfilt, because for (symmetrical) FIR filters this is not necessary. This means that there will be a difference in the output from before version 1.8, as the filter is applied once. One could obtain the same effect as before by calling apply_filter twice, but in practice (with a well designed filter), this should not be necessary.
+
     """
 
     b = construct_filter(band, fs=fs, **kwargs)
 
     if isinstance(signal, (tuple, list)):
-        signal = [
-            scipy.signal.filtfilt(b, 1.0, np.asarray(x), axis=axis) for x in signal
-        ]
+        signal = [_filter(b, np.asarray(x), axis=axis) for x in signal]
     else:
         signal = np.asarray(signal)
-        signal = scipy.signal.filtfilt(b, 1.0, signal, axis=axis)
+        signal = _filter(b, signal, axis=axis)
 
     return signal
 
