@@ -47,7 +47,8 @@ def plot_spectrum(
 
     if db:
         S = 10.0 * np.log10(S)
-        err = 10.0 * np.log10(err)
+        if not err is None:
+            err = 10.0 * np.log10(err)
 
     if axes is None:
         axes = plt.gca()
