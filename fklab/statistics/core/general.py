@@ -11,11 +11,169 @@ General utilities.
 """
 from fklab.version._core_version._version import __version__
 
-__all__ = ["monte_carlo_pvalue", "find_mode", "beta_reparameterize"]
+__all__ = [
+    "format_pvalue_stars", "format_pvalue_exact",
+    "format_pvalue_relative", "format_pvalue",
+    "monte_carlo_pvalue", "find_mode", "beta_reparameterize"
+    ]
+
+import re
 
 import numpy as np
 import scipy as sp
 import scipy.stats
+
+def _check_significance_levels(alpha):
+    """Check vector of significance levels
+    
+    Parameters
+    ----------
+    alpha : None or 1D array-like
+        A list of significance levels. If None, the default
+        `[0.001, 0.01, 0.05]` is used.
+    
+    Returns
+    -------
+    alpha: 1d array
+        1D array with checked significance levels that is
+        padded with infinity values on both ends.
+    
+    """
+    
+    if alpha is None:
+        alpha = np.array([0.001, 0.01, 0.05])
+    else:
+        alpha = np.sort(np.array(alpha, dtype=np.double).ravel())
+    
+    alpha = np.clip(alpha, 0, 1)
+    
+    if len(alpha)==0:
+        raise ValueError("Invalid array of significance levels")
+    
+    alpha = np.pad(alpha, (1,1), constant_values=(-np.inf, np.inf))
+    
+    return alpha
+
+
+def format_pvalue_stars(p, alpha=None, significant='*', insignificant='n.s.', **kwargs):
+    """Format p-value qualitatively as stars.
+    
+    Parameters
+    ----------
+    p : float scalar
+    alpha : 1D array-like
+        Significance levels
+    significant : str
+        Text to be used to indicate significance level
+    insignificant : str
+        Text to be used to indicate insignificant p-value
+    
+    Returns
+    -------
+    str : formatted p-value
+    
+    """
+    
+    p = np.clip(float(p), 0, 1)
+    
+    alpha = _check_significance_levels(alpha)
+    
+    idx = np.digitize(p, alpha)
+    
+    if idx>=len(alpha)-1:
+        return insignificant.format(alpha=alpha[-2], alpha_percent=100*alpha[-2])
+    else:
+        return significant*(len(alpha)-idx-1)
+
+
+def format_pvalue_exact(p, precision=3, fmt="p={pvalue}", latex=False, **kwargs):
+    """Format p-value as number.
+    
+    Parameters
+    ----------
+    p : float scalar
+    precision : integer >= 0
+        The number of digits to represent the p-value
+    prefix : str
+        Add prefix to formatted p-value
+    latex : bool
+        Use latex for scientific notation
+        
+    Returns
+    -------
+    str : formatted p-value
+    
+    """
+    
+    p = np.clip(float(p), 0, 1)
+    
+    if p!=0 and abs(p)<10**(-precision):
+        p = r"{:.{}e}".format(p, precision-1)
+        if latex:
+            c = re.compile(r'(?P<base>[+-]?[0-9.]+)[eE](?P<sign>-?)[+0]*(?P<exp>[0-9]+)')
+            p = c.sub(r'$\g<base>{\\times}10^{\g<sign>\g<exp>}$', p)
+    else:
+        p = "{:.{}f}".format(p, precision)
+        if latex:
+            p = r'${}$'.format(p)
+    
+    return fmt.format(pvalue=p)
+
+
+def format_pvalue_relative(p, alpha=None, significant="p<{alpha}", insignificant="p≥{alpha}", **kwargs):
+    """Format p-value relative to significance level.
+    
+    Parameters
+    ----------
+    p : float scalar
+    alpha : 1D array-like
+        Significance levels
+    insignificant : str or None
+        Text to be used to indicate insignificant p-value.
+    prefix : str
+        Add prefix to formatted p-value
+        
+    Returns
+    -------
+    str : formatted p-value
+    """
+    
+    p = np.clip(float(p), 0, 1)
+    
+    alpha = _check_significance_levels(alpha)
+    
+    idx = np.digitize(p, alpha)
+    
+    if idx>=len(alpha)-1:
+        return insignificant.format(alpha=alpha[-2], alpha_percent=100*alpha[-2])
+    else:
+        return significant.format(alpha=alpha[idx], alpha_percent=100*alpha[idx])
+
+
+def format_pvalue(p, kind='exact', **kwargs):
+    """String formating of p-value.
+    
+    Parameters
+    ----------
+    p : float, 0<=p<=1
+    kind : 'stars', 'exact' or 'relative'
+    **kwargs :
+        Extra keyword arguments for the formatting function.
+    
+    Returns
+    -------
+    str : formatted p-value
+    
+    """
+    
+    if kind=='stars':
+        return format_pvalue_stars(p, **kwargs)
+    elif kind=='exact':
+        return format_pvalue_exact(p, **kwargs)
+    elif kind=='relative':
+        return format_pvalue_relative(p, **kwargs)
+    else:
+        raise ValueError('Unsupported value for kind argument')
 
 
 def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
