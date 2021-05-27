@@ -39,7 +39,7 @@ def _spectrum_error(S, J, errtype, pval, avg, numsp=None):
         S = S[:, None]
 
     if numsp is not None:
-        numsp = np.array(numsp).ravel()
+        numsp = np.array(numsp, copy=False).ravel()
         if len(numsp) != C:
             raise ValueError("Invalid value for numsp")
 
@@ -145,7 +145,7 @@ def _mtspectrum_single(data, fs=1.0, average=False, **kwargs):
 
     """
     # TODO: check data
-    data = np.array(data)
+    data = np.array(data, copy=False)
     N = data.shape[0]
 
     options = mtoptions(**kwargs)
@@ -227,7 +227,7 @@ def mtspectrum(
 
     """
     # check data
-    data = np.array(data)
+    data = np.array(data, copy=False)
     if data.ndim != 1:
         raise ValueError("Only vector data is supported")
 
@@ -309,7 +309,7 @@ def mtspectrogram(
     options : dict
 
     """
-    data = np.array(data)
+    data = np.array(data, copy=False)
 
     if triggers is None:
         if data.ndim == 1:
@@ -330,7 +330,7 @@ def mtspectrogram(
         s = start_time
     else:
         ## hack: copy of code from _generate_trigger_windows
-        trigger_window = np.array(trigger_window, dtype=np.float).ravel()
+        trigger_window = np.array(trigger_window, dtype=np.float, copy=False).ravel()
         if len(trigger_window) == 1:
             trigger_window = np.abs(trigger_window) * [-1, 1]
         elif len(trigger_window) != 2 or np.diff(trigger_window) <= 0.0:
@@ -396,12 +396,12 @@ def _coherence_error(c, j1, j2, errtype, pval, avg, numsp1=None, numsp2=None):
         c = c[:, None]
 
     if numsp1 is not None:
-        numsp1 = np.array(numsp1).ravel()
+        numsp1 = np.array(numsp1, copy=False).ravel()
         if len(numsp1) != Ch:
             raise ValueError("Invalid value for numsp1")
 
     if numsp2 is not None:
-        numsp2 = np.array(numsp2).ravel()
+        numsp2 = np.array(numsp2, copy=False).ravel()
         if len(numsp2) != Ch:
             raise ValueError("Invalid value for numsp2")
 
@@ -421,7 +421,7 @@ def _coherence_error(c, j1, j2, errtype, pval, avg, numsp1=None, numsp2=None):
         else:
             dof2 = 2 * dim
 
-        dof = np.array(min(dof1, dof2)).ravel()
+        dof = np.array(min(dof1, dof2), copy=False).ravel()
         Ch = 1
 
         j1 = j1.reshape((nf, dim, 1))
@@ -531,8 +531,8 @@ def _mtcoherence_single(x, y, fs=1.0, average=False, **kwargs):
     """
     # TODO: check shape of x and y
 
-    x = np.array(x)
-    y = np.array(y)
+    x = np.array(x, copy=False)
+    y = np.array(y, copy=False)
 
     N = x.shape[0]
 
@@ -625,8 +625,8 @@ def mtcoherence(
 
     """
     # check data
-    x = np.array(x)
-    y = np.array(y)
+    x = np.array(x, copy=False)
+    y = np.array(y, copy=False)
 
     if x.ndim != 1:
         raise ValueError("Only vector data is supported")
@@ -718,8 +718,8 @@ def mtcoherogram(
     options : dict
 
     """
-    x = np.array(x)
-    y = np.array(y)
+    x = np.array(x, copy=False)
+    y = np.array(y, copy=False)
 
     if x.shape != y.shape:
         raise ValueError("Input signals need to have the same size.")
@@ -747,7 +747,7 @@ def mtcoherogram(
         s = start_time
     else:
         ## hack: copy of code from _generate_trigger_windows
-        trigger_window = np.array(trigger_window, dtype=np.float).ravel()
+        trigger_window = np.array(trigger_window, dtype=np.float, copy=False).ravel()
         if len(trigger_window) == 1:
             trigger_window = np.abs(trigger_window) * [-1, 1]
         elif len(trigger_window) != 2 or np.diff(trigger_window) <= 0.0:
