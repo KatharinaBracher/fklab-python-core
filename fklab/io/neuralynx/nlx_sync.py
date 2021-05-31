@@ -329,7 +329,7 @@ class NlxEventInfo:
                 config = read_nlx_log(config)
                 if event is not None:
                     config = read_nlx_event(event, config)
-            elif config.suffix == "yaml":
+            elif config.suffix == '.yaml':
                 config = load_nlx_config(config)
             else:
                 raise RuntimeError(f"unknown config file type : {config.name}")
