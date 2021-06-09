@@ -29,7 +29,6 @@ __all__ = ["mtspectrum", "mtspectrogram", "mtcoherence", "mtcoherogram"]
 
 
 def _spectrum_error(S, J, errtype, pval, avg, numsp=None):
-
     if errtype == "none" or errtype is None:
         return None
 
@@ -100,7 +99,11 @@ def _spectrum_error(S, J, errtype, pval, avg, numsp=None):
 
     # Serr=shiftdim( squeeze(Serr), 1 );
 
-    return Serr
+    if avg:
+        # drop last axis for average case
+        return Serr[:, :, 0]
+    else:
+        return Serr
 
 
 def _mtspectrum_single(data, fs=1.0, average=False, **kwargs):
@@ -137,10 +140,10 @@ def _mtspectrum_single(data, fs=1.0, average=False, **kwargs):
         (frequencies,) if average==True.
     f : 1d array
         vector of frequencies
-    Serr : None or 3d array
+    Serr : None, 2d array or 3d array
         lower and upper error estimates. The shape of the array is
-        (2, frequencies, signals), where the first axis contains the
-        lower and upper error estimates.
+        (2, frequencies, signals), or (2, frequencies) if average==True,
+        where the first axis contains the lower and upper error estimates.
     options : dict
 
     """
@@ -379,14 +382,9 @@ def mtspectrogram(
             S[k] = 2 * np.mean(np.real(np.conjugate(J) * J), axis=1)
 
         if compute_error:
-            _err = _spectrum_error(
+            Serr[k] = _spectrum_error(
                 S[k], J, options["error"], options["pvalue"], average
             )
-
-            if average:
-                Serr[k] = _err[:, :, 0]
-            else:
-                Serr[k] = _err
 
     return S, t, f, Serr, options
 
