@@ -384,9 +384,9 @@ def mtspectrogram(
             )
 
             if average:
-                Serr[k, :, :] = _err[:, :, 0]
+                Serr[k] = _err[:, :, 0]
             else:
-                Serr[k, :, :, :] = _err
+                Serr[k] = _err
 
     return S, t, f, Serr, options
 
