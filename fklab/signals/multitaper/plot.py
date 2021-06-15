@@ -56,9 +56,10 @@ def plot_spectrum(
     artists = []
 
     if not err is None:
-        artists.append(
-            axes.fill_between(f, err[0, :, 0], err[1, :, 0], facecolor=color, alpha=0.2)
-        )
+        if err.ndim == 2:  # average case
+            artists.append(axes.fill_between(f, err[0, :], err[1, :], facecolor=color, alpha=0.2))
+        else:
+            artists.append(axes.fill_between(f, err[0, :, 0], err[1, :, 0], facecolor=color, alpha=0.2))
 
     artists.extend(plt.plot(f, S, axes=axes, color=color))
 
