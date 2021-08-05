@@ -462,7 +462,7 @@ def remove_artefacts(
         k[axis] = ~b
         interpolator = scipy.interpolate.interp1d(
             time[~b],
-            signal[k],
+            signal[tuple(k)],
             axis=axis,
             kind=interp,
             bounds_error=False,
@@ -470,7 +470,7 @@ def remove_artefacts(
             assume_sorted=True,
         )
         k[axis] = b
-        signal[k] = interpolator(time[b])
+        signal[tuple(k)] = interpolator(time[b])
 
     return signal
 
