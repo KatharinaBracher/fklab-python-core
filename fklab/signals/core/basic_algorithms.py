@@ -423,9 +423,10 @@ def remove_artefacts(
 
     # perform interpolation
     if interp == "fill":
+
         # set samples near artefact to interp
         k[axis] = b
-        signal[k] = fill_value
+        signal[tuple(k)] = fill_value
     elif interp == "reflect":
         # perform weighted reflection interpolation
         # loop through invalid regions
@@ -437,7 +438,7 @@ def remove_artefacts(
             if region[0] < regionsize or region[1] >= len(signal) - regionsize:
                 # do not interpolate anything too close to the ends
                 k[axis] = slice(region[0], region[1] + 1)
-                signal[k] = fill_value
+                signal[tuple(k)] = fill_value
             else:
                 # construct reflected signals and weights
                 pre_reflect = 2 * np.take(signal, region[0], axis=axis) - np.take(
@@ -450,13 +451,16 @@ def remove_artefacts(
                 )
 
                 weights = np.arange(1.0, regionsize + 1) / (regionsize + 1)
-                sz = np.ones(signal.ndim)
+                sz = np.ones(signal.ndim, dtype=int)
                 sz[axis] = len(weights)
                 weights = weights.reshape(sz)
 
                 # compute weighted average and assign to signal
                 k[axis] = slice(region[0], region[1] + 1)
-                signal[k] = pre_reflect[r] * (1 - weights) + post_reflect[r] * weights
+                signal[tuple(k)] = (
+                    pre_reflect[tuple(r)] * (1 - weights)
+                    + post_reflect[tuple(r)] * weights
+                )
     else:
         # use scipy.interpolate.interp1d
         k[axis] = ~b
