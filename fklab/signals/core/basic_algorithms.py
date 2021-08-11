@@ -398,7 +398,7 @@ def remove_artefacts(
 
     """
     # check arguments
-    signal = np.array(signal, copy=True)
+    signal = np.array(signal, copy=True, dtype=float)
     artefacts = np.asarray(artefacts).ravel()
 
     if time is None:
@@ -423,7 +423,6 @@ def remove_artefacts(
 
     # perform interpolation
     if interp == "fill":
-
         # set samples near artefact to interp
         k[axis] = b
         signal[tuple(k)] = fill_value
