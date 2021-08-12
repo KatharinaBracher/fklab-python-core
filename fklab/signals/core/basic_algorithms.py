@@ -398,7 +398,10 @@ def remove_artefacts(
 
     """
     # check arguments
-    signal = np.array(signal, copy=True, dtype=float)
+    signal = np.array(signal, copy=True)
+    if not issubclass(signal.dtype.type, np.inexact):
+        signal = signal.astype(np.float_)
+
     artefacts = np.asarray(artefacts).ravel()
 
     if time is None:
