@@ -433,7 +433,7 @@ def event_count(events, x=None):
     return c
 
 
-def event_intervals(events, other=None, kind="post"):
+def event_intervals(events, other=None, kind="post", segments=None):
     """Return inter-event intervals.
 
     Parameters
@@ -445,6 +445,8 @@ def event_intervals(events, other=None, kind="post"):
     kind : {'pre', '<', 'post', '>', 'smallest', 'largest'}
         type of interval to return. 'pre' or '<': interval to previous event,'post' or '>': interval to next event, 'smallest' or 'largest':
         smallest/largest of the intervals to the previous and next events.
+    segments : (n,2) array or Segment, optional
+        array of time segment start and end times
 
     Returns
     -------
@@ -501,9 +503,9 @@ def event_intervals(events, other=None, kind="post"):
             idxpost[0 : valids[0]] = 0
 
     if kind in ["pre", "<"]:
-        return ipre, idxpre
+        ii, idx = ipre, idxpre
     elif kind in ["post", ">"]:
-        return ipost, idxpost
+        ii, idx = ipost, idxpost
     elif kind == "smallest":
         ii = ipre
         tmp = np.flatnonzero(np.abs(ipost) <= np.abs(ipre))
@@ -514,7 +516,6 @@ def event_intervals(events, other=None, kind="post"):
         idx[tmp] = idxpost[tmp]
         idx[np.logical_or(np.isnan(ipre), np.isnan(ipost))] = -1
 
-        return ii, idx
     elif kind == "largest":
         ii = ipre
         tmp = np.flatnonzero(np.abs(ipost) > np.abs(ipre))
@@ -524,9 +525,25 @@ def event_intervals(events, other=None, kind="post"):
         idx = idxpre
         idx[tmp] = idxpost[tmp]
         idx[np.logical_or(np.isnan(ipre), np.isnan(ipost))] = -1
-        return ii, idx
+
     else:
         raise Error
+
+    if not segments is None:
+        segments = check_segments(segments)
+
+        valid = idx >= 0
+        valid = (valid) & (segment_contains(segments, events)[0])
+
+        if not other is None:
+            valid[valid] &= segment_contains(segments, other[idx[valid]])[0]
+        else:
+            valid[valid] &= segment_contains(segments, events[idx[valid]])[0]
+
+        ii[~valid] = np.nan
+        idx[~valid] = -1
+
+    return ii, idx
 
 
 def filter_intervals(events, mininterval=0.003):
@@ -880,7 +897,7 @@ def peri_event_histogram(
     Returns
     -------
     histogram: array with peri-event histogram, shape is (lags, events, references)
-    bins: array with time lag bins used to compute histogram, shape is (nbins,2) 
+    bins: array with time lag bins used to compute histogram, shape is (nbins,2)
 
     """
     events = check_events_list(events, copy=False)
