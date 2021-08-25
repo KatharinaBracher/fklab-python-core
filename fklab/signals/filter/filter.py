@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import matplotlib.transforms
 import mpl_toolkits.axes_grid1
 import numpy as np
+import pandas
 import scipy.signal
 from matplotlib import gridspec
 
@@ -677,7 +678,7 @@ def compute_envelope(
         envelope = envelope[:Norig]
 
     if median_filter:
-        signal = apply_median_filter(signal, median_filter, fs)
+        envelope = apply_median_filter(envelope, median_filter, fs)
 
     # (optional) smooth envelope
     smooth_arg = dict(kernel="gaussian", bandwidth=-1.0)
