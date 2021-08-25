@@ -14,6 +14,7 @@ import numpy as np
 import scipy as sp
 import scipy.interpolate
 
+import fklab.decode
 import fklab.utilities.general
 from fklab.codetools import deprecated
 from fklab.segments.basic_algorithms import check_segments
@@ -34,8 +35,11 @@ __all__ = [
     "filter_intervals",
     "complex_spike_index",
     "peri_event_histogram",
+    "peri_event_density",
     "check_events",
     "check_events_list",
+    "fastbin",
+    "spike_time_tiling_coefficient",
 ]
 
 
@@ -880,7 +884,7 @@ def peri_event_histogram(
     Returns
     -------
     histogram: array with peri-event histogram, shape is (lags, events, references)
-    bins: array with time lag bins used to compute histogram, shape is (nbins,2) 
+    bins: array with time lag bins used to compute histogram, shape is (nbins,2)
 
     """
     events = check_events_list(events, copy=False)
@@ -1001,6 +1005,112 @@ def peri_event_histogram(
 #% variance normalized q10 is approx normal only when normal approx to Poisson
 #% distribution applies, i.e. when lamda > 20 (see Lubenov&Siapas,2005)
 #% this gives condition bTP0P1>20
+
+
+def peri_event_density(
+    events,
+    triggers,
+    lags=None,
+    npoints=101,
+    bandwidth=0.05,
+    squeeze=True,
+    remove_zero_lag=False,
+    segments=None,
+    unbiased=True,
+):
+    """
+    Compute peri-event probability distribution
+
+    Parameters
+    ----------
+    events : 1d array or sequence of 1d arrays
+        Vector(s) of sorted event times (in seconds)
+    triggers : 1d array or sequence of 1d arrays
+        Vector(s) of sorted trigger times (in seconds)
+    bandwidth : float
+        Bandwidth of the gaussian kernel
+    lags : (float, float)
+        Minimum and maximum lag times. Default: [-1, 1].
+    npoints : int
+        Number of points at which density is evaluated
+    squeeze : bool
+        Squeeze out singular dimensions of output array
+    remove_zero_lag : bool
+        Remove zero lag events
+    segments : (n,2) array or Segment
+        Array of time segment start and end times
+    unbiased : bool
+        Only include trigger events for which data is available at all lags.
+        Is ignored if segments is None.
+
+    Returns
+    -------
+    density : (npoints, nevents, ntriggers) array
+        Peri-event densities for all event-trigger combinations
+    lags : (npoints,) array
+        Vector of time lags
+
+    """
+
+    if not isinstance(events, (tuple, list)):
+        events = [events]
+
+    if not isinstance(triggers, (tuple, list)):
+        triggers = [triggers]
+
+    if lags is None:
+        lags = np.array([-1, 1])
+    else:
+        lags = np.array(lags).ravel()
+
+    if len(lags) != 2:
+        raise ValueError("Expected (2,) sequence for lags.")
+
+    if not segments is None:
+        segments = fklab.segments.Segment(segments)
+        events = [x[segments.contains(x)[0]] for x in events]
+        triggers = [x[segments.contains(x)[0]] for x in triggers]
+
+    events = [x[np.isfinite(x)] for x in events]
+    triggers = [x[np.isfinite(x)] for x in triggers]
+
+    kde_space = fklab.decode.EuclideanSpace(["lag"], bandwidth=bandwidth)
+    grid_points = np.linspace(*lags, npoints)
+    kde_grid = kde_space.grid([grid_points])
+
+    yy = np.empty((npoints, len(events), len(triggers)), dtype=np.float)
+
+    for t, trigger in enumerate(triggers):
+
+        if not segments is None and unbiased:
+            # compute segments relative to triggers
+            trig_seg = np.reshape(
+                np.array(segments)[:, None, :] - trigger[None, :, None],
+                (len(segments) * len(trigger), 2),
+            )
+            ntriggers = fklab.segments.segment_count(trig_seg, grid_points)
+        else:
+            ntriggers = len(trigger)
+
+        for e, event in enumerate(events):
+            rel_events = fklab.events.basic_algorithms._event_correlation(
+                event, trigger, lags=lags + [-4 * bandwidth, 4 * bandwidth]
+            )[0]
+
+            if remove_zero_lag:
+                rel_events = rel_events[np.abs(rel_events) > 0]
+
+            nrelevents = len(rel_events)
+
+            mix = fklab.decode.Mixture(kde_space)
+            mix.merge(rel_events)
+
+            yy[:, e, t] = mix.evaluate(kde_grid) * nrelevents / ntriggers
+
+    if squeeze:
+        yy = np.squeeze(yy)
+
+    return yy, grid_points
 
 
 def spike_time_tiling_coefficient(a, b, dt=0.1, epochs=None):
