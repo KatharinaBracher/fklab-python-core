@@ -1,55 +1,73 @@
 import math
 import sys
 from pathlib import Path
-from typing import Union, Tuple, Dict, TypedDict, Literal, IO
+
+if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+    from typing import TypedDict, Literal
+else:
+    from typing_extensions import TypedDict, Literal
+
+from typing import Union, Tuple, Dict, IO
 
 import yaml
 
 __all__ = [
     # IO functions
-    'read_nlx_config',
-    'read_nlx_log',
-    'read_nlx_event',
-    'save_nlx_config',
-    'load_nlx_config',
+    "read_nlx_config",
+    "read_nlx_log",
+    "read_nlx_event",
+    "save_nlx_config",
+    "load_nlx_config",
     # config function
-    'create_default_config',
-    'clone_config',
-    'create_nlx_event',
-    'get_nlx_event_info',
-    'get_event_mask',
+    "create_default_config",
+    "clone_config",
+    "create_nlx_event",
+    "get_nlx_event_info",
+    "get_event_mask",
 ]
 
-EventInfo = TypedDict('EventInfo', {
-    '_original_name': str,
-    'type': Literal['system', 'user'],
-    'direct': Literal['input', 'output'],
-    'port': int,
-    'bits': int,
-})
+EventInfo = TypedDict(
+    "EventInfo",
+    {
+        "_original_name": str,
+        "type": Literal["system", "user"],
+        "direct": Literal["input", "output"],
+        "port": int,
+        "bits": int,
+    },
+)
 
-PortInfo = TypedDict('PortInfo', {
-    'DigitalIOPortDirection': Literal['input', 'output'],
-    'DigitalIOEventsEnabled': bool,
-    'DigitalIOPulseDuration': int,
-    'DigitalIOUseStrobeBit': bool,
-})
+PortInfo = TypedDict(
+    "PortInfo",
+    {
+        "DigitalIOPortDirection": Literal["input", "output"],
+        "DigitalIOEventsEnabled": bool,
+        "DigitalIOPulseDuration": int,
+        "DigitalIOUseStrobeBit": bool,
+    },
+)
 
-SystemBoard = TypedDict('SystemBoard', {
-    'DigitalIOBitsPerPort': int,
-    'DigitalIOInputScanDelay': int,
-    'Ports': Dict[int, PortInfo],
-    'Events': Dict[str, EventInfo]
-})
+SystemBoard = TypedDict(
+    "SystemBoard",
+    {
+        "DigitalIOBitsPerPort": int,
+        "DigitalIOInputScanDelay": int,
+        "Ports": Dict[int, PortInfo],
+        "Events": Dict[str, EventInfo],
+    },
+)
 
 CheetahConfig = Dict[str, SystemBoard]
 
 
-def create_default_config(total_ports=4, *,
-                          board_name: str = 'AcqSystem1_0',
-                          bits_per_port=8,
-                          scan_delay=1,
-                          pulse_duration=15) -> CheetahConfig:
+def create_default_config(
+    total_ports=4,
+    *,
+    board_name: str = "AcqSystem1_0",
+    bits_per_port=8,
+    scan_delay=1,
+    pulse_duration=15,
+) -> CheetahConfig:
     """Create a default config with default fields and value.
 
     Parameters
@@ -72,18 +90,18 @@ def create_default_config(total_ports=4, *,
     """
     return {
         board_name: {
-            'DigitalIOInputScanDelay': scan_delay,
-            'DigitalIOBitsPerPort': bits_per_port,
-            'Events': {},
-            'Ports': {
+            "DigitalIOInputScanDelay": scan_delay,
+            "DigitalIOBitsPerPort": bits_per_port,
+            "Events": {},
+            "Ports": {
                 port: {
-                    'DigitalIOEventsEnabled': True,
-                    'DigitalIOPortDirection': 'input',
-                    'DigitalIOPulseDuration': pulse_duration,
-                    'DigitalIOUseStrobeBit': False
+                    "DigitalIOEventsEnabled": True,
+                    "DigitalIOPortDirection": "input",
+                    "DigitalIOPulseDuration": pulse_duration,
+                    "DigitalIOUseStrobeBit": False,
                 }
                 for port in range(total_ports)
-            }
+            },
         }
     }
 
@@ -102,33 +120,39 @@ def clone_config(config: CheetahConfig) -> CheetahConfig:
     """
     return {
         board_name: {
-            'DigitalIOInputScanDelay': board['DigitalIOInputScanDelay'],
-            'DigitalIOBitsPerPort': board['DigitalIOBitsPerPort'],
-            'Events': {
+            "DigitalIOInputScanDelay": board["DigitalIOInputScanDelay"],
+            "DigitalIOBitsPerPort": board["DigitalIOBitsPerPort"],
+            "Events": {
                 event_name: {
-                    '_original_name': event['_original_name'],
-                    'type': event['type'],
-                    'direct': event['direct'],
-                    'port': event['port'],
-                    'bits': event['bits']
-                } for event_name, event in board['Events'].items()
+                    "_original_name": event["_original_name"],
+                    "type": event["type"],
+                    "direct": event["direct"],
+                    "port": event["port"],
+                    "bits": event["bits"],
+                }
+                for event_name, event in board["Events"].items()
             },
-            'Ports': {
+            "Ports": {
                 port_i: {
-                    'DigitalIOEventsEnabled': port['DigitalIOEventsEnabled'],
-                    'DigitalIOPortDirection': port['DigitalIOPortDirection'],
-                    'DigitalIOPulseDuration': port['DigitalIOPulseDuration'],
-                    'DigitalIOUseStrobeBit': port['DigitalIOUseStrobeBit']
-                } for port_i, port in board['Ports'].items()
-            }
+                    "DigitalIOEventsEnabled": port["DigitalIOEventsEnabled"],
+                    "DigitalIOPortDirection": port["DigitalIOPortDirection"],
+                    "DigitalIOPulseDuration": port["DigitalIOPulseDuration"],
+                    "DigitalIOUseStrobeBit": port["DigitalIOUseStrobeBit"],
+                }
+                for port_i, port in board["Ports"].items()
+            },
         }
         for board_name, board in config.items()
     }
 
 
-def create_nlx_event(port: int, bits: int, name: str,
-                     type: Literal['user', 'system'] = 'user',
-                     direct: Literal['input', 'output'] = 'input') -> EventInfo:
+def create_nlx_event(
+    port: int,
+    bits: int,
+    name: str,
+    type: Literal["user", "system"] = "user",
+    direct: Literal["input", "output"] = "input",
+) -> EventInfo:
     """Create a EventInfo.
 
     **Use Example**
@@ -161,25 +185,23 @@ def create_nlx_event(port: int, bits: int, name: str,
 
     """
     if port < -1:  # -1 for unknown
-        raise ValueError(f'negative port number : {port}')
+        raise ValueError(f"negative port number : {port}")
     if bits < -1:  # -1 for unknown
-        raise ValueError(f'negative bits number : {bits}')
-    if type not in ('user', 'system'):
-        raise ValueError(f'illegal event type : {type}')
-    if direct not in ('input', 'output'):
-        raise ValueError(f'illegal event direct : {direct}')
+        raise ValueError(f"negative bits number : {bits}")
+    if type not in ("user", "system"):
+        raise ValueError(f"illegal event type : {type}")
+    if direct not in ("input", "output"):
+        raise ValueError(f"illegal event direct : {direct}")
 
     return EventInfo(
-        port=port,
-        bits=bits,
-        type=type,
-        direct=direct,
-        _original_name=name,
+        port=port, bits=bits, type=type, direct=direct, _original_name=name
     )
 
 
-def read_nlx_config(file: Union[str, Path], config: CheetahConfig = None) -> CheetahConfig:
-    """Read event information from Neuralynx/Cheetah config (*.cfg) file.
+def read_nlx_config(
+    file: Union[str, Path], config: CheetahConfig = None
+) -> CheetahConfig:
+    """Read event information from Neuralynx/Cheetah config (.cfg) file.
 
     Parameters
     ----------
@@ -191,7 +213,6 @@ def read_nlx_config(file: Union[str, Path], config: CheetahConfig = None) -> Che
     Returns
     -------
     CheetahConfig
-
     """
     if isinstance(file, str):
         file = Path(file)
@@ -199,11 +220,11 @@ def read_nlx_config(file: Union[str, Path], config: CheetahConfig = None) -> Che
     if config is None:
         config = {}
 
-    with file.open('r') as f:
+    with file.open("r") as f:
         for line in f:
             line = line.strip()
 
-            if len(line) == 0 or line.startswith('#'):
+            if len(line) == 0 or line.startswith("#"):
                 continue
 
             _config_set_command(config, line)
@@ -235,20 +256,20 @@ def read_nlx_log(file: Union[str, Path], config: CheetahConfig = None) -> Cheeta
     # line pattern we care
     # -* NOTICE  *-  13:28:35.505 - 22799408 - FormatCmdLine::GetNextLine() - Processing line: ...
     # -* NOTICE  *-  13:28:35.505 - 22799408 - FormatCmdLine::GetNextLine() - Processing line NUMBER: ...
-    N = '-* NOTICE  *-'
-    F = 'FormatCmdLine::GetNextLine() - Processing line'
+    N = "-* NOTICE  *-"
+    F = "FormatCmdLine::GetNextLine() - Processing line"
 
-    with file.open('r', encoding='ISO-8859-1') as f:
+    with file.open("r", encoding="ISO-8859-1") as f:
         for line in f:
             line = line.strip()
 
-            if len(line) == 0 or line.startswith('#'):
+            if len(line) == 0 or line.startswith("#"):
                 continue
 
             if not line.startswith(N) or F not in line:
                 continue
 
-            line = line[line.index(':', 80) + 1:].strip()
+            line = line[line.index(":", 80) + 1 :].strip()
             _config_set_command(config, line)
 
     return config
@@ -275,46 +296,48 @@ def _config_set_command(config: CheetahConfig, line: str):
     # take the command we care
     if line.startswith("-SetDigitalIOBitsPerPort"):
         # -SetDigitalIOBitsPerPort "AcqSystem1_0" VALUE
-        p = line.split(' ', 2)
-        get_dict(p[1])['DigitalIOBitsPerPort'] = int(p[2])
+        p = line.split(" ", 2)
+        get_dict(p[1])["DigitalIOBitsPerPort"] = int(p[2])
 
-    elif line.startswith('-SetDigitalIOInputScanDelay'):
+    elif line.startswith("-SetDigitalIOInputScanDelay"):
         # -SetDigitalIOInputScanDelay "AcqSystem1_0" VALUE
-        p = line.split(' ', 2)
-        get_dict(p[1])['DigitalIOInputScanDelay'] = int(p[2])
+        p = line.split(" ", 2)
+        get_dict(p[1])["DigitalIOInputScanDelay"] = int(p[2])
 
-    elif line.startswith('-SetDigitalIOPortDirection'):
+    elif line.startswith("-SetDigitalIOPortDirection"):
         # -SetDigitalIOPortDirection "AcqSystem1_0" PORT Input/Output
-        p = line.split(' ', 3)
-        get_dict(p[1], 'Ports', int(p[2]))['DigitalIOPortDirection'] = p[3].lower()
+        p = line.split(" ", 3)
+        get_dict(p[1], "Ports", int(p[2]))["DigitalIOPortDirection"] = p[3].lower()
 
-    elif line.startswith('-SetDigitalIOUseStrobeBit'):
+    elif line.startswith("-SetDigitalIOUseStrobeBit"):
         # -SetDigitalIOUseStrobeBit "AcqSystem1_0" PORT True/False
-        p = line.split(' ', 3)
-        get_dict(p[1], 'Ports', int(p[2]))['DigitalIOUseStrobeBit'] = p[3] != 'False'
+        p = line.split(" ", 3)
+        get_dict(p[1], "Ports", int(p[2]))["DigitalIOUseStrobeBit"] = p[3] != "False"
 
-    elif line.startswith('-SetDigitalIOEventsEnabled'):
+    elif line.startswith("-SetDigitalIOEventsEnabled"):
         # -SetDigitalIOEventsEnabled "AcqSystem1_0" PORT True/False
-        p = line.split(' ', 3)
-        get_dict(p[1], 'Ports', int(p[2]))['DigitalIOEventsEnabled'] = p[3] != 'False'
+        p = line.split(" ", 3)
+        get_dict(p[1], "Ports", int(p[2]))["DigitalIOEventsEnabled"] = p[3] != "False"
 
-    elif line.startswith('-SetDigitalIOPulseDuration'):
+    elif line.startswith("-SetDigitalIOPulseDuration"):
         # -SetDigitalIOPulseDuration "AcqSystem1_0" PORT VALUE
-        p = line.split(' ', 3)
-        get_dict(p[1], 'Ports', int(p[2]))['DigitalIOPulseDuration'] = int(p[3])
+        p = line.split(" ", 3)
+        get_dict(p[1], "Ports", int(p[2]))["DigitalIOPulseDuration"] = int(p[3])
 
-    elif line.startswith('-SetNamedTTLEvent'):
+    elif line.startswith("-SetNamedTTLEvent"):
         # -SetNamedTTLEvent "AcqSystem1_0" PORT BITS "NAME"
-        p = line.split(' ', 4)
+        p = line.split(" ", 4)
 
         port = int(p[2])
         bits = int(p[3])
         e = _unquote(p[4])
-        direct = get_dict(p[1], 'Ports', port).get('DigitalIOPortDirection', 'input')
-        get_dict(p[1], 'Events')[e] = create_nlx_event(port, bits, e, 'user', direct)
+        direct = get_dict(p[1], "Ports", port).get("DigitalIOPortDirection", "input")
+        get_dict(p[1], "Events")[e] = create_nlx_event(port, bits, e, "user", direct)
 
 
-def read_nlx_event(file: Union[str, Path, 'NlxFileEvent'], config: CheetahConfig = None) -> CheetahConfig:
+def read_nlx_event(
+    file: Union[str, Path, "NlxFileEvent"], config: CheetahConfig = None
+) -> CheetahConfig:
     """Read event information from Neuralynx Event file (Events.nev).
 
     This method will read and set the lost information from event file,
@@ -348,26 +371,35 @@ def read_nlx_event(file: Union[str, Path, 'NlxFileEvent'], config: CheetahConfig
         except ValueError:
             pass
 
-        if e_str.startswith('TTL Input '):
-            board, port, bits = _parse_ttl_input(e_str, on_error='warning')
+        if e_str.startswith("TTL Input "):
+            board, port, bits = _parse_ttl_input(e_str, on_error="warning")
             if board is not None:
                 try:
                     board = config[board]
                 except KeyError as e:
-                    raise RuntimeError(f'board {board} not found in config, '
-                                       f'make sure this Events.nev is generated under this config') from e
+                    raise RuntimeError(
+                        f"board {board} not found in config, "
+                        f"make sure this Events.nev is generated under this config"
+                    ) from e
                 else:
-                    if e_str not in board['Events'] and port is not None and bits is not None:
-                        board['Events'][e_str] = create_nlx_event(port, bits, e_str, 'user')
+                    if (
+                        e_str not in board["Events"]
+                        and port is not None
+                        and bits is not None
+                    ):
+                        board["Events"][e_str] = create_nlx_event(
+                            port, bits, e_str, "user"
+                        )
         else:
             for board in config.values():
-                board['Events'][e_str] = create_nlx_event(-1, -1, e_str, 'system')
+                board["Events"][e_str] = create_nlx_event(-1, -1, e_str, "system")
 
     return config
 
 
-def _parse_ttl_input(e_str: str,
-                     on_error: Literal['error', 'warning', 'ignore'] = 'error') -> Tuple[str, int, int]:
+def _parse_ttl_input(
+    e_str: str, on_error: Literal["error", "warning", "ignore"] = "error"
+) -> Tuple[str, int, int]:
     """Parse TTL Input event string.
 
     There is one TTL Input event string example:
@@ -397,7 +429,7 @@ def _parse_ttl_input(e_str: str,
         bad event string or mask value.
 
     """
-    p = e_str.split(' ')
+    p = e_str.split(" ")
 
     board = None
     port = None
@@ -413,30 +445,30 @@ def _parse_ttl_input(e_str: str,
         if mask > 0:
             bits = math.log2(mask)
             if bits - int(bits) != 0:
-                if on_error == 'ignore':
+                if on_error == "ignore":
                     pass
-                elif on_error == 'warning':
-                    print(f'bad mask value : {mask} for event : {e_str}')
+                elif on_error == "warning":
+                    print(f"bad mask value : {mask} for event : {e_str}")
                 else:
-                    raise RuntimeError(f'bad mask value : {mask} for event : {e_str}')
+                    raise RuntimeError(f"bad mask value : {mask} for event : {e_str}")
 
             bits = int(bits)
         else:
             bits = None
 
     except ValueError as e:
-        if on_error == 'ignore':
+        if on_error == "ignore":
             pass
-        elif on_error == 'warning':
-            print(f'bad value : {e}')
+        elif on_error == "warning":
+            print(f"bad value : {e}")
         else:
             raise e
 
     except IndexError as e:
-        if on_error == 'ignore':
+        if on_error == "ignore":
             pass
-        elif on_error == 'warning':
-            print(f'bad format : {e}')
+        elif on_error == "warning":
+            print(f"bad format : {e}")
         else:
             raise e
 
@@ -456,10 +488,10 @@ def save_nlx_config(config: CheetahConfig, file: Union[str, Path, IO] = None):
     if file is None:
         file = sys.stdout
     elif isinstance(file, str):
-        with open(file, 'w') as f:
+        with open(file, "w") as f:
             return save_nlx_config(config, f)
     elif isinstance(file, Path):
-        with file.open('w') as f:
+        with file.open("w") as f:
             return save_nlx_config(config, f)
 
     yaml.dump(config, file)
@@ -533,16 +565,16 @@ def load_nlx_config(file: Union[str, Path, IO]) -> CheetahConfig:
 
     """
     if isinstance(file, str):
-        with open(file, 'r') as f:
+        with open(file, "r") as f:
             return load_nlx_config(f)
     elif isinstance(file, Path):
-        with file.open('r') as f:
+        with file.open("r") as f:
             return load_nlx_config(f)
 
     return yaml.safe_load(file)
 
 
-def _ensure_nlx_event_file(file: Union[str, Path, 'NlxFileEvent']) -> 'NlxFileEvent':
+def _ensure_nlx_event_file(file: Union[str, Path, "NlxFileEvent"]) -> "NlxFileEvent":
     from fklab.io.neuralynx import NlxOpen, NlxFileEvent
 
     if isinstance(file, NlxFileEvent):
@@ -555,7 +587,9 @@ def _ensure_nlx_event_file(file: Union[str, Path, 'NlxFileEvent']) -> 'NlxFileEv
         raise TypeError(f"not an event file : {file}")
 
 
-def get_nlx_event_info(config: CheetahConfig, event_name: str) -> Tuple[EventInfo, str, str]:
+def get_nlx_event_info(
+    config: CheetahConfig, event_name: str
+) -> Tuple[EventInfo, str, str]:
     """Get event info from config by name.
 
     This method will try to find the first name matched (include name and _original_name) event.
@@ -582,16 +616,16 @@ def get_nlx_event_info(config: CheetahConfig, event_name: str) -> Tuple[EventInf
 
     """
     for board, info in config.items():
-        events = info['Events']
+        events = info["Events"]
 
         if event_name in events:
             return events[event_name], event_name, board
 
         for name, event in events.items():
-            if event['_original_name'] == event_name:
+            if event["_original_name"] == event_name:
                 return event, name, board
 
-    raise ValueError(f'event {event_name} not found in config')
+    raise ValueError(f"event {event_name} not found in config")
 
 
 def get_event_mask(board: SystemBoard) -> Dict[int, str]:
@@ -609,9 +643,9 @@ def get_event_mask(board: SystemBoard) -> Dict[int, str]:
 
     """
     return {
-        int(2 ** info['bits']): name
-        for name, info in board['Events'].items()
-        if info['bits'] >= 0
+        int(2 ** info["bits"]): name
+        for name, info in board["Events"].items()
+        if info["bits"] >= 0
     }
 
 

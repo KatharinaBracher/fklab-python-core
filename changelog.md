@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7]
+
+Project become open-source !!
+
+### Added
+- time alignment feature for neuralynx
+- speed up apply_filter by replacing filtfilt with convolve to perform filtering
+- Extend bootstrapped condifence interval with monte-carlo p-value calculatio
+
+### fixed
+- median filter not at the right place in the ripple detection method
+
 ## [1.6]
 ### Added
  - fklab.plot.core.artists: added options to set color and width of scalebar created with AnchoredScaleBar (Fred)
