@@ -529,13 +529,13 @@ def event_intervals(events, other=None, kind="post", segments=None):
     else:
         raise Error
 
-    if not segments is None:
+    if segments is not None:
         segments = check_segments(segments)
 
         valid = idx >= 0
         valid = (valid) & (segment_contains(segments, events)[0])
 
-        if not other is None:
+        if other is not None:
             valid[valid] &= segment_contains(segments, other[idx[valid]])[0]
         else:
             valid[valid] &= segment_contains(segments, events[idx[valid]])[0]
