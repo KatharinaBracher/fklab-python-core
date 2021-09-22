@@ -592,11 +592,7 @@ def segment_asindex(segments, x):
 
     """
     x = np.array(x).squeeze()
-    b = segment_contains(segments, x)[0]
-
-    b = np.diff(np.concatenate(([0], b, [0])))
-
-    seg = np.vstack(((b == 1).nonzero()[0], (b == -1).nonzero()[0] - 1)).T
+    seg = segment_contains(segments, x)[2]
 
     return seg
 
