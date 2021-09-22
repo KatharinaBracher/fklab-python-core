@@ -56,11 +56,12 @@ def plot_spectrum(
     artists = []
 
     if not err is None:
-        artists.append(
-            axes.fill_between(f, err[0, :, 0], err[1, :, 0], facecolor=color, alpha=0.2)
-        )
+        if err.ndim == 2:  # average case
+            artists.append(axes.fill_between(f, err[0, :], err[1, :], facecolor=color, alpha=0.2))
+        else:
+            artists.append(axes.fill_between(f, err[0, :, 0], err[1, :, 0], facecolor=color, alpha=0.2))
 
-    artists.extend(plt.plot(f, S, axes=axes, color=color))
+    artists.extend(axes.plot(f, S, color=color))
 
     if units is None or units == "":
         units = "1"
@@ -68,9 +69,8 @@ def plot_spectrum(
         units = str(units)
         units = units + "*" + units
 
-    plt.xlabel("frequency [Hz]")
-    plt.ylabel(
-        "power spectral density [{units}/Hz] {db}".format(
+    axes.set(xlabel="frequency [Hz]")
+    axes.set(ylabel="power spectral density [{units}/Hz] {db}".format(
             units=units, db="in db" if db else ""
         )
     )
@@ -139,7 +139,7 @@ def plot_spectrogram(
     )
 
     if colorbar:
-        cbar = plt.colorbar(artists[0])
+        cbar = plt.colorbar(artists[0], ax=axes)
         artists.append(cbar)
 
         if units is None or units == "":
@@ -200,15 +200,14 @@ def plot_coherence(signal1, signal2, t=None, axes=None, color="black", **kwargs)
             )
         )
 
-    artists.extend(plt.plot(f, coh, axes=axes, color=color))
+    artists.extend(axes.plot(f, coh, color=color))
 
     if not err[0] is None:
-        artists.append(plt.axhline(y=err[0], color="red", linestyle=":"))
+        artists.append(axes.axhline(y=err[0], color="red", linestyle=":"))
 
-    plt.xlabel("frequency [Hz]")
-    plt.ylabel("coherence")
+    axes.set(xlabel="frequency [Hz]", ylabel="coherence")
 
-    plt.ylim(0, 1)
+    axes.set(ylim=(0, 1))
 
     return axes, artists, (coh, phi, f, err, options)
 
@@ -248,26 +247,24 @@ def plot_coherogram(signal1, signal2, t=None, axes=None, **kwargs):
     artists = []
 
     artists.append(
-        plt.imshow(
+        axes.imshow(
             coh.T,
-            axes=axes,
             cmap="YlOrRd",
             aspect="auto",
             origin="lower",
             extent=[t[0, 0], t[-1, 1], f[0], f[-1]],
             interpolation="nearest",
+            vmin=0, vmax=1.0
         )
     )
-    plt.clim(0.0, 1.0)
-
-    plt.ylabel("frequency [Hz]")
-    plt.xlabel(
-        "{label} [s]".format(
+    
+    axes.set(ylabel="frequency [Hz]")
+    axes.set(xlabel="{label} [s]".format(
             label="time" if kwargs.get("triggers", None) is None else "latency"
         )
     )
 
-    cbar = plt.colorbar()
+    cbar = plt.colorbar(artists[0], ax=axes)
     cbar.set_label("coherence")
 
     artists.append(cbar)

@@ -224,8 +224,8 @@ def mtspectrum(
         vector of frequencies
     Serr : None or 3d array
         lower and upper error estimates. The shape of the array is
-        (2, frequencies, signals), where the first axis contains the
-        lower and upper error estimates.
+        (2, frequencies, signals), or (2, frequencies) if average==True,
+        where the first axis contains the lower and upper error estimates.
     options : dict
 
     """
