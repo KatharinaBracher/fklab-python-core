@@ -57,9 +57,15 @@ def plot_spectrum(
 
     if not err is None:
         if err.ndim == 2:  # average case
-            artists.append(axes.fill_between(f, err[0, :], err[1, :], facecolor=color, alpha=0.2))
+            artists.append(
+                axes.fill_between(f, err[0, :], err[1, :], facecolor=color, alpha=0.2)
+            )
         else:
-            artists.append(axes.fill_between(f, err[0, :, 0], err[1, :, 0], facecolor=color, alpha=0.2))
+            artists.append(
+                axes.fill_between(
+                    f, err[0, :, 0], err[1, :, 0], facecolor=color, alpha=0.2
+                )
+            )
 
     artists.extend(axes.plot(f, S, color=color))
 
@@ -70,7 +76,8 @@ def plot_spectrum(
         units = units + "*" + units
 
     axes.set(xlabel="frequency [Hz]")
-    axes.set(ylabel="power spectral density [{units}/Hz] {db}".format(
+    axes.set(
+        ylabel="power spectral density [{units}/Hz] {db}".format(
             units=units, db="in db" if db else ""
         )
     )
@@ -79,7 +86,14 @@ def plot_spectrum(
 
 
 def plot_spectrogram(
-    data, t=None, axes=None, units=None, db=True, colorbar=True, **kwargs
+    data,
+    t=None,
+    axes=None,
+    units=None,
+    db=True,
+    colorbar=True,
+    colormap="YlOrRd",
+    **kwargs
 ):
     """Plot spectrogram of data vector.
 
@@ -95,6 +109,10 @@ def plot_spectrogram(
         Units of the data (e.g. mV)
     db : bool, optional
         Plot density in dB.
+    colorbar: bool, optioinal
+        show legend colorbar
+    colormap: string, optional
+        string representing matplotlib colormap
     kwargs : mtspectrogram parameters
 
     Returns
@@ -123,7 +141,7 @@ def plot_spectrogram(
     artists.append(
         axes.imshow(
             S.T,
-            cmap="YlOrRd",
+            cmap=colormap,
             aspect="auto",
             origin="lower",
             extent=[t[0, 0], t[-1, 1], f[0], f[-1]],
@@ -254,12 +272,14 @@ def plot_coherogram(signal1, signal2, t=None, axes=None, **kwargs):
             origin="lower",
             extent=[t[0, 0], t[-1, 1], f[0], f[-1]],
             interpolation="nearest",
-            vmin=0, vmax=1.0
+            vmin=0,
+            vmax=1.0,
         )
     )
-    
+
     axes.set(ylabel="frequency [Hz]")
-    axes.set(xlabel="{label} [s]".format(
+    axes.set(
+        xlabel="{label} [s]".format(
             label="time" if kwargs.get("triggers", None) is None else "latency"
         )
     )
