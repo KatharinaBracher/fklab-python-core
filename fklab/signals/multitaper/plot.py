@@ -109,10 +109,11 @@ def plot_spectrogram(
         Units of the data (e.g. mV)
     db : bool, optional
         Plot density in dB.
-    colorbar: bool, optioinal
+    colorbar: bool, optional
         show legend colorbar
     colormap: string, optional
-        string representing matplotlib colormap
+        string representing matplotlib colormap,
+        find the valid colormaps here: https://matplotlib.org/stable/tutorials/colors/colormaps.html
     kwargs : mtspectrogram parameters
 
     Returns
