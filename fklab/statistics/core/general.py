@@ -20,6 +20,8 @@ __all__ = [
     "find_mode",
     "beta_reparameterize",
     "map_array",
+    "bin_array",
+    "construct_array"
 ]
 
 import re
@@ -308,6 +310,122 @@ def beta_reparameterize(mode=0.5, concentration=4):
     return (mode * (concentration - 2) + 1, (1 - mode) * (concentration - 2) + 1)
 
 
+def bin_array(x, bins=10, range=None):
+    """Return indices of bins to which values belong.
+
+    Similar to `numpy.digitize`, but for nd arrays. This
+    implementation uses `numpy.searchsorted` rather than
+    `numpy.digitize` to find bin indices.
+
+    Note that the index for values in `x` that do fall within
+    a bin is equal to either -1 or the number of bins. The
+    returned `valid` array indicates which input data samples
+    fall within a bin.
+
+    Parameters
+    ----------
+    x : (n,) or (n,d) array
+        Multidimensional samples for which the bin index is
+        returned.
+    bins : None, scalar, array, (nx,ny,...), (xbins,ybins,...)
+        The number of bins or bin edges for each of the data
+        dimensions.
+    range : None, (low,high), ((lowx,highx),(lowy,highy),...)
+        If number of bins is provided, the minimum and maximum
+        values that determine the range over which bins are
+        defined.
+
+    Returns
+    -------
+    indices : (n,d) array
+        The multidimensional bin indices for all data samples.
+    valid : (n,) bool array
+        True for samples that fall inside a bin.
+    bins : [1d array, ...]
+        List of bin edges for all dimensions.
+    shape : tuple
+        Shape of the binned array.
+
+    """
+
+    if x.ndim==1:
+        x = x[:,None]
+    elif x.ndim!=2:
+        raise ValueError("Expecting `x` to be 1d or 2d array.")
+
+    ndims = x.shape[1]
+
+    if not isinstance(bins, (tuple, list)):
+        bins = [bins,]*ndims
+    elif len(bins)!=ndims:
+        raise ValueError("Invalid value for `bins`")
+
+    if not isinstance(range, (list, tuple)):
+        range = [range,]*ndims
+    elif len(range)==2 and all([isinstance(k, (int,float)) for k in range]):
+        range = [range,]*ndims
+
+    bin_edges = [
+        np.histogram_bin_edges(x[:,k], bins=bins[k], range=range[k])
+        for k in np.arange(ndims)
+    ]
+
+    indices = np.column_stack(
+        [np.searchsorted(bin_edges[k], x[:,k], side="right")-1 for k in np.arange(ndims)])
+
+    valid = np.all(
+        np.logical_and(indices>=0, indices<[[len(b)-1 for b in bin_edges]]),
+        axis=1
+    )
+
+    shape = tuple([len(b)-1 for b in bin_edges])
+
+    return indices, valid, bins, shape
+
+
+def construct_array(x, indices, shape, fill_value=0):
+    """Construct full array.
+
+    Parameters
+    ----------
+    x : (n,...) array
+        Multidimensional data array. Each row is a data sample.
+    indices : (n,d) array
+        Multidimensional bin indices for each data sample.
+    shape : tuple
+        Shape of the binned array.
+    fill_value : scalar
+        Value of bins without data samples.
+
+    Returns
+    -------
+    y : nd-array
+
+    """
+
+    if indices.ndim<1 or indices.ndim>2:
+        raise ValueError("`indices` should be 1d or 2d array.")
+
+    ndims = 1 if indices.ndim==1 else indices.shape[1]
+
+    if len(x)!=len(indices):
+        raise ValueError("Size of first dimension for `x` and `indices` should be equal.")
+
+    if isinstance(shape,int):
+        shape = (shape,)*ndims
+    elif not isinstance(shape,tuple) or len(shape)!=ndims:
+        raise ValueError("Invalid value for `shape`")
+
+    result = np.full_like(x, fill_value, shape=shape+x.shape[1:])
+
+    idx = [k.ravel() for k in np.hsplit(indices,ndims)] + [slice(None),]*(x.ndim-1)
+    idx = tuple(idx)
+
+    result[idx] = x
+
+    return result
+
+
 def map_array(index, *args, fcn="count"):
     """Split-apply-combine operation.
 
@@ -345,7 +463,9 @@ def map_array(index, *args, fcn="count"):
     -------
     result : array
         In case of a mapping operation, *result* is a (n,...) array.
-        In case of a reduction operation, *result* is a (ngroups,...) array.
+        In case of a pure reduction operation, *result* is a (ngroups,...) array.
+        In case of a partial reduction operation, *result* is a list
+        of length ngroups with (m,...) arrays.
     groups : array
         Indices of groups.
 
@@ -393,7 +513,12 @@ def map_array(index, *args, fcn="count"):
         if all([r.shape[0] == 1 for r in result]):
             result = np.concatenate(result)
         else:
-            result = np.stack(result)
+            # should we just return result and leave stack operation
+            # to users (if they need it)
+            # or return n?
+            # n = [len(k) for k in result]
+            # result = np.stack(result)
+            pass
     else:
         result = np.concatenate(result)
         result = result[np.argsort(sorted_inverse)]
