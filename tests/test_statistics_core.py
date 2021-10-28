@@ -42,7 +42,7 @@ class TestStatisticBinned(unittest.TestCase):
 
         np.testing.assert_array_equal(valid, position < 80)
 
-    def test_map_array(self):
+    def test_generate_full_binned_array(self):
         bin_number = 21
         position = np.random.uniform(-50, 50, size=(10, 2))
         bins = np.linspace(-50, 50, bin_number)
@@ -50,7 +50,7 @@ class TestStatisticBinned(unittest.TestCase):
         index, valid, bin_edges, shape = fklab.statistics.core.bin_array(
             position, bins=bins
         )
-        mu, groups = fklab.statistics.core.map_array(
+        mu, groups = fklab.statistics.core.generate_full_binned_array(
             index[valid], speed[valid], fcn=np.mean
         )
 
