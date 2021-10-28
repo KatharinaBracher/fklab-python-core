@@ -19,9 +19,9 @@ __all__ = [
     "monte_carlo_pvalue",
     "find_mode",
     "beta_reparameterize",
-    "map_array",
+    "generate_full_binned_array",
     "bin_array",
-    "construct_array"
+    "transform_binned_array",
 ]
 
 import re
@@ -348,85 +348,46 @@ def bin_array(x, bins=10, range=None):
 
     """
 
-    if x.ndim==1:
-        x = x[:,None]
-    elif x.ndim!=2:
+    if x.ndim == 1:
+        x = x[:, None]
+    elif x.ndim != 2:
         raise ValueError("Expecting `x` to be 1d or 2d array.")
 
     ndims = x.shape[1]
 
     if not isinstance(bins, (tuple, list)):
-        bins = [bins,]*ndims
-    elif len(bins)!=ndims:
+        bins = [bins] * ndims
+    elif len(bins) != ndims:
         raise ValueError("Invalid value for `bins`")
 
     if not isinstance(range, (list, tuple)):
-        range = [range,]*ndims
-    elif len(range)==2 and all([isinstance(k, (int,float)) for k in range]):
-        range = [range,]*ndims
+        range = [range] * ndims
+    elif len(range) == 2 and all([isinstance(k, (int, float)) for k in range]):
+        range = [range] * ndims
 
     bin_edges = [
-        np.histogram_bin_edges(x[:,k], bins=bins[k], range=range[k])
+        np.histogram_bin_edges(x[:, k], bins=bins[k], range=range[k])
         for k in np.arange(ndims)
     ]
 
     indices = np.column_stack(
-        [np.searchsorted(bin_edges[k], x[:,k], side="right")-1 for k in np.arange(ndims)])
-
-    valid = np.all(
-        np.logical_and(indices>=0, indices<[[len(b)-1 for b in bin_edges]]),
-        axis=1
+        [
+            np.searchsorted(bin_edges[k], x[:, k], side="right") - 1
+            for k in np.arange(ndims)
+        ]
     )
 
-    shape = tuple([len(b)-1 for b in bin_edges])
+    valid = np.all(
+        np.logical_and(indices >= 0, indices < [[len(b) - 1 for b in bin_edges]]),
+        axis=1,
+    )
+
+    shape = tuple([len(b) - 1 for b in bin_edges])
 
     return indices, valid, bins, shape
 
 
-def construct_array(x, indices, shape, fill_value=0):
-    """Construct full array.
-
-    Parameters
-    ----------
-    x : (n,...) array
-        Multidimensional data array. Each row is a data sample.
-    indices : (n,d) array
-        Multidimensional bin indices for each data sample.
-    shape : tuple
-        Shape of the binned array.
-    fill_value : scalar
-        Value of bins without data samples.
-
-    Returns
-    -------
-    y : nd-array
-
-    """
-
-    if indices.ndim<1 or indices.ndim>2:
-        raise ValueError("`indices` should be 1d or 2d array.")
-
-    ndims = 1 if indices.ndim==1 else indices.shape[1]
-
-    if len(x)!=len(indices):
-        raise ValueError("Size of first dimension for `x` and `indices` should be equal.")
-
-    if isinstance(shape,int):
-        shape = (shape,)*ndims
-    elif not isinstance(shape,tuple) or len(shape)!=ndims:
-        raise ValueError("Invalid value for `shape`")
-
-    result = np.full_like(x, fill_value, shape=shape+x.shape[1:])
-
-    idx = [k.ravel() for k in np.hsplit(indices,ndims)] + [slice(None),]*(x.ndim-1)
-    idx = tuple(idx)
-
-    result[idx] = x
-
-    return result
-
-
-def map_array(index, *args, fcn="count"):
+def generate_full_binned_array(index, *args, fcn="count"):
     """Split-apply-combine operation.
 
     Similar to scipy.stats.binned_statistic_dd with the following differences:
@@ -524,3 +485,48 @@ def map_array(index, *args, fcn="count"):
         result = result[np.argsort(sorted_inverse)]
 
     return result, unique_index
+
+
+def transform_binned_array(x, indices, shape, fill_value=0):
+    """Construct full array.
+
+    Parameters
+    ----------
+    x : (n,...) array
+        Multidimensional data array. Each row is a data sample.
+    indices : (n,d) array
+        Multidimensional bin indices for each data sample.
+    shape : tuple
+        Shape of the binned array.
+    fill_value : scalar
+        Value of bins without data samples.
+
+    Returns
+    -------
+    y : nd-array
+
+    """
+
+    if indices.ndim < 1 or indices.ndim > 2:
+        raise ValueError("`indices` should be 1d or 2d array.")
+
+    ndims = 1 if indices.ndim == 1 else indices.shape[1]
+
+    if len(x) != len(indices):
+        raise ValueError(
+            "Size of first dimension for `x` and `indices` should be equal."
+        )
+
+    if isinstance(shape, int):
+        shape = (shape,) * ndims
+    elif not isinstance(shape, tuple) or len(shape) != ndims:
+        raise ValueError("Invalid value for `shape`")
+
+    result = np.full_like(x, fill_value, shape=shape + x.shape[1:])
+
+    idx = [k.ravel() for k in np.hsplit(indices, ndims)] + [slice(None)] * (x.ndim - 1)
+    idx = tuple(idx)
+
+    result[idx] = x
+
+    return result
