@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8]
+
+### Added
+
+- Add compute binned statistics feature in fklab.statistics : see [notebook](https://kloostermannerflab.bitbucket.io/notebooks/statistics/binned_statistics.html)
+- Add peri_event_density in fklab.events: see [example](https://kloostermannerflab.bitbucket.io/gallery)
+
+## Fixed
+
+- Change of behavior in fklab.segment.asIndex : third output return segment_contains
+-
 ## [1.7]
 
 Project become open-source !!
