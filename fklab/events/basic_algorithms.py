@@ -14,7 +14,6 @@ import numpy as np
 import scipy as sp
 import scipy.interpolate
 
-import fklab.decode
 import fklab.utilities.general
 from fklab.codetools import deprecated
 from fklab.segments.basic_algorithms import check_segments
@@ -1068,6 +1067,7 @@ def peri_event_density(
         Vector of time lags
 
     """
+    import fklab.decode
 
     if not isinstance(events, (tuple, list)):
         events = [events]
