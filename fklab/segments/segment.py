@@ -974,7 +974,7 @@ class Segment(object):
         Segment(array([[ 0, 15],
                [20, 46]]))
         """
-        return Segment(segment_asindex(self._data, x, mode))
+        return Segment(segment_asindex(self._data, x, valid_only))
 
     def ijoin(self, gap=0):
         """Join segments with small inter-segment gap (in place).
