@@ -956,19 +956,21 @@ class Segment(object):
         """
         return segment_overlap(self._data, other=other)
 
-    def asindex(self, x, mode="full"):
+    def asindex(self, x, valid_only=False):
         """Convert segments to indices into vector.
 
         Parameters
         ----------
         x : ndarray
+        valid_only : bool, optional
+            set to true if invalid segments should be discarded
 
         Returns
         -------
         Segment (indices)
 
-        >>> segment = Segment([[ 0 ,4],[ 5,12]])
-        >>> segment.asindex(np.linspace(0, 12, 48))
+        >>> segment = Segment([[ 0 ,4],[ 5,12],[52,60]])
+        >>> segment.asindex(np.linspace(0, 12, 48), valid_only=True)
         Segment(array([[ 0, 15],
                [20, 46]]))
         """
