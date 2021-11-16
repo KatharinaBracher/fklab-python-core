@@ -968,10 +968,16 @@ class Segment(object):
         -------
         Segment (indices)
 
-        >>> segment = Segment([[ 0 ,4],[ 5,12],[52,60]])
+        >>> segment = Segment([[ 0 ,4],[ 5,12],[ 52,60]])
         >>> segment.asindex(np.linspace(0, 12, 48), valid_only=True)
         Segment(array([[ 0, 15],
                [20, 46]]))
+        >>> segment = Segment([[ 0 ,4],[ 5,12],[ 52,60]])
+        >>> segment.asindex(np.linspace(0, 12, 48))
+        Segment(array([[ 0, 15],
+               [20, 46],
+               [-1, -1]]))
+
         """
         return Segment(segment_asindex(self._data, x, valid_only))
 
