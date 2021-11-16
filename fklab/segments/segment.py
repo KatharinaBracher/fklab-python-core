@@ -963,8 +963,7 @@ class Segment(object):
         ----------
         x : ndarray
         valid_only : bool, optional
-            set to true if invalid segments should be discarded
-
+            set to true if invalid segments should be discarded otherwise invalid segment = [-1,-1]
         Returns
         -------
         Segment (indices)

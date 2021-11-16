@@ -586,7 +586,7 @@ def segment_asindex(segments, x, valid_only=False):
     segments : segment array
     x : ndarray
     valid_only : bool, optional
-            set to true if invalid segments should be discarde
+            set to true if invalid segments should be discarded otherwise invalid segment = [-1,-1]
 
     Returns
     -------
