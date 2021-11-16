@@ -956,7 +956,7 @@ class Segment(object):
         """
         return segment_overlap(self._data, other=other)
 
-    def asindex(self, x):
+    def asindex(self, x, mode="full"):
         """Convert segments to indices into vector.
 
         Parameters
@@ -972,7 +972,7 @@ class Segment(object):
         Segment(array([[ 0, 15],
                [20, 46]]))
         """
-        return Segment(segment_asindex(self._data, x))
+        return Segment(segment_asindex(self._data, x, mode))
 
     def ijoin(self, gap=0):
         """Join segments with small inter-segment gap (in place).

@@ -578,7 +578,7 @@ def segment_overlap(segments, other=None):
     return out1, out2, out3
 
 
-def segment_asindex(segments, x):
+def segment_asindex(segments, x, mode="full"):
     """Convert segments to indices into vector.
 
     Parameters
@@ -594,6 +594,13 @@ def segment_asindex(segments, x):
     x = np.array(x).squeeze()
     seg = segment_contains(segments, x)[2]
 
+    if mode == "valid":
+        remove_idx = []
+        for idx, s in enumerate(seg):
+            if s[0] < 0 or s[1] < 0:
+                remove_idx.append(idx)
+
+    seg = np.delete(seg, remove_idx, 0)
     return seg
 
 
