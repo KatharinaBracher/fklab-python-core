@@ -956,23 +956,30 @@ class Segment(object):
         """
         return segment_overlap(self._data, other=other)
 
-    def asindex(self, x):
+    def asindex(self, x, valid_only=False):
         """Convert segments to indices into vector.
 
         Parameters
         ----------
         x : ndarray
-
+        valid_only : bool, optional
+            set to True if invalid segments should be discarded otherwise invalid segment = [-1,-1]
         Returns
         -------
         Segment (indices)
 
-        >>> segment = Segment([[ 0 ,4],[ 5,12]])
-        >>> segment.asindex(np.linspace(0, 12, 48))
+        >>> segment = Segment([[ 0 ,4],[ 5,12],[ 52,60]])
+        >>> segment.asindex(np.linspace(0, 12, 48), valid_only=True)
         Segment(array([[ 0, 15],
                [20, 46]]))
+        >>> segment = Segment([[ 0 ,4],[ 5,12],[ 52,60]])
+        >>> segment.asindex(np.linspace(0, 12, 48))
+        Segment(array([[ 0, 15],
+               [20, 46],
+               [-1, -1]]))
+
         """
-        return Segment(segment_asindex(self._data, x))
+        return Segment(segment_asindex(self._data, x, valid_only))
 
     def ijoin(self, gap=0):
         """Join segments with small inter-segment gap (in place).
