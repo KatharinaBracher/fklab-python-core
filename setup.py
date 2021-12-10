@@ -81,6 +81,9 @@ setup(
         "pybind11>=2.2",
         "matplotlib",
         "pyyaml",
+        "scikit-learn",
+        "typing_extensions",
+        "pandas"
     ],
     author="Fabian Kloosterman",
     author_email="fabian.kloosterman@nerf.be",
