@@ -57,9 +57,7 @@ def check_segments(x, copy=False):
     except TypeError:
         raise ValueError("Cannot convert data to numpy array")
 
-    # The array needs to contain real values only.
-    # Is this a proper general test for numbers?
-    if not np.isrealobj(x):
+    if not x.dtype in (float, int):
         raise ValueError("Values are not real numbers")
 
     # The array has to have two dimensions of shape(X,2), where X>=0.
@@ -426,13 +424,13 @@ def segment_contains(segment, x, issorted=True, expand=None):
     xfillp = 0  # index of last x value that has been tested
 
     isinseg = np.zeros(
-        x.shape, dtype=np.bool
+        x.shape, dtype=bool
     )  # True for each x inside any of the segments
     contains = -1 * np.ones(
-        segment.shape, dtype=np.int
+        segment.shape, dtype=int
     )  # for each segment start and end index of x-values that are contained within the segment
     ninseg = np.zeros(
-        segment.shape[0], dtype=np.int
+        segment.shape[0], dtype=int
     )  # for each segment number of x-values it contains
 
     if nx > 0:
@@ -656,7 +654,7 @@ def segment_split(segments, size=1, overlap=0, join=True, tol=1e-7):
     nbins[idx] = np.ceil(nbins[idx])
     nbins[~idx] = np.floor(nbins[~idx])
 
-    nbins = nbins.astype(np.int)
+    nbins = nbins.astype(int)
 
     n = len(nbins)
 

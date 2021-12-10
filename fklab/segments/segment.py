@@ -57,7 +57,124 @@ class Segment(object):
     Parameters
     ----------
     data : Segment, array_like
+        array to be translated as segment with start/stop value
 
+    Example
+    -------
+
+    **How to construct the Segment object ?**
+
+    Create a segment from a list :
+
+    >>> Segment([1, 2])
+    Segment(array([[1, 2]]))
+
+    >>> Segment([[1, 2], [3, 4], [5, 6]])
+    Segment(array([[1, 2],
+           [3, 4],
+           [5, 6]]))
+
+    Create a segment from a numpy array:
+
+    >>> Segment(np.ones((4, 2)))
+    Segment(array([[1., 1.],
+           [1., 1.],
+           [1., 1.],
+           [1., 1.]]))
+
+
+    **How to manipulate the Segment object ?**
+
+    Comparaison with another event or a potential other event
+
+    >>> Segment([[1,2], [2,3]]) ==  Segment([[1,2], [2,3]])
+    True
+
+    >>> Segment([1,2,3]) !=  Segment([[1,2], [4,6]])
+    True
+
+    >>> Segment([1,2]) == [1,2]
+    True
+
+    Boolean logical maniputation
+
+    >>> Segment([1, 4]) | Segment([3, 7])
+    Segment(array([[1., 7.]]))
+
+    >>> Segment([1, 4]) & Segment([3, 7])
+    Segment(array([[3., 4.]]))
+
+    >>> Segment([1,7]) ^ Segment([5, 9])
+    Segment(array([[1., 5.],
+           [7., 9.]]))
+
+    >>> ~Segment([2,4])
+    Segment(array([[-inf,   2.],
+           [  4.,  inf]]))
+
+    Getter
+
+    >>> Segment([[1,2], [3,6]])[0]
+    Segment(array([[1, 2]]))
+
+    Assessor
+
+    >>> seg = Segment([[1,2], [3,6]])
+    >>> seg[0] = [2, 4]
+    >>> seg
+    Segment(array([[2, 4],
+           [3, 6]]))
+
+    Iterator
+
+    >>> for seg in Segment([[1,2], [2,4]]): print(seg)
+    (1, 2)
+    (2, 4)
+
+    Deletion by index
+
+    >>> seg = Segment([[1,2], [3,6]])
+    >>> del seg[1]
+    >>> seg
+    Segment(array([[1, 2]]))
+
+    Deletion based on a boolean list:
+
+    >>> seg = Segment([[1,2], [3,6]])
+    >>> seg[seg.start < 2]
+    Segment(array([[1, 2]]))
+
+
+    Addition of two segments (inplace or not) = concatenation:
+
+    >>> Segment([[1,2],[2,3]]) + Segment([3, 4])
+    Segment(array([[1, 2],
+           [2, 3],
+           [3, 4]]))
+
+    Addition/soustraction of an offset (inplace or not):
+
+    >>> Segment([[1,2],[2,3]]) + 3
+    Segment(array([[4., 5.],
+           [5., 6.]]))
+
+    >>> Segment([[1,2],[2,3]]) - 3
+    Segment(array([[-2., -1.],
+           [-1.,  0.]]))
+
+    Division
+
+    >>> Segment([[1,2],[2,3]])/2
+    Segment(array([[1.25, 1.75],
+           [2.25, 2.75]]))
+
+    Others
+
+    >>> str(Segment([1,2]))
+    'Segment([[1 2]])'
+
+    >>> len(Segment([[1,2],[2,4]]))
+    2
     """
 
     def __init__(self, data=[], copy=True):
@@ -69,9 +186,16 @@ class Segment(object):
         else:
             self._data = check_segments(data, copy)
 
-    @classmethod
-    def issegment(cls, x):
-        """Test is x is valid segment array."""
+    @staticmethod
+    def issegment(x):
+        """Test is x is valid segment array.
+
+        >>> Segment.issegment("a")
+        False
+
+        >>> Segment.issegment([[0, 10], [20, 30], [50, 100]])
+        True
+        """
         if isinstance(x, Segment):
             return True
 
@@ -79,23 +203,7 @@ class Segment(object):
             check_segments(x)
         except ValueError:
             return False
-
         return True
-
-    @classmethod
-    def fromarray(cls, data):
-        """Construct Segment from array.
-
-        Parameters
-        ----------
-        data : (n,2) array
-
-        Returns
-        -------
-        Segment
-
-        """
-        return Segment(data)
 
     @classmethod
     def fromlogical(cls, y, x=None, interpolate=False):
@@ -108,11 +216,34 @@ class Segment(object):
             converted into a segment.
         x : 1d array like, optional
             The segment indices from y will be used to index into x.
+        interpolate: bool, optional
+            if true, segments of duration 0 are extent to have a minimal duration
 
         Returns
         -------
         Segment
 
+        Examples
+        --------
+
+        Very practical to obtain segment of signal upper a certain threshold for example:
+
+        >>> Segment.fromlogical(np.array([10, 5, 12, 10, 3]) > 8)
+        Segment(array([[0, 0],
+               [2, 3]]))
+
+        >>> Segment.fromlogical(np.array([10, 5, 12, 10, 3]) > 15)
+        Segment(array([], shape=(0, 2), dtype=int64))
+
+        Or to obtain the time segment corresponding to the signal superior to the threshold
+
+        >>> Segment.fromlogical(np.array([10, 5, 12, 10, 3]) > 8, x=np.array([2, 4, 6, 8, 10]))
+        Segment(array([[2, 2],
+               [6, 8]]))
+
+        >>> Segment.fromlogical(np.array([10, 5, 12, 10, 3]) < 8, x=np.array([2, 4, 6, 8, 10]), interpolate = True)
+        Segment(array([[ 3.,  5.],
+               [ 9., 10.]]))
         """
         y = np.asarray(y == True, dtype=np.int8).ravel()
 
@@ -143,6 +274,8 @@ class Segment(object):
 
         return Segment(seg)
 
+    # TODO : add a wrapper to extract (signal) data from segment (timestamps)
+
     @classmethod
     def fromindices(cls, y, x=None):
         """Construct segments from vector of indices.
@@ -159,6 +292,22 @@ class Segment(object):
         -------
         Segment
 
+        Examples
+        --------
+
+        >>> Segment.fromindices(np.array([3, 6, 7, 9]))
+        Segment(array([[3, 3],
+               [6, 7],
+               [9, 9]]))
+
+        >>> Segment.fromindices([])
+        Segment(array([], shape=(0, 2), dtype=float64))
+
+
+        >>> Segment.fromindices(np.array([3, 6, 7, 9]), x=np.arange(start=0, stop=20, step=2))
+        Segment(array([[ 6,  6],
+               [12, 14],
+               [18, 18]]))
         """
         if len(y) == 0:
             return Segment([])
@@ -195,6 +344,20 @@ class Segment(object):
         -------
         Segment
 
+
+        Examples
+        --------
+        >>> Segment.fromevents(10, 20)
+        Segment(array([[10., 20.]]))
+
+        >>> Segment.fromevents([10, 15], [20, 30])
+        Segment(array([[15., 20.]]))
+
+        >>> Segment.fromevents([10, 15], [20, 30], greedyStart=True)
+        Segment(array([[10., 20.]]))
+
+        >>> Segment.fromevents([10, 15], [20, 30], greedyStop=True)
+        Segment(array([[15., 30.]]))
         """
         on = np.array(on, dtype=np.float64).ravel()
         off = np.array(off, dtype=np.float64).ravel()
@@ -265,6 +428,22 @@ class Segment(object):
         -------
         Segment
 
+
+        Examples
+        --------
+        The anchor is at the middle of the segment (default mode)
+
+        >>> Segment.fromduration(10, 20)
+        Segment(array([[ 0., 20.]]))
+
+        >>> Segment.fromduration(10, 20, reference = 0)
+        Segment(array([[10., 30.]]))
+
+        The anchor is at the end of the segment because the reference=1
+
+        >>> Segment.fromduration(10, 20, reference = 1)
+        Segment(array([[-10.,  10.]]))
+
         """
         # anchor + duration*[-reference (1-reference)]
         anchor = np.array(anchor, dtype=np.float64).ravel()
@@ -276,14 +455,25 @@ class Segment(object):
 
         return Segment(np.vstack((start, stop)).T)
 
-        pass
-
     def __array__(self, *args):
         return self._data.__array__(*args)
 
-    def asarray(self):
-        """Return numpy array representation of Segment object data."""
-        return self._data  # should we return a copy here?
+    def asarray(self, copy=True):
+        """Return numpy array representation of Segment object data.
+
+        Parameters
+        ----------
+        copy : bool, optional
+
+        Examples
+        --------
+
+        >>> Segment([1, 2, 3]).asarray()
+        array([[1, 2],
+               [2, 3]])
+        """
+
+        return self._data.copy() if copy else self._data
 
     def __repr__(self):
         """Return string representation of Segment object."""
@@ -294,33 +484,84 @@ class Segment(object):
         return "Segment(" + str(self._data) + ")"
 
     def span(self):
+        """Span of segments.
+
+        Returns
+        -------
+        segment that spans input segments
+
+        Examples
+        --------
+
+        >>> Segment([[1, 2], [4, 5]]).span()
+        array([1, 5])
+
+        >>> Segment([]).span()
+        array([], shape=(0, 2), dtype=float64)
+        """
         return segment_span(self._data)
 
     @property
     def start(self):
-        """Return a vector of segment start values."""
-        # this returns a copy
+        """Get/Set vector of segment start values.
+
+        Examples
+        --------
+
+        >>> Segment([[1, 2], [4, 5]]).start
+        array([1, 4])
+
+        >>> test = Segment([[1, 2], [4, 5]])
+        >>> test.start = np.array([0, 2])
+        >>> test
+        Segment(array([[0, 2],
+               [2, 5]]))
+
+        .. note:: start upper than stop value raise a SegmentError when a new start is superior to stop time
+
+        >>> test = Segment([[1, 2], [4, 5]])
+        >>> test.start = np.array([3, 2])
+        Traceback (most recent call last):
+        ...
+        fklab.segments.segment.SegmentError: Segment start times should be <= stop times
+        """
         return self._data[:, 0].copy()
 
     @start.setter
     def start(self, value):
-        """Set segment start values."""
         # Should we re-order after changing start points?
         if np.any(self._data[:, 1] < value):
             raise SegmentError("Segment start times should be <= stop times")
-
         self._data[:, 0] = value
 
     @property
     def stop(self):
-        """Return a vector of segment stop values."""
-        # this returns a copy
+        """Get/Set vector of segment start values.
+
+        Examples
+        --------
+
+        >>> Segment([[1, 2], [4, 5]]).stop
+        array([2, 5])
+
+        >>> test = Segment([[1, 2], [4, 5]])
+        >>> test.stop = np.array([3, 6])
+        >>> test
+        Segment(array([[1, 3],
+               [4, 6]]))
+
+        .. note:: Raise a SegmentError when a new stop is inferior to start time
+
+        >>> test = Segment([[1, 2], [4, 5]])
+        >>> test.stop = np.array([0, 2])
+        Traceback (most recent call last):
+        ...
+        fklab.segments.segment.SegmentError: Segment stop times should be >= start times
+        """
         return self._data[:, 1].copy()
 
     @stop.setter
     def stop(self, value):
-        """Set segment stop values."""
-        # TODO: check if values are not beyond start points
         if np.any(self._data[:, 0] > value):
             raise SegmentError("Segment stop times should be >= start times")
 
@@ -328,12 +569,28 @@ class Segment(object):
 
     @property
     def duration(self):
-        """Return a vector of segment durations."""
+        """Get/set a vector of segment durations.
+
+        Examples
+        --------
+
+        >>> Segment([1, 3, 6]).duration
+        array([2, 3])
+
+        The setter recompute the new segment to have the requested duration while
+        keeping the same center as previously.
+
+        >>> seg = Segment([[1, 3], [4, 5]])
+        >>> seg.duration = np.array([2, 6])
+        >>> seg
+        Segment(array([[1, 3],
+               [1, 7]]))
+
+        """
         return np.diff(self._data, axis=1).ravel()
 
     @duration.setter
     def duration(self, value):
-        """Set new duration of segments."""
         value = np.array(value, dtype=np.float64).ravel()
         ctr = np.mean(self._data, axis=1)
         self._data[:, 0] = ctr - 0.5 * value
@@ -341,31 +598,76 @@ class Segment(object):
 
     @property
     def center(self):
-        """Return a vector of segment centers."""
+        """Get/Set segment centers.
+
+        Examples
+        --------
+
+        >>> Segment([1, 3, 6]).center
+        array([2. , 4.5])
+
+        The setter recompute the new segment to have the requested center while
+        keeping the same duration as previously.
+
+        >>> seg = Segment([[1, 3], [4, 5]])
+        >>> seg.center = np.array([2, 6])
+        >>> seg
+        Segment(array([[1, 3],
+               [5, 6]]))
+
+        """
         return np.mean(self._data, axis=1)
 
     @center.setter
     def center(self, value):
-        """Set new centers of segments."""
         value = np.array(value, dtype=np.float64).ravel()
         dur = np.diff(self._data, axis=1).squeeze()
         self._data[:, 0] = value - 0.5 * dur
         self._data[:, 1] = value + 0.5 * dur
 
     def __len__(self):
-        """Return the number segments in the container."""
+        """Return the number of segments in the container."""
         return int(self._data.shape[0])
 
     def issorted(self):
-        """Check if segment starts are sorted in ascending order."""
+        """Check if segment starts are sorted in ascending order.
+
+        Examples
+        --------
+
+        >>> Segment([[2,4]]).issorted()
+        True
+
+        >>> Segment([[0,4], [1,5], [3, 6]]).issorted()
+        True
+
+        >>> Segment([[2,4], [1,5], [3, 6]]).issorted()
+        False
+
+        See Also
+        --------
+        fklab.utilities.general.issorted
+
+        """
         return issorted(self._data[:, 0])
 
     def isort(self):
-        """Sort segments (in place) in ascending order according to start value."""
-        if self._data.shape[0] > 1:
-            idx = np.argsort(self._data[:, 0])
-            self._data = self._data[idx, :]
+        """Sort segments (in place) in ascending order according to start value.
 
+        Returns
+        -------
+        self
+             itself sorted
+
+        Examples
+        --------
+
+        >>> Segment([[2,4], [1,5]]).isort()
+        Segment(array([[1, 5],
+               [2, 4]]))
+        """
+
+        self._data = segment_sort(self._data)
         return self
 
     def sort(self):
@@ -374,30 +676,65 @@ class Segment(object):
         Returns
         -------
         Segment
+             new segment
 
+        Examples
+        --------
+
+        >>> Segment([[2,4], [1,5]]).sort()
+        Segment(array([[1, 5],
+               [2, 4]]))
         """
         s = Segment(self)
         s.isort()
         return s
 
     def argsort(self):
-        """Argument sort of segment start value.
+        """Indices of the sorted segment by the start value.
 
         Returns
         -------
         ndarray
             Indices that will sort the segment array.
 
+        Examples
+        --------
+
+        >>> Segment([[2,4], [1,5]]).argsort()
+        array([1, 0])
         """
         return np.argsort(self._data[:, 0])
 
     @property
     def intervals(self):
-        """Duration of intervals between segments."""
+        """Duration of intervals between segments.
+
+        Examples
+        --------
+
+        >>> Segment([[2,4], [1,5]]).intervals
+        array([-3])
+        """
         return self._data[1:, 0] - self._data[:-1, 1]
 
     def hasoverlap(self):
-        """Check if any segments are overlapping."""
+        """Check if any segments are overlapping.
+
+        Returns
+        -------
+        bool
+            True if any of the segments overlap.
+
+        Examples
+        --------
+
+        >>> Segment([[2,4], [1,5]]).hasoverlap()
+        True
+
+        >>> Segment([[3,4], [1,2]]).hasoverlap()
+        False
+
+        """
         return segment_has_overlap(self._data)
 
     def removeoverlap(self, strict=True):
@@ -413,7 +750,18 @@ class Segment(object):
 
         Returns
         -------
-        Segment
+        self
+            return itself for chained methods
+
+        Examples
+        --------
+
+        >>> Segment([[2,4], [1,5]]).removeoverlap()
+        Segment(array([[1, 5]]))
+
+        >>> Segment([[2,4], [1,2]]).removeoverlap(strict=False)
+        Segment(array([[1, 2],
+               [2, 4]]))
 
         """
         self._data = segment_remove_overlap(self._data, strict=strict)
@@ -427,11 +775,29 @@ class Segment(object):
             idx += 1
 
     def not_(self):
-        """Test if no segments are defined."""
+        """Test if no segments are defined.
+
+        Examples
+        --------
+
+        >>> not Segment([[2,4], [1,5]])
+        False
+        >>> not Segment([])
+        True
+        """
         return self._data.shape[0] == 0
 
     def truth(self):
-        """Test if one or more segments are defined."""
+        """Test if one or more segments are defined.
+
+        Examples
+        --------
+
+        >>> bool(Segment([[2,4], [1,5]]))
+        True
+        >>> bool(Segment([]))
+        False
+        """
         return self._data.shape[0] > 0
 
     def exclusive(self, *others):
@@ -448,6 +814,12 @@ class Segment(object):
         -------
         Segment
 
+        Example
+        -------
+
+        >>> Segment([1, 6]).exclusive([2,4])
+        Segment(array([[1., 2.],
+               [4., 6.]]))
         """
         s = Segment(self)
         s.iexclusive(*others)
@@ -471,12 +843,19 @@ class Segment(object):
         """Invert segments.
 
         Constructs segments from the inter-segment intervals.
-        This method Will remove overlap as a side effect.
+        This method will remove overlap as a side effect.
 
         Returns
         -------
         Segment
 
+        Examples
+        --------
+
+        >>> Segment([[1,2], [4,5]]).invert()
+        Segment(array([[-inf,   1.],
+               [  2.,   4.],
+               [  5.,  inf]]))
         """
         s = Segment(self)
         s.iinvert()
@@ -486,8 +865,7 @@ class Segment(object):
         """Invert segments (in place).
 
         Constructs segments from the inter-segment intervals.
-        This method Will remove overlap as a side effect.
-
+        This method will remove overlap as a side effect.
         """
         self._data = segment_invert(self._data)
         return self
@@ -497,7 +875,7 @@ class Segment(object):
     def union(self, *others):
         """Combine segments (logical OR).
 
-        This method Will remove overlaps as a sife effect.
+        This method will remove overlaps as a side effect.
 
         Parameters
         ----------
@@ -506,6 +884,9 @@ class Segment(object):
         Returns
         -------
         Segment
+
+        >>> Segment([1,5]).union([2,7])
+        Segment(array([[1., 7.]]))
 
         """
         s = Segment(self)
@@ -540,6 +921,9 @@ class Segment(object):
         -------
         Segment
 
+        >>> Segment([1,7]).difference([5, 9])
+        Segment(array([[1., 5.],
+               [7., 9.]]))
         """
         s = Segment(self)
         s.idifference(*others)
@@ -556,20 +940,7 @@ class Segment(object):
         self._data = segment_difference(self._data, *others)
         return self
 
-    def __xor__(self, other):
-        """Return non-overlapping parts of segments (logical XOR).
-
-        Parameters
-        ----------
-        *others : segment arrays
-
-        Returns
-        -------
-        Segment
-
-        """
-        return self.difference(other)
-
+    __xor__ = difference
     __rxor__ = __xor__
     __ixor__ = idifference
 
@@ -583,6 +954,9 @@ class Segment(object):
         Returns
         -------
         Segment
+
+        >>> Segment([1, 7]).intersection([2, 9])
+        Segment(array([[2., 7.]]))
 
         """
         s = Segment(self)
@@ -620,24 +994,6 @@ class Segment(object):
             other = Segment(other)
         return (self._data.shape == other._data.shape) and np.all(
             self._data == other._data
-        )
-
-    def __ne__(self, other):
-        """Test if objects contain dissimilar segment data.
-
-        Parameters
-        ----------
-        other : segment array
-
-        Returns
-        -------
-        bool
-
-        """
-        if not isinstance(other, Segment):
-            other = Segment(other)
-        return (self._data.shape != other._data.shape) and np.any(
-            self._data != other._data
         )
 
     def __getitem__(self, key):
@@ -680,7 +1036,7 @@ class Segment(object):
         key = np.array(key)
 
         # if a logical vector with length equal number of segments, then find indices
-        if key.dtype == np.bool and key.ndim == 1 and len(key) == self._data.shape[0]:
+        if key.dtype == bool and key.ndim == 1 and len(key) == self._data.shape[0]:
             key = np.nonzero(key)[0]
 
         self._data = np.delete(self._data, key, axis=0)
@@ -697,6 +1053,18 @@ class Segment(object):
         -------
         Segment
 
+        Examples
+        --------
+
+        >>> Segment([[1,2],[2,3]]).offset(3)
+        Segment(array([[4., 5.],
+               [5., 6.]]))
+
+        In case of offset array, first scalar is added to the first segment ...etc.
+
+        >>> Segment([[1,2],[2,3]]).offset([3, 2])
+        Segment(array([[4., 5.],
+               [4., 5.]]))
         """
         s = Segment(self)
         s.ioffset(value)
@@ -738,6 +1106,16 @@ class Segment(object):
         -------
         Segment
 
+        Examples
+        --------
+
+        >>> Segment([[1,2],[2,3]]).scale(3)
+        Segment(array([[0., 3.],
+               [1., 4.]]))
+
+        >>> Segment([[1,2],[2,3]]).scale(3, reference=0)
+        Segment(array([[1., 4.],
+               [2., 5.]]))
         """
         s = Segment(self)
         s.iscale(*args, **kwargs)
@@ -771,6 +1149,18 @@ class Segment(object):
         -------
         Segment
 
+        Examples
+        --------
+
+        >>> Segment([[1,2],[2,3]]).concat(Segment([3,4]))
+        Segment(array([[1, 2],
+               [2, 3],
+               [3, 4]]))
+
+        >>> Segment([[1,2],[2,3]]).concat([3, 4])
+        Segment(array([[1, 2],
+               [2, 3],
+               [3, 4]]))
         """
         s = Segment(self)
         s.iconcat(*others)
@@ -814,7 +1204,6 @@ class Segment(object):
         Returns
         -------
         Segment
-
         """
         if isinstance(value, Segment):
             return self.concat(value)
@@ -833,7 +1222,6 @@ class Segment(object):
         Returns
         -------
         Segment
-
         """
         return self.offset(-value)
 
@@ -890,14 +1278,15 @@ class Segment(object):
     def contains(self, value, issorted=True, expand=None):
         """Test if values are contained in segments.
 
-        Segments are considered left closed and right open intervals. So, a value x is contained in a segment if start<=x and x<stop.
+        Segments are considered left closed and right open intervals.
+        So, a value x is contained in a segment if start<=x and x<stop.
 
         Parameters
         ----------
         value : sorted 1d array
         issorted : bool
-            Assumes vector x is sorted and will not sort it internally. Note that even if issorted is False, the third output argument
-            will still return indices into the (internally) sorted vector.
+            Assumes vector x is sorted and will not sort it internally. Note that even if issorted is False,
+            the third output argument will still return indices into the (internally) sorted vector.
         expand : bool
             Will expand the last output to full index arrays into 'x' for each segment. The default is True if issorted is False and
             vice versa. Note that for non-sorted data (issorted is False) and expand=False, the last output argument will
@@ -912,6 +1301,19 @@ class Segment(object):
         ndarray
             For each segment, the start and end indices of values in x that are contained within that segment.
 
+        Examples
+        --------
+
+        >>> Segment([[1,2], [4,5]]).contains(4)
+        (array([ True]), array([0, 1]), array([[-1, -1],
+               [ 0,  0]]))
+
+        >>> Segment([[1,2], [4,5]]).contains([0, 4])
+        (array([False,  True]), array([0, 1]), array([[-1, -1],
+               [ 1,  1]]))
+
+        >>> Segment([[1,2], [4,5], [0,1], [3,5]]).contains([0, 4], expand=True)
+        (array([False,  True]), array([0, 1, 0, 1]), [array([-1]), array([1]), array([-1]), array([1])])
         """
         # TODO: test if self is sorted
         # TODO: test if value is sorted
@@ -933,6 +1335,16 @@ class Segment(object):
         ndarray
             For each value in x the number of segments that contain that value.
 
+        Examples
+        --------
+
+        >>> Segment([[2,4], [2,6]]).count(3)
+        array(2.)
+
+        >>> Segment([[2,4], [2,6]]).count([3, 8])
+        array([2., 0.])
+
+
         """
         return segment_count(self._data, x)
 
@@ -953,6 +1365,21 @@ class Segment(object):
         ndarray
             overlap relative to duration of second segment
 
+        Examples
+        --------
+
+        >>> Segment([[2,4], [2,6]]).overlap()
+        (array([[2., 2.],
+               [2., 4.]]), array([[1. , 1. ],
+               [0.5, 1. ]]), array([[1. , 0.5],
+               [1. , 1. ]]))
+
+        >>> Segment([[2,4], [2,6]]).overlap([5,8])
+        (array([[0.],
+               [1.]]), array([[0.  ],
+               [0.25]]), array([[0.        ],
+               [0.33333333]]))
+
         """
         return segment_overlap(self._data, other=other)
 
@@ -968,16 +1395,19 @@ class Segment(object):
         -------
         Segment (indices)
 
+        Examples
+        --------
+
         >>> segment = Segment([[ 0 ,4],[ 5,12],[ 52,60]])
         >>> segment.asindex(np.linspace(0, 12, 48), valid_only=True)
         Segment(array([[ 0, 15],
                [20, 46]]))
+
         >>> segment = Segment([[ 0 ,4],[ 5,12],[ 52,60]])
         >>> segment.asindex(np.linspace(0, 12, 48))
         Segment(array([[ 0, 15],
                [20, 46],
                [-1, -1]]))
-
         """
         return Segment(segment_asindex(self._data, x, valid_only))
 
@@ -994,7 +1424,7 @@ class Segment(object):
         return self
 
     def join(self, *args, **kwargs):
-        """Join segments with small inter-segment gap.
+        """Join segments with small inter-segment gap (or overlapped).
 
         Parameters
         ----------
@@ -1005,6 +1435,12 @@ class Segment(object):
         -------
         Segment
 
+        Examples
+        --------
+
+        >>> Segment([[1,2],[2.5, 3.5], [5,6]]).join(gap=1)
+        Segment(array([[1. , 3.5],
+               [5. , 6. ]]))
         """
         s = Segment(self)
         s.ijoin(*args, **kwargs)
@@ -1029,6 +1465,21 @@ class Segment(object):
         -------
         Segment or list of Segments
 
+        Examples
+        --------
+
+        >>> Segment([1,3]).split(1)
+        Segment(array([[1, 2],
+               [2, 3]]))
+
+        >>> Segment([1,3]).split(1, overlap=0.25)
+        Segment(array([[1.  , 2.  ],
+               [1.75, 2.75]]))
+
+        >>> Segment([[1,3], [2,4]]).split(1, join=False)
+        [Segment(array([[1, 2],
+               [2, 3]])), Segment(array([[2, 3],
+               [3, 4]]))]
         """
         seg = segment_split(self._data, size=size, overlap=overlap, join=join, tol=tol)
         if len(seg) == 0:
@@ -1046,11 +1497,11 @@ class Segment(object):
         x : ndarray
             The function is applied to values in this array that lie within
             the segments.
-        separate : bool
+        separate : bool, opt, default=False
             Apply function to data in each segment separately
-        function : callable
+        function : callable, opt, default=len
             Function that takes one or more data arrays.
-        default : any
+        default : any, opt, default=None
             Default value for segments that do not contain data (only used
             when separate is True)
         *args : ndarray-like
@@ -1062,7 +1513,6 @@ class Segment(object):
         -------
         ndarray or [ ndarray, ]
             Result of applying function to segmented data.
-
         """
         return segment_applyfcn(self._data, x, *args, **kwargs)
 
