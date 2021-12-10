@@ -274,8 +274,6 @@ class Segment(object):
 
         return Segment(seg)
 
-    # TODO : add a wrapper to extract (signal) data from segment (timestamps)
-
     @classmethod
     def fromindices(cls, y, x=None):
         """Construct segments from vector of indices.
