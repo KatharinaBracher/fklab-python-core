@@ -248,7 +248,7 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
     return p
 
 
-def find_mode(x, axis=0, gridsize=201):
+def find_mode(x, weights=None, axis=0, gridsize=201):
     """Find mode in observations.
 
     To determine the mode of a set of observations, a kernel
@@ -259,6 +259,9 @@ def find_mode(x, axis=0, gridsize=201):
     Parameters
     ----------
     x : array
+    weights : None or nd-array
+        weights associated with data points. Needs to be the same
+        size as `x`.
     axis : int
         axis along which to find the mode
     gridsize : int
@@ -272,10 +275,17 @@ def find_mode(x, axis=0, gridsize=201):
     shape = x.shape
     ndim = x.ndim
 
+    if not weights is None and weights.shape != shape:
+        raise ValueError("weights array needs to be the same shape as `x`")
+
     # reshape
     x = np.moveaxis(x, axis, -1)
     new_shape = x.shape[:-1] if ndim > 1 else (1,)
     x = np.reshape(x, (x.size // shape[axis], shape[axis]))
+
+    if not weights is None:
+        weights = np.moveaxis(weights, axis, -1)
+        weights = np.reshape(weights, (weights.size // shape[axis], shape[axis]))
 
     l, u = np.min(x, axis=1), np.max(x, axis=1)
 
@@ -283,7 +293,9 @@ def find_mode(x, axis=0, gridsize=201):
 
     for k, y in enumerate(x):
         grid = np.linspace(l[k], u[k], gridsize)
-        density = sp.stats.gaussian_kde(y)(grid)
+        density = sp.stats.gaussian_kde(
+            y, weights=None if weights is None else weights[k]
+        )(grid)
         mode[k] = grid[np.argmax(density)]
 
     mode = np.reshape(mode, new_shape)
