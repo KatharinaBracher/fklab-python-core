@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.9] (not release yet - develop branch)
+## [1.8.1]
 
 ### Added
 
@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Deprecation
 - fklab.events.event_average deprecated since multiple versions has been removed.
   fklab.signals.event_triggered_average should be used in replacement.
+
+- event.asarray and segment.asarray has been depracted in favor of the numpy api (np.asarray(obj))
+
 
 ## [1.8]
 
