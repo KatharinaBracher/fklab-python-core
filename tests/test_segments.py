@@ -33,13 +33,13 @@ class TestBasicAlgorithm(unittest.TestCase):
         segment = Segment([[0, 4], [5, 12]])
         expected = [[0, 15], [20, 46]]
         result = segment.asindex(self.vector)
-        np.testing.assert_array_equal(result.asarray(), expected)
+        np.testing.assert_array_equal(np.asarray(result), expected)
 
     def test_as_index_full(self):
         segment = Segment([[0, 4], [4, 12]])
         expected = [[0, 15], [16, 46]]
         result = segment.asindex(self.vector)
-        np.testing.assert_array_equal(result.asarray(), expected)
+        np.testing.assert_array_equal(np.asarray(result), expected)
 
     def test_issegment(self):
         self.assertTrue(Segment.issegment(Segment([[0, 10], [20, 30], [50, 100]])))

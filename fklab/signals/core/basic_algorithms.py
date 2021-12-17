@@ -284,7 +284,7 @@ def localextrema(
     elif method in ["discrete"]:
         imax, imin = _localextrema_discrete(y)
     else:
-        raise Exception
+        raise ValueError("Unknown method argument. Expecting 'gradient' or 'discrete'.")
 
     # select the requested extrema
     if kind in ("extrema", "extremes"):
@@ -294,7 +294,9 @@ def localextrema(
     elif kind in ("min", "minimum", "minima"):
         ii = imin
     else:
-        raise Exception
+        raise ValueError(
+            "Unknown kind argument. Expecting one of ‘extrema’, ‘extremes’, ‘max’, ‘maximum’, ‘maxima’, ‘min’, ‘minimum’, ‘minima’"
+        )
 
     # compute signal amplitude at local extrema
     try:

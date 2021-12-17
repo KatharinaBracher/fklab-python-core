@@ -120,12 +120,7 @@ def issorted(x, strict=False):
 
     """
     x = np.asarray(x).ravel()
-    if x.size == 1:
-        return True
-    if x.size == 2:
-        return x[0] < x[1]
-    else:
-        return _issorted(x, strict)
+    return _issorted(x, strict)
 
 
 def isascending(x, strict=False):

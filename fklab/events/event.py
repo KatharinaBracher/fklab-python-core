@@ -20,6 +20,7 @@ from .basic_algorithms import event_rate
 from .basic_algorithms import filter_bursts
 from .basic_algorithms import filter_intervals
 from .basic_algorithms import peri_event_histogram
+from fklab.codetools import deprecated
 from fklab.version._core_version._version import __version__
 
 __all__ = ["Event"]
@@ -72,7 +73,7 @@ class Event(AttributeMixIn):
 
     **How to manipulate the Event object ?**
 
-    Comparaison with another event or a potential other event
+    Comparison with another event or a potential other event
 
     >>> Event([1,2,3]) == Event([1,2,3])
     True
@@ -83,17 +84,15 @@ class Event(AttributeMixIn):
     >>> Event([1,2,3]) == [1,2,3]
     True
 
-    Comparaison with an offset
+    Comparison with an single value
 
     >>> Event([1,2,3]) > 1
     array([False,  True,  True])
 
-    Getter
+    Get/Set
 
     >>> Event([1,2,3])[0]
     Event(array([1]))
-
-    Assessor
 
     >>> ev = Event([1,2,3])
     >>> ev[0] = 2
@@ -106,20 +105,20 @@ class Event(AttributeMixIn):
     1
     2
 
-    Deletion based on index :
+    Filter based on index :
 
     >>> ev = Event([1,2,3])
     >>> del ev[0]
     >>> ev
     Event(array([2, 3]))
 
-    Deletion based on a boolean list:
+    Filter based on a boolean list:
 
     >>> ev = Event([1,2,3])
     >>> ev[ev < 2]
     Event(array([1]))
 
-    Addition/soustraction of an offset (inplace or not):
+    Addition/substraction of an offset (inplace or not):
 
     >>> Event([1,2,3]) + 1
     Event(array([2., 3., 4.]))
@@ -129,7 +128,7 @@ class Event(AttributeMixIn):
     >>> ev
     Event(array([2., 3., 4.]))
 
-    Addition of two events (inplace or not) = concatenation:
+    Concatenation of two event series (in place or not):
 
     >>> Event([1,2,3]) + Event([4,5,6])
     Event(array([1, 2, 3, 4, 5, 6]))
@@ -197,6 +196,7 @@ class Event(AttributeMixIn):
     def __array__(self, *args):
         return self._data.__array__(*args)
 
+    @deprecated("Please use np.asarray(obj) instead.")
     def asarray(self, copy=True):
         """Return numpy array representation of Event object data."""
         return self._data.copy() if copy else self._data
@@ -315,7 +315,7 @@ class Event(AttributeMixIn):
         Parameters
         ----------
         value: array-like or scalar
-            offset to apply to the events. In case of multiple offset, an new event array is created for each.
+            offset to apply to the events. Should be a scalar or a vector with the same size as the event size.
 
         Returns
         -------
@@ -328,9 +328,8 @@ class Event(AttributeMixIn):
         Event(array([3., 4., 5.]))
 
         >>> Event([1,2,3]).offset([1, 2, 3])
-        Event(array([[2., 3., 4.],
-               [3., 4., 5.],
-               [4., 5., 6.]]))
+        Event(array([2., 4., 6.]))
+
         """
         e = Event(self)  # copy
         e.ioffset(value)  # apply offset to copy
@@ -342,14 +341,12 @@ class Event(AttributeMixIn):
         Parameters
         ----------
         value: array-like or scalar
-            offset to apply to the events. In case of multiple offset, an new event array is created for each.
+            offset to apply to the events. Should be a scalar or a vector with the same size as the event size.
 
         """
-        value = np.array(value, dtype=np.float64).squeeze()
+        value = np.asarray(value, dtype=np.float64).squeeze()
 
-        if value.ndim == 1:
-            value = value.reshape([len(value), 1])
-        elif value.ndim != 0:
+        if value.ndim > 1:
             raise ValueError("Invalid shape of offset value")
 
         self._data = self._data + value
@@ -421,8 +418,7 @@ class Event(AttributeMixIn):
         Example
         -------
 
-        >>> ev = Event([1,2,3]).iconcat(Event([4,5,6]))
-        >>> ev
+        >>> Event([1,2,3]).iconcat(Event([4,5,6]))
         Event(array([1, 2, 3, 4, 5, 6]))
 
         >>> Event([1,2,3]).iconcat(Event([]))
@@ -459,15 +455,15 @@ class Event(AttributeMixIn):
         Example
         -------
 
-        >>> Event([1,3,4,2]).count(4)
+        >>> Event([1,2,3,4]).count(4)
         array([4.])
 
-        >>> Event([1,3,4,2]).count([2, 4])
+        >>> Event([1,2,3,4]).count([2, 4])
         array([2., 4.])
         """
         return event_count(self._data, x)
 
-    def intervals(self, other=None, kind="post"):
+    def intervals(self, other=None, kind="post", segments=None):
         """Return inter-event intervals.
 
         Parameters
@@ -478,6 +474,8 @@ class Event(AttributeMixIn):
             type of interval to return. 'pre' or '<': interval to previous event,
             'post' or '>': interval to next event, 'smallest' or 'largest':
             smallest/largest of the intervals to the previous and next events.
+        segments : (n,2) array or Segment, optional
+            array of time segment start and end times
 
         Returns
         -------
@@ -489,6 +487,12 @@ class Event(AttributeMixIn):
 
         Example
         -------
+
+        For each event the function looks up the immediately following event and returns the interval and index of the second event.
+        For the last event, there is no following event and an interval of nan and an index of -1 is returned.
+
+        >>> Event([1,3,9]).intervals()
+        (array([ 2.,  6., nan]), array([ 1,  2, -1]))
 
         By default, we look for each events to the nearest post input event and give the interval to it in
         the first output and which input element has been selected in the second output.
@@ -503,8 +507,10 @@ class Event(AttributeMixIn):
         >>> Event([1, 2, 3 ]).intervals([0])
         (array([nan, nan, nan]), array([-1, -1, -1]))
 
-        With the method king "pre" or "<", we do the same thing as before except we look at the nearest input event before
-        the event.
+        To find the intervals to the immediately preceding events, we set the kind argument to “pre” or “<“.
+        Note that intervals are signed and intervals to preceding event are negative.
+        >>> Event([1, 3, 9]).intervals(kind="pre")
+        (array([nan, -2., -6.]), array([-1,  0,  1]))
 
         >>> Event([1, 2, 3 ]).intervals([2], kind="pre")
         (array([nan,  0., -1.]), array([-1,  0,  0]))
@@ -512,17 +518,29 @@ class Event(AttributeMixIn):
         With the method king "smallest", we do the same thing as before except we look at the input event nearest
         (before and after) the event.
 
+        >>> Event([1, 3, 9]).intervals(kind="smallest")
+        (array([nan, -2., nan]), array([-1,  0, -1]))
+
         >>> Event([1, 2, 3 ]).intervals([2, 3], kind="smallest")
         (array([nan,  0.,  0.]), array([-1,  0,  1]))
 
         With the method king "largest", we do the same thing as before except we look at the input event farest
         (before and after) the event.
 
+        >>> Event([1, 3, 9]).intervals(kind="largest")
+        (array([nan,  6., nan]), array([-1,  2, -1]))
+
         >>> Event([1, 2, 3 ]).intervals([2, 3], kind="largest")
         (array([nan,  0.,  0.]), array([-1,  0,  1]))
 
+        Segments option allows you to select where the interval should start. Example here, the element 1 not included
+        in the segment selected as its ouptut set to nan, -1.
+
+        >>> Event([1, 2, 3 ]).intervals([2, 3], segments=[2,4])
+        (array([nan,  0.,  0.]), array([-1,  0,  1]))
+
         """
-        return event_intervals(self._data, other=other, kind=kind)
+        return event_intervals(self._data, other=other, kind=kind, segments=segments)
 
     def bin(self, bins, kind="count"):
         """Count number of events in bins.
@@ -553,9 +571,9 @@ class Event(AttributeMixIn):
 
         **Binary method:**
 
-        >>> Event(np.array([2.5, 3, 4, 1, 1.5, 2, 5, 6, 7, 8])).bin([[1, 3], [3, 7]], kind="rate")
-        array([[2.],
-               [1.]])
+        >>> Event(np.array([2.5, 3, 4, 1, 1.5, 2, 5, 6, 7, 8])).bin([[1, 3], [3, 7]], kind="binary")
+        array([[1],
+               [1]], dtype=uint8)
 
         **Rate method:**
 
@@ -893,8 +911,12 @@ class Event(AttributeMixIn):
 
         References
         ----------
-        Add what is a complex spike in burst
-        (burst spikes with descending amplitudes)
+        https://www.sciencedirect.com/science/article/pii/S0092867400818280
+        “We defined a complex spike index (CSI) as the percentage of first lag interspike intervals that fall
+        between 2 ms and 15 ms and whose second spike is smaller than the first.”
+
+        This description does not exactly cover how we have implemented it
+        (which is based on the original C code of Matt Wilson, co-author of the above paper).
 
         """
         return float(
@@ -904,7 +926,7 @@ class Event(AttributeMixIn):
     def average(
         self, time, data, lags=None, fs=None, interpolation="linear", function=None
     ):
-        """Average of the signal around a certain event time.
+        """Average of the signal around event times.
 
         Parameters
         ----------

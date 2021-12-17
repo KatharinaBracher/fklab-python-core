@@ -57,7 +57,7 @@ def check_segments(x, copy=False):
     except TypeError:
         raise ValueError("Cannot convert data to numpy array")
 
-    if not x.dtype in (float, int):
+    if not np.issubdtype(x.dtype, np.number):
         raise ValueError("Values are not real numbers")
 
     # The array has to have two dimensions of shape(X,2), where X>=0.

@@ -59,9 +59,7 @@ def split_eventstrings(timestamp, eventstrings):
 
     """
 
-    if isinstance(timestamp, list):
-        timestamp = np.array(timestamp)
-
+    timestamp = np.asarray(timestamp)
     events = np.unique(eventstrings)
     d = {e: timestamp[np.array(eventstrings) == e] for e in events}
     return d
@@ -109,7 +107,7 @@ def event_rate(events, segments=None, separate=False):
     events : 1d numpy array or sequence of 1d numpy arrays
         vector(s) of event times (in seconds)
     segments : (n,2) array or Segment, optional
-        array of time segment start and end times
+        array of time segment start and end times ([start, stop[)
     separate : bool, optional
         compute event rates for all segments separately
 
@@ -122,26 +120,35 @@ def event_rate(events, segments=None, separate=False):
     """
     events = check_events_list(events)
 
-    if segments is None:  # ignore separate
-        fr = np.array(
-            [(len(x) - 1) / np.sum(np.diff(x)) for x in events], dtype=np.float64
-        )
+    if segments is None:
+        return np.array(
+            [
+                event_rate(
+                    x,
+                    segments=[
+                        np.min(x) - 0.5 * np.mean(np.diff(x)),
+                        np.max(x) + 0.5 * np.mean(np.diff(x)),
+                    ],
+                )
+                for x in events
+            ]
+        ).flatten()
+
+    segments = check_segments(segments, copy=False)
+    if not separate:
+        # combine segments
+        segments = segment_remove_overlap(segments)
+        # find number of events in segments
+        ne = [np.sum(segment_contains(segments, x)[1]) for x in events]
+        ne = np.float64(ne)
+        # convert to rate
+        fr = ne / np.sum(np.diff(segments, axis=1))
     else:
-        segments = check_segments(segments, copy=False)
-        if not separate:
-            # combine segments
-            segments = segment_remove_overlap(segments)
-            # find number of events in segments
-            ne = [np.sum(segment_contains(segments, x)[1]) for x in events]
-            ne = np.float64(ne)
-            # convert to rate
-            fr = ne / np.sum(np.diff(segments, axis=1))
-        else:
-            # find number of events in each segment
-            ne = [segment_contains(segments, x)[1] for x in events]
-            ne = np.float64(np.vstack(ne))
-            # convert to rate
-            fr = ne / np.diff(segments, axis=1).reshape((1, len(segments)))
+        # find number of events in each segment
+        ne = [segment_contains(segments, x)[1] for x in events]
+        ne = np.float64(np.vstack(ne))
+        # convert to rate
+        fr = ne / np.diff(segments, axis=1).reshape((1, len(segments)))
 
     return fr
 
@@ -371,8 +378,7 @@ def filter_bursts_length(bursts, nevents=None):
     bursts : 1d array
         burst indicator vector as returned by event_bursts function.
     nevents : scalar or 2-element sequence
-        range of burst lengths that will be filtered out. If `nevents`
-        is a scalar, the range is [nevents, Inf]. By default, the number is 2 events minimum (= No filtering)
+        range of burst lengths that will be filtered out. If `nevents` is a scalar, the range is [nevents, Inf]. By default, the number is 2 events minimum (= No filtering)
 
     Returns
     -------
@@ -463,21 +469,18 @@ def event_intervals(events, other=None, kind="post", segments=None):
         index of the event to which the interval was determined
 
 
-    Example
-    -------
-    Segments option is not available from the Event class api.
-    It allow to select where the interval should start. Example here,
-    the element 1 not included in the segment selected as its ouptut
-    set to nan, -1.
-
-    >>> event_intervals([1, 2, 3 ], [2, 3], segments=[2,4])
-    (array([nan,  0.,  0.]), array([-1,  0,  1]))
     """
     events = check_events(events, copy=False)
     n = len(events)
 
     if n == 0:
         return np.array([]), np.array([])
+
+    if not kind in ["pre", "<", "post", ">", "smallest", "largest"]:
+        raise NotImplementedError(
+            str(kind)
+            + " is not the right keyword for kind. Available keys are : pre , <, post, >, smallest or largest"
+        )
 
     if other is None:  # auto intervals
 
@@ -539,11 +542,6 @@ def event_intervals(events, other=None, kind="post", segments=None):
         idx = idxpre
         idx[tmp] = idxpost[tmp]
         idx[np.logical_or(np.isnan(ipre), np.isnan(ipost))] = -1
-    else:
-        raise NotImplementedError(
-            str(kind)
-            + " is not the right keyword for kind. Available keys are : pre , <, post, >, smallest or largest"
-        )
 
     if segments is not None:
         segments = check_segments(segments)
@@ -913,6 +911,23 @@ def peri_event_histogram(
     histogram: array with peri-event histogram, shape is (lags, events, references)
     bins: array with time lag bins used to compute histogram, shape is (nbins,2)
 
+
+    .. note:: Developer's documentation of the various normalizations in peri-event histogram.
+
+        T : total time
+        mean rate:
+        P0 = N0/T
+        P1 = N1/T
+        cross-correlation histogram: J10 = eventcorr( spike 0, spike 1 )
+        cross product density: P10 = J/bT
+        asymptotic distribution (independent):  sqrt(P10) -> sqrt(P1P0) +- norminv(1-alpha/2)/sqrt(4bT)
+        conditional mean intensity: m10 = J/bN0
+        asymptotic distribution (independent): qrt(m10) -> sqrt(P1) +- norminv(1-alpha/2)/sqrt(4bN0)
+        cross-covariance / cumulant density: q10 = P10 - P1P0
+        asymptotic distribution (independent):  q10 -> 0 +- norminv(1-alpha/2)*sqrt(P1P0/Tb)
+        variance normalized q10 is approx normal only when normal approx to Poisson
+        distribution applies, i.e. when lamda > 20 (see Lubenov&Siapas,2005)
+        this gives condition bTP0P1>20
     """
     events = check_events_list(events, copy=False)
 

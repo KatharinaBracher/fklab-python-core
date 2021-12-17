@@ -35,8 +35,8 @@ class TestBasicAlgorithm(unittest.TestCase):
         self.assertEqual(res, 2.0)
 
     def test_check_events_rate(self):
-        res = event_rate([np.array([1, 2, 3, 4]), np.array([2, 3, 4, 5])])
-        self.assertEqual(list(res), [1, 1])
+        res = event_rate([np.array([2, 3, 4, 5]), np.array([1, 2, 3, 4])])
+        np.testing.assert_array_equal(res, np.array([1, 1]))
 
     def test_check_event_rate_sep_segments(self):
         res = event_rate(

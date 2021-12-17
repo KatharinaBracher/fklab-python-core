@@ -33,6 +33,7 @@ from .basic_algorithms import segment_span
 from .basic_algorithms import segment_split
 from .basic_algorithms import segment_uniform_random
 from .basic_algorithms import segment_union
+from fklab.codetools import deprecated
 from fklab.utilities.general import issorted
 from fklab.utilities.general import partition_vector
 from fklab.version._core_version._version import __version__
@@ -85,7 +86,7 @@ class Segment(object):
 
     **How to manipulate the Segment object ?**
 
-    Comparaison with another event or a potential other event
+    Comparison with another segment or a potential other segment
 
     >>> Segment([[1,2], [2,3]]) ==  Segment([[1,2], [2,3]])
     True
@@ -96,7 +97,7 @@ class Segment(object):
     >>> Segment([1,2]) == [1,2]
     True
 
-    Boolean logical maniputation
+    Boolean logical manipulation
 
     >>> Segment([1, 4]) | Segment([3, 7])
     Segment(array([[1., 7.]]))
@@ -112,12 +113,10 @@ class Segment(object):
     Segment(array([[-inf,   2.],
            [  4.,  inf]]))
 
-    Getter
+    Get/Set
 
     >>> Segment([[1,2], [3,6]])[0]
     Segment(array([[1, 2]]))
-
-    Assessor
 
     >>> seg = Segment([[1,2], [3,6]])
     >>> seg[0] = [2, 4]
@@ -131,28 +130,27 @@ class Segment(object):
     (1, 2)
     (2, 4)
 
-    Deletion by index
+    Select by index
 
     >>> seg = Segment([[1,2], [3,6]])
     >>> del seg[1]
     >>> seg
     Segment(array([[1, 2]]))
 
-    Deletion based on a boolean list:
+    Select based on a boolean list:
 
     >>> seg = Segment([[1,2], [3,6]])
     >>> seg[seg.start < 2]
     Segment(array([[1, 2]]))
 
-
-    Addition of two segments (inplace or not) = concatenation:
+    Concatenation of two event series (in place or not):
 
     >>> Segment([[1,2],[2,3]]) + Segment([3, 4])
     Segment(array([[1, 2],
            [2, 3],
            [3, 4]]))
 
-    Addition/soustraction of an offset (inplace or not):
+    Addition/substraction of an offset (inplace or not):
 
     >>> Segment([[1,2],[2,3]]) + 3
     Segment(array([[4., 5.],
@@ -162,7 +160,7 @@ class Segment(object):
     Segment(array([[-2., -1.],
            [-1.,  0.]]))
 
-    Division
+    Scaling
 
     >>> Segment([[1,2],[2,3]])/2
     Segment(array([[1.25, 1.75],
@@ -226,7 +224,7 @@ class Segment(object):
         Examples
         --------
 
-        Very practical to obtain segment of signal upper a certain threshold for example:
+        Very practical to obtain segment of signal above a certain threshold for example:
 
         >>> Segment.fromlogical(np.array([10, 5, 12, 10, 3]) > 8)
         Segment(array([[0, 0],
@@ -235,7 +233,7 @@ class Segment(object):
         >>> Segment.fromlogical(np.array([10, 5, 12, 10, 3]) > 15)
         Segment(array([], shape=(0, 2), dtype=int64))
 
-        Or to obtain the time segment corresponding to the signal superior to the threshold
+        Or to obtain the time segment corresponding to the signal above the threshold
 
         >>> Segment.fromlogical(np.array([10, 5, 12, 10, 3]) > 8, x=np.array([2, 4, 6, 8, 10]))
         Segment(array([[2, 2],
@@ -248,7 +246,7 @@ class Segment(object):
         y = np.asarray(y == True, dtype=np.int8).ravel()
 
         if len(y) == 0 or np.all(y == 0):
-            return Segment(np.zeros((0, 2), dtype=np.int64))
+            return cls(np.zeros((0, 2), dtype=np.int64))
 
         offset = 0
         if interpolate:
@@ -272,7 +270,7 @@ class Segment(object):
             else:
                 seg = x[seg]
 
-        return Segment(seg)
+        return cls(seg)
 
     @classmethod
     def fromindices(cls, y, x=None):
@@ -308,7 +306,7 @@ class Segment(object):
                [18, 18]]))
         """
         if len(y) == 0:
-            return Segment([])
+            return cls([])
 
         d = np.nonzero(np.diff(y) > 1)[0]
         segstart = y[np.concatenate(([0], d + 1))]
@@ -319,7 +317,7 @@ class Segment(object):
         if x is not None:
             seg = x[seg]
 
-        return Segment(seg)
+        return cls(seg)
 
     @classmethod
     def fromevents(cls, on, off, greedyStart=False, greedyStop=False):
@@ -406,7 +404,7 @@ class Segment(object):
         s = np.nonzero(np.diff(eventid) == -2)[0]
         s = np.vstack((events[s], events[s + 1])).T
 
-        return Segment(s)
+        return cls(s)
 
     @classmethod
     def fromduration(cls, anchor, duration, reference=0.5):
@@ -451,24 +449,18 @@ class Segment(object):
         start = anchor - reference * duration
         stop = anchor + (1 - reference) * duration
 
-        return Segment(np.vstack((start, stop)).T)
+        return cls(np.vstack((start, stop)).T)
 
     def __array__(self, *args):
         return self._data.__array__(*args)
 
+    @deprecated("Please use np.asarray(obj) instead.")
     def asarray(self, copy=True):
         """Return numpy array representation of Segment object data.
 
         Parameters
         ----------
         copy : bool, optional
-
-        Examples
-        --------
-
-        >>> Segment([1, 2, 3]).asarray()
-        array([[1, 2],
-               [2, 3]])
         """
 
         return self._data.copy() if copy else self._data
@@ -492,12 +484,12 @@ class Segment(object):
         --------
 
         >>> Segment([[1, 2], [4, 5]]).span()
-        array([1, 5])
+        Segment(array([[1, 5]]))
 
         >>> Segment([]).span()
-        array([], shape=(0, 2), dtype=float64)
+        Segment(array([], shape=(0, 2), dtype=float64))
         """
-        return segment_span(self._data)
+        return Segment(segment_span(self._data))
 
     @property
     def start(self):
@@ -515,7 +507,7 @@ class Segment(object):
         Segment(array([[0, 2],
                [2, 5]]))
 
-        .. note:: start upper than stop value raise a SegmentError when a new start is superior to stop time
+        .. note:: sif start > stop for any segment then a SegmentError is raised
 
         >>> test = Segment([[1, 2], [4, 5]])
         >>> test.start = np.array([3, 2])
@@ -534,7 +526,7 @@ class Segment(object):
 
     @property
     def stop(self):
-        """Get/Set vector of segment start values.
+        """Get/Set vector of segment stop values.
 
         Examples
         --------
@@ -548,7 +540,7 @@ class Segment(object):
         Segment(array([[1, 3],
                [4, 6]]))
 
-        .. note:: Raise a SegmentError when a new stop is inferior to start time
+        .. note:: a SegmentError is raised if stop > start for any segment
 
         >>> test = Segment([[1, 2], [4, 5]])
         >>> test.stop = np.array([0, 2])
@@ -575,7 +567,7 @@ class Segment(object):
         >>> Segment([1, 3, 6]).duration
         array([2, 3])
 
-        The setter recompute the new segment to have the requested duration while
+        The setter recomputes the new segment to have the requested duration while
         keeping the same center as previously.
 
         >>> seg = Segment([[1, 3], [4, 5]])
