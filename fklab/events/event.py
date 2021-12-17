@@ -8,6 +8,7 @@ are implemented as methods of the class.
 """
 import numpy as np
 
+import fklab.signals.core
 import fklab.utilities.general
 from .basic_algorithms import check_events
 from .basic_algorithms import complex_spike_index
@@ -19,6 +20,7 @@ from .basic_algorithms import event_rate
 from .basic_algorithms import filter_bursts
 from .basic_algorithms import filter_intervals
 from .basic_algorithms import peri_event_histogram
+from fklab.codetools import deprecated
 from fklab.version._core_version._version import __version__
 
 __all__ = ["Event"]
@@ -47,9 +49,110 @@ class Event(AttributeMixIn):
 
     Attributes
     ----------
-    data: numpy.array
-
+    data: array-like, 1D
     copy: bool, opt
+
+    Examples
+    --------
+
+    **How to construct the Event object ?**
+
+    >>> Event([1, 2, 3])
+    Event(array([1, 2, 3]))
+
+    >>> Event(np.array([1,2,3]))
+    Event(array([1, 2, 3]))
+
+    >>> Event(Event([1,2,3]))
+    Event(array([1, 2, 3]))
+
+    >>> Event([[1,2,3], [4,5,6]])
+    Traceback (most recent call last):
+    ...
+    ValueError: Data is not arranged as a vector
+
+    **How to manipulate the Event object ?**
+
+    Comparison with another event or a potential other event
+
+    >>> Event([1,2,3]) == Event([1,2,3])
+    True
+
+    >>> Event([1,2,3]) != Event([4,5,6])
+    True
+
+    >>> Event([1,2,3]) == [1,2,3]
+    True
+
+    Comparison with an single value
+
+    >>> Event([1,2,3]) > 1
+    array([False,  True,  True])
+
+    Get/Set
+
+    >>> Event([1,2,3])[0]
+    Event(array([1]))
+
+    >>> ev = Event([1,2,3])
+    >>> ev[0] = 2
+    >>> ev
+    Event(array([2, 2, 3]))
+
+    Iterator
+
+    >>> for ev in Event([1,2]): print(ev)
+    1
+    2
+
+    Filter based on index :
+
+    >>> ev = Event([1,2,3])
+    >>> del ev[0]
+    >>> ev
+    Event(array([2, 3]))
+
+    Filter based on a boolean list:
+
+    >>> ev = Event([1,2,3])
+    >>> ev[ev < 2]
+    Event(array([1]))
+
+    Addition/substraction of an offset (inplace or not):
+
+    >>> Event([1,2,3]) + 1
+    Event(array([2., 3., 4.]))
+
+    >>> ev = Event([1,2,3])
+    >>> ev += 1
+    >>> ev
+    Event(array([2., 3., 4.]))
+
+    Concatenation of two event series (in place or not):
+
+    >>> Event([1,2,3]) + Event([4,5,6])
+    Event(array([1, 2, 3, 4, 5, 6]))
+
+    >>> ev = Event([1,2,3])
+    >>> ev +=  Event([4,5,6])
+    >>> ev
+    Event(array([1, 2, 3, 4, 5, 6]))
+
+    Attention, it is not possible to do the substraction of two events.
+
+    >>> Event([1,2,3]) - Event([4,5,6])
+    Traceback (most recent call last):
+    ...
+    ValueError: Substraction of two events is not implemented.
+
+    Other
+
+    >>> str(Event([1,2,3]))
+    'Event([1 2 3])'
+
+    >>> len(Event([1,2,3]))
+    3
+
     """
 
     def __init__(self, data=[], copy=True):
@@ -64,9 +167,22 @@ class Event(AttributeMixIn):
 
         super(Event, self).__init__()
 
-    @classmethod
-    def isevent(cls, x):
-        """Check if x is event-like."""
+    @staticmethod
+    def isevent(x):
+        """Check if x is event-like.
+
+        As it is a static method, it can be used before creating an event object.
+
+        >>> Event.isevent(np.array([1,2,3]))
+        True
+
+        >>> Event.isevent(Event(np.array([1,2,3])))
+        True
+
+        >>> Event.isevent([[1,2,3],[4,5,6]])
+        False
+
+        """
         if isinstance(x, Event):
             return True
 
@@ -80,9 +196,10 @@ class Event(AttributeMixIn):
     def __array__(self, *args):
         return self._data.__array__(*args)
 
-    def asarray(self):
+    @deprecated("Please use np.asarray(obj) instead.")
+    def asarray(self, copy=True):
         """Return numpy array representation of Event object data."""
-        return self._data  # should we return a copy here?
+        return self._data.copy() if copy else self._data
 
     def __repr__(self):
         """Return string representation of Event object."""
@@ -97,11 +214,26 @@ class Event(AttributeMixIn):
         return int(self._data.__len__())
 
     def issorted(self):
-        """Check if events are sorted in ascending order."""
+        """Check if events are sorted in ascending order.
+
+        >>> Event([1,2,3]).issorted()
+        True
+
+        >>> Event([1,4,2]).issorted()
+        False
+        """
         return fklab.utilities.general.issorted(self._data)
 
     def sort(self):
-        """Sort events in ascending order."""
+        """Sort events in ascending order.
+
+        >>> Event([1,2,3]).sort()
+        Event(array([1, 2, 3]))
+
+        >>> Event([1,4,2]).sort()
+        Event(array([1, 2, 4]))
+
+        """
         if self._data.__len__() > 1:
             idx = np.argsort(self._data)
             self._data = self._data[idx]
@@ -117,11 +249,25 @@ class Event(AttributeMixIn):
             idx += 1
 
     def not_(self):
-        """Test if no events are defined."""
+        """Test if no events are defined.
+
+        >>> not Event([2,4])
+        False
+        >>> not Event([])
+        True
+
+        """
         return self._data.__len__() == 0
 
     def truth(self):
-        """Test if one or more events are defined."""
+        """Test if one or more events are defined.
+
+        >>> bool(Event([2,4]))
+        True
+        >>> bool(Event([]))
+        False
+
+        """
         return self._data.__len__() > 0
 
     def __eq__(self, other):
@@ -132,13 +278,17 @@ class Event(AttributeMixIn):
             self._data == other._data
         )
 
-    def __ne__(self, other):
-        """Test if objects contain dissimilar event data."""
-        if not isinstance(other, Event):
-            other = Event(other)
-        return (self._data.shape != other._data.shape) and np.any(
-            self._data != other._data
-        )
+    def __lt__(self, other):
+        return np.asarray(self) < other
+
+    def __le__(self, other):
+        return np.asarray(self) <= other
+
+    def __gt__(self, other):
+        return np.asarray(self) > other
+
+    def __ge__(self, other):
+        return np.asarray(self) >= other
 
     def __getitem__(self, key):
         """Slice events."""
@@ -160,18 +310,43 @@ class Event(AttributeMixIn):
         return self
 
     def offset(self, value):
-        """Add offset to events."""
+        """Add offset to events and create a new object.
+
+        Parameters
+        ----------
+        value: array-like or scalar
+            offset to apply to the events. Should be a scalar or a vector with the same size as the event size.
+
+        Returns
+        -------
+        Event
+
+        Example
+        -------
+
+        >>> Event([1,2,3]).offset(2)
+        Event(array([3., 4., 5.]))
+
+        >>> Event([1,2,3]).offset([1, 2, 3])
+        Event(array([2., 4., 6.]))
+
+        """
         e = Event(self)  # copy
         e.ioffset(value)  # apply offset to copy
         return e
 
     def ioffset(self, value):
-        """Add offset to events (in place)."""
-        value = np.array(value, dtype=np.float64).squeeze()
+        """Add offset to events (in place).
 
-        if value.ndim == 1:
-            value = value.reshape([len(value), 1])
-        elif value.ndim != 0:
+        Parameters
+        ----------
+        value: array-like or scalar
+            offset to apply to the events. Should be a scalar or a vector with the same size as the event size.
+
+        """
+        value = np.asarray(value, dtype=np.float64).squeeze()
+
+        if value.ndim > 1:
             raise ValueError("Invalid shape of offset value")
 
         self._data = self._data + value
@@ -196,6 +371,8 @@ class Event(AttributeMixIn):
 
     def __sub__(self, value):
         """Add negative offset."""
+        if isinstance(value, Event):
+            raise ValueError("Substraction of two events is not implemented.")
         return self.offset(-value)
 
     __rsub__ = __sub__
@@ -215,6 +392,15 @@ class Event(AttributeMixIn):
         -------
         Event
 
+        Example
+        -------
+
+        >>> Event([1,2,3]).concat(Event([4,5,6]))
+        Event(array([1, 2, 3, 4, 5, 6]))
+
+        >>> Event([1,2,3]) + Event([4,5,6])
+        Event(array([1, 2, 3, 4, 5, 6]))
+
         """
         e = Event(self)
         e.iconcat(*others)
@@ -228,6 +414,15 @@ class Event(AttributeMixIn):
         ----------
         \*others : event vectors
 
+
+        Example
+        -------
+
+        >>> Event([1,2,3]).iconcat(Event([4,5,6]))
+        Event(array([1, 2, 3, 4, 5, 6]))
+
+        >>> Event([1,2,3]).iconcat(Event([]))
+        Event(array([1., 2., 3.]))
         """
         if len(others) == 0:
             return self
@@ -257,10 +452,18 @@ class Event(AttributeMixIn):
         count : 1d array
             event counts
 
+        Example
+        -------
+
+        >>> Event([1,2,3,4]).count(4)
+        array([4.])
+
+        >>> Event([1,2,3,4]).count([2, 4])
+        array([2., 4.])
         """
         return event_count(self._data, x)
 
-    def intervals(self, other=None, kind="post"):
+    def intervals(self, other=None, kind="post", segments=None):
         """Return inter-event intervals.
 
         Parameters
@@ -271,6 +474,8 @@ class Event(AttributeMixIn):
             type of interval to return. 'pre' or '<': interval to previous event,
             'post' or '>': interval to next event, 'smallest' or 'largest':
             smallest/largest of the intervals to the previous and next events.
+        segments : (n,2) array or Segment, optional
+            array of time segment start and end times
 
         Returns
         -------
@@ -280,8 +485,62 @@ class Event(AttributeMixIn):
         index : 1d array
             index of the event to which the interval was determined
 
+        Example
+        -------
+
+        For each event the function looks up the immediately following event and returns the interval and index of the second event.
+        For the last event, there is no following event and an interval of nan and an index of -1 is returned.
+
+        >>> Event([1,3,9]).intervals()
+        (array([ 2.,  6., nan]), array([ 1,  2, -1]))
+
+        By default, we look for each events to the nearest post input event and give the interval to it in
+        the first output and which input element has been selected in the second output.
+        For example, the event 1 is closest of 2 which give us an interval of 1 and the index 0
+
+        >>> Event([1, 2, 3 ]).intervals([2, 3])
+        (array([1., 0., 0.]), array([0, 0, 1]))
+
+        If there is no element available to compute the interval (in that case, no input element are bigger que 1, 2 and 3)
+        the output will be nan for the interval, -1 for the element selected.
+
+        >>> Event([1, 2, 3 ]).intervals([0])
+        (array([nan, nan, nan]), array([-1, -1, -1]))
+
+        To find the intervals to the immediately preceding events, we set the kind argument to “pre” or “<“.
+        Note that intervals are signed and intervals to preceding event are negative.
+        >>> Event([1, 3, 9]).intervals(kind="pre")
+        (array([nan, -2., -6.]), array([-1,  0,  1]))
+
+        >>> Event([1, 2, 3 ]).intervals([2], kind="pre")
+        (array([nan,  0., -1.]), array([-1,  0,  0]))
+
+        With the method king "smallest", we do the same thing as before except we look at the input event nearest
+        (before and after) the event.
+
+        >>> Event([1, 3, 9]).intervals(kind="smallest")
+        (array([nan, -2., nan]), array([-1,  0, -1]))
+
+        >>> Event([1, 2, 3 ]).intervals([2, 3], kind="smallest")
+        (array([nan,  0.,  0.]), array([-1,  0,  1]))
+
+        With the method king "largest", we do the same thing as before except we look at the input event farest
+        (before and after) the event.
+
+        >>> Event([1, 3, 9]).intervals(kind="largest")
+        (array([nan,  6., nan]), array([-1,  2, -1]))
+
+        >>> Event([1, 2, 3 ]).intervals([2, 3], kind="largest")
+        (array([nan,  0.,  0.]), array([-1,  0,  1]))
+
+        Segments option allows you to select where the interval should start. Example here, the element 1 not included
+        in the segment selected as its ouptut set to nan, -1.
+
+        >>> Event([1, 2, 3 ]).intervals([2, 3], segments=[2,4])
+        (array([nan,  0.,  0.]), array([-1,  0,  1]))
+
         """
-        return event_intervals(self._data, other=other, kind=kind)
+        return event_intervals(self._data, other=other, kind=kind, segments=segments)
 
     def bin(self, bins, kind="count"):
         """Count number of events in bins.
@@ -302,29 +561,74 @@ class Event(AttributeMixIn):
         counts : 1d array
             event counts for each bin
 
+        Example
+        -------
+        **Count method:** (default method)
+
+        >>> Event(np.array([2.5, 3, 4, 1, 1.5, 2, 5, 6, 7, 8])).bin([[1, 3], [3, 7]])
+        array([[4],
+               [4]], dtype=uint64)
+
+        **Binary method:**
+
+        >>> Event(np.array([2.5, 3, 4, 1, 1.5, 2, 5, 6, 7, 8])).bin([[1, 3], [3, 7]], kind="binary")
+        array([[1],
+               [1]], dtype=uint8)
+
+        **Rate method:**
+
+        >>> Event(np.array([2.5, 3, 4, 1, 1.5, 2, 5, 6, 7, 8])).bin([[1, 3], [3, 7]], kind="rate")
+        array([[2.],
+               [1.]])
+
+        Attention, each bin pair needs to be sorted because it is transfomred as a segment = [start, stop times[.
+
+        >>> Event(np.array([2.5, 3])).bin([3, 1])
+        Traceback (most recent call last):
+        ...
+        ValueError: Segment durations cannot be negative
+
+        However, the list of bin pairs itself does not need to be sorted.
+
+        >>> Event(np.array([2.5, 3, 4, 1, 1.5, 2, 5, 6, 7, 8])).bin([[3, 7], [1, 3]], kind="rate")
+        array([[1.],
+               [2.]])
         """
         return event_bin(self._data, bins, kind=kind)
 
-    def meanrate(self, segments=None):
+    def meanrate(self, segments=None, separate=False):
         """Return mean rate of events.
 
         Parameters
         ----------
-        segments : (n,2) array or Segment, optional
+        segments : (n,2) sorted array or Segment, optional
             array of time segment start and end times
-        separate : bool, optional
-            compute event rates for all segments separately
+
+        separate: bool, opt - compute for separate input segments
 
         Returns
         -------
         rate : array
-            Mean firing rate for each of the input event time vectors.
-            If separate=True, then a 2d array is returned, where rate[i,j]
-            represents the mean firing rate for event vector i and
-            segment j.
+            Mean firing rate
+
+        Example
+        -------
+
+        >>> Event(np.array([1, 1.5, 2, 2.5, 3, 4])).meanrate([[1, 3]])
+        array([2.])
+
+        With multiple segments, the result by default give the mean rate of the combined input segments.
+
+        >>> Event(np.array([1, 1.5, 2, 2.5, 3, 4])).meanrate([[1, 3], [3,4]])
+        array([1.66666667])
+
+        To obtain, the event rate for each input segments, you need to set the option separate to True.
+
+        >>> Event(np.array([1, 1.5, 2, 2.5, 3, 4])).meanrate([[1, 3], [3,4]], separate=True)
+        array([[2., 1.]])
 
         """
-        return event_rate(self._data, segments=segments, separate=False)
+        return event_rate(self._data, segments=segments, separate=separate)
 
     def peri_event_histogram(
         self,
@@ -369,6 +673,62 @@ class Event(AttributeMixIn):
             remove_zero_lag=remove_zero_lag,
         )
 
+    def peri_event_density(
+        self,
+        triggers,
+        lags=None,
+        npoints=101,
+        bandwidth=0.05,
+        squeeze=True,
+        remove_zero_lag=False,
+        segments=None,
+        unbiased=True,
+    ):
+
+        """
+        Compute peri-event probability distribution
+
+        Parameters
+        ----------
+        triggers : 1d array or sequence of 1d arrays
+            Vector(s) of sorted trigger times (in seconds)
+        bandwidth : float
+            Bandwidth of the gaussian kernel
+        lags : (float, float)
+            Minimum and maximum lag times. Default: [-1, 1].
+        npoints : int
+            Number of points at which density is evaluated
+        squeeze : bool
+            Squeeze out singular dimensions of output array
+        remove_zero_lag : bool
+            Remove zero lag events
+        segments : (n,2) array or Segment
+            Array of time segment start and end times
+        unbiased : bool
+            Only include trigger events for which data is available at all lags.
+            Is ignored if segments is None.
+
+        Returns
+        -------
+        density : (npoints, nevents, ntriggers) array
+            Peri-event densities for all event-trigger combinations
+        lags : (npoints,) array
+            Vector of time lags
+
+        """
+
+        return peri_event_density(
+            self._data,
+            triggers,
+            lags,
+            npoints,
+            bandwidth,
+            squeeze,
+            remove_zero_lag,
+            segments,
+            unbiased,
+        )
+
     def detectbursts(
         self, intervals=None, nevents=None, amplitude=None, attribute=False
     ):
@@ -383,6 +743,8 @@ class Event(AttributeMixIn):
             minimum and maximum number of events in a burst
         amplitude : 1d array, optional
             vector of event amplitudes
+        attribute: bool
+            this parameter is not used at this time
 
         Returns
         -------
@@ -390,11 +752,22 @@ class Event(AttributeMixIn):
             vector with burst indicators: 0=non-burst event, 1=first event
             in burst, 2=event in burst, 3=last event in burst
 
+
+        Examples
+        --------
+
+        >>> Event([2,2.5,3,4,5,6,6.5,7]).detectbursts(intervals=[0.9, 1.1])
+        array([0., 0., 1., 2., 2., 3., 0., 0.])
+
+        >>> Event([2,2.5,3,4,5,6,6.5,7]).detectbursts(intervals=[0.9, 1.1], nevents=[3,7])
+        array([0., 0., 1., 2., 2., 3., 0., 0.])
+
+        Adding the amplitude of each event in input allow to detect complex spike burst.
+
         """
         return event_bursts(
-            self._data, intervals=intervals, nevents=nevents, amplitude=amplitude
+            self._data, intervals=intervals, nevents=nevents, marks=amplitude
         )
-        # TODO: automatically add attribute with output
 
     def filterbursts(self, bursts=None, method="reduce", **kwargs):
         """Filter events in place based on participation in bursts.
@@ -406,10 +779,43 @@ class Event(AttributeMixIn):
             If not provided, it will be computed internally (parameters to
             the event_bursts function can be provided as extra keyword arguments)
         method : {'none', 'reduce', 'remove', 'isolate', 'isolatereduce'}
-            filter method to be applied. 'none': remove all events,
-            'reduce': only keep non-burst events and first event in bursts,
-            'remove': remove all burst events, 'isolate': remove all non-burst
-            events, 'isolatereduce': only keep first event in bursts.
+            filter method to be applied.
+
+        \*\*kwargs: dict
+            Arguments for the event_burst method
+
+
+        See Also
+        --------
+        fklab.events.basic_algorithms.event_burst
+
+        Example
+        -------
+
+        **'reduce': only keep non-burst events and first event in bursts**
+
+        >>> Event([1, 2, 2.5, 3, 4, 5, 6, 6.5, 7]).filterbursts(method="reduce",intervals=[0.9, 1.1])
+        Event(array([1. , 2.5, 3. , 6.5, 7. ]))
+
+        **'remove': remove all burst events**
+
+        >>> Event([1, 2, 2.5, 3, 4, 5, 6, 6.5, 7]).filterbursts(method="remove",intervals=[0.9, 1.1])
+        Event(array([2.5, 6.5, 7. ]))
+
+        **'isolate': remove all non-burst events**
+
+        >>> Event([1, 2, 2.5, 3, 4, 5, 6, 6.5, 7]).filterbursts(method="isolate",intervals=[0.9, 1.1])
+        Event(array([1., 2., 3., 4., 5., 6.]))
+
+        **'isolatereduce': only keep first event in bursts**
+
+        >>> Event([1, 2, 2.5, 3, 4, 5, 6, 6.5, 7]).filterbursts(method="isolatereduce",intervals=[0.9, 1.1])
+        Event(array([1., 3.]))
+
+        **'none' or any other keyword: Do nothing - Keep all events**
+
+        >>> Event([1, 2, 2.5, 3, 4, 5, 6, 6.5, 7]).filterbursts(method="none",intervals=[0.9, 1.1])
+        Event(array([1. , 2. , 2.5, 3. , 4. , 5. , 6. , 6.5, 7. ]))
 
         """
         events, idx = filter_bursts(self._data, bursts=bursts, method=method, **kwargs)
@@ -424,7 +830,29 @@ class Event(AttributeMixIn):
         ----------
         mininterval : scalar, optional
 
+        Returns
+        -------
+        Event
+            itself (inplace manipulation)
+
+        Example
+        -------
+
+        >>> Event([1, 1.1, 2, 3]).filterintervals(mininterval=0.5)
+        Event(array([1., 2., 3.]))
+
+        >>> Event([1, 2, 3, 1.1, -1]).filterintervals(mininterval=0.5)
+        Traceback (most recent call last):
+        ...
+        ValueError: The events should be sorted before being filtered to avoid unexpected behavior.
+
         """
+        if not self.issorted():
+            raise ValueError(
+                "The events should be sorted before being filtered "
+                "to avoid unexpected behavior."
+            )
+
         events, idx = filter_intervals(self._data, mininterval=mininterval)
         self._data = events
         return self
@@ -445,6 +873,11 @@ class Event(AttributeMixIn):
         Returns
         -------
         ndarray or KernelDensity object
+
+
+        See also
+        --------
+        sklearn.neighbor.kde.KernelDensity
 
         """
         from sklearn.neighbors.kde import KernelDensity
@@ -474,6 +907,16 @@ class Event(AttributeMixIn):
         Returns
         -------
         scalar
+            coefficient criterion
+
+        References
+        ----------
+        https://www.sciencedirect.com/science/article/pii/S0092867400818280
+        “We defined a complex spike index (CSI) as the percentage of first lag interspike intervals that fall
+        between 2 ms and 15 ms and whose second spike is smaller than the first.”
+
+        This description does not exactly cover how we have implemented it
+        (which is based on the original C code of Matt Wilson, co-author of the above paper).
 
         """
         return float(
@@ -483,7 +926,7 @@ class Event(AttributeMixIn):
     def average(
         self, time, data, lags=None, fs=None, interpolation="linear", function=None
     ):
-        """Average Event triggered.
+        """Average of the signal around event times.
 
         Parameters
         ----------
@@ -492,28 +935,36 @@ class Event(AttributeMixIn):
         data : ndarray
             array of data samples. First dimension should be time.
         lags : 2-element sequence, optional
-            minimum and maximum lags over which to compute average
+            minimum and maximum lags over which to compute average. default = [-1, 1]
         fs : float, optional
             sampling frequency of average. If not provided, will be calculated from time vector t
         interpolation : string or integer, optional
             kind of interpolation.
         function : callable, optional
             function to apply to data samples (e.g. to compute something else
-            than the average)
-
-        See Also
-        --------
-        scipy.interpolate.interp1d
+            than the average), needs to accept the axis option. Default is np.nanmean
 
         Returns
         -------
         ndarray
             event triggered average of data
+        ndarray
+            vector of lags
+
+
+        See also
+        --------
+        scipy.interpolate.interp1d
+
+
+        Example
+        -------
+
+        >>> Event([1]).average([0,1,2,3,4], [0,1, 1, 0, 0])
+        (array([0., 1.]), array([-1.,  0.]))
 
         """
-        from .basic_algorithms import event_average
-
-        return event_average(
+        return fklab.signals.core.event_triggered_average(
             self._data,
             time,
             data,

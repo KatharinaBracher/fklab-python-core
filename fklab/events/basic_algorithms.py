@@ -15,7 +15,6 @@ import scipy as sp
 import scipy.interpolate
 
 import fklab.utilities.general
-from fklab.codetools import deprecated
 from fklab.segments.basic_algorithms import check_segments
 from fklab.segments.basic_algorithms import segment_contains
 from fklab.segments.basic_algorithms import segment_intersection
@@ -59,9 +58,10 @@ def split_eventstrings(timestamp, eventstrings):
     dict
 
     """
-    events = np.unique(eventstrings)
-    d = {e: timestamp[eventstrings == e] for e in events}
 
+    timestamp = np.asarray(timestamp)
+    events = np.unique(eventstrings)
+    d = {e: timestamp[np.array(eventstrings) == e] for e in events}
     return d
 
 
@@ -104,10 +104,10 @@ def event_rate(events, segments=None, separate=False):
 
     Parameters
     ----------
-    events : 1d array or sequence of 1d arrays
+    events : 1d numpy array or sequence of 1d numpy arrays
         vector(s) of event times (in seconds)
     segments : (n,2) array or Segment, optional
-        array of time segment start and end times
+        array of time segment start and end times ([start, stop[)
     separate : bool, optional
         compute event rates for all segments separately
 
@@ -119,28 +119,36 @@ def event_rate(events, segments=None, separate=False):
 
     """
     events = check_events_list(events)
-    n = len(events)
 
-    if segments is None:  # ignore separate
-        fr = np.array(
-            [len(x) / (np.max(x) - np.min(x)) for x in events], dtype=np.float64
-        )
+    if segments is None:
+        return np.array(
+            [
+                event_rate(
+                    x,
+                    segments=[
+                        np.min(x) - 0.5 * np.mean(np.diff(x)),
+                        np.max(x) + 0.5 * np.mean(np.diff(x)),
+                    ],
+                )
+                for x in events
+            ]
+        ).flatten()
+
+    segments = check_segments(segments, copy=False)
+    if not separate:
+        # combine segments
+        segments = segment_remove_overlap(segments)
+        # find number of events in segments
+        ne = [np.sum(segment_contains(segments, x)[1]) for x in events]
+        ne = np.float64(ne)
+        # convert to rate
+        fr = ne / np.sum(np.diff(segments, axis=1))
     else:
-        segments = check_segments(segments, copy=False)
-        if not separate:
-            # combine segments
-            segments = segment_remove_overlap(segments)
-            # find number of events in segments
-            ne = [np.sum(segment_contains(segments, x)[1]) for x in events]
-            ne = np.float64(ne)
-            # convert to rate
-            fr = ne / np.sum(np.diff(segments, axis=1))
-        else:
-            # find number of events in each segment
-            ne = [segment_contains(segments, x)[1] for x in events]
-            ne = np.float64(np.vstack(ne))
-            # convert to rate
-            fr = ne / np.diff(segments, axis=1).reshape((1, len(segments)))
+        # find number of events in each segment
+        ne = [segment_contains(segments, x)[1] for x in events]
+        ne = np.float64(np.vstack(ne))
+        # convert to rate
+        fr = ne / np.diff(segments, axis=1).reshape((1, len(segments)))
 
     return fr
 
@@ -185,9 +193,9 @@ def event_bin(events, bins, kind="count"):
     # bins, something that fastbin does support
     for k, e in enumerate(events):
         if fklab.utilities.general.isascending(e):
-            m[:, k] = fastbin(e, bins)
+            m[:, k] = fastbin(e, bins.astype(float))
         else:
-            m[:, k] = fastbin(np.sort(e), bins)
+            m[:, k] = fastbin(np.sort(e), bins.astype(float))
 
     # transpose output, such that rows represent events and columns represent bins
     # m = m.T
@@ -199,6 +207,8 @@ def event_bin(events, bins, kind="count"):
         m = np.uint8(m)
     elif kind == "rate":
         m = m / np.diff(bins, axis=1)
+    else:
+        raise NotImplementedError("kind can be only count, binary or rate.")
 
     # if bins had to be sorted initially, unsort them here
     if sortflag:
@@ -245,7 +255,7 @@ def event_bursts(events, intervals=None, nevents=None, marks=None):
 
     if marks is not None:
         if len(marks) != n:
-            raise Error
+            raise ValueError("marks needs to have the same size than events")
 
     dpre = np.abs(event_intervals(events, kind="pre")[0])
     dpost = np.abs(event_intervals(events, kind="post")[0])
@@ -268,6 +278,7 @@ def event_bursts(events, intervals=None, nevents=None, marks=None):
     mask = np.logical_and(mask, apost <= 0)
     inburst[mask] = 1
 
+    # find middle event(s) in burst
     mask = np.logical_and.reduce(
         (
             dpre <= max_interval,
@@ -279,6 +290,7 @@ def event_bursts(events, intervals=None, nevents=None, marks=None):
     mask = np.logical_and(mask, np.logical_and(apre >= 0, apost <= 0))
     inburst[mask] = 2
 
+    # find last event in burst
     mask = np.logical_or.reduce(
         (dpost > max_interval, dpost < min_interval, np.isnan(dpost))
     )
@@ -326,7 +338,7 @@ def filter_bursts(events, bursts=None, method="none", **kwargs):
         If not provided, it will be computed internally (parameters to
         the event_bursts function can be provided as extra keyword arguments)
     method : {'none', 'reduce', 'remove', 'isolate', 'isolatereduce'}
-        filter method to be applied. 'none': remove all events,
+        filter method to be applied. 'none': keep all events,
         'reduce': only keep non-burst events and first event in bursts,
         'remove': remove all burst events, 'isolate': remove all non-burst
         events, 'isolatereduce': only keep first event in bursts.
@@ -366,7 +378,7 @@ def filter_bursts_length(bursts, nevents=None):
     bursts : 1d array
         burst indicator vector as returned by event_bursts function.
     nevents : scalar or 2-element sequence
-        range of burst lengths that will be filtered out. If nevents is a scalar, the range is [nevents, Inf].
+        range of burst lengths that will be filtered out. If `nevents` is a scalar, the range is [nevents, Inf]. By default, the number is 2 events minimum (= No filtering)
 
     Returns
     -------
@@ -382,7 +394,7 @@ def filter_bursts_length(bursts, nevents=None):
     burst_end = np.flatnonzero(bursts == 3)
 
     # determine burst lengths
-    burstlen = burstend - burststart + 1
+    burstlen = burst_end - burst_start + 1
 
     # find burst to remove
     nevents = np.array(nevents).ravel()
@@ -400,7 +412,7 @@ def filter_bursts_length(bursts, nevents=None):
     return bursts
 
 
-def event_count(events, x=None):
+def event_count(events, x):
     """Calculate the cumulative event count.
 
     Parameters
@@ -414,12 +426,10 @@ def event_count(events, x=None):
     -------
     count : 1d array
         event counts
-
     """
     events = check_events(events, copy=False)
     ne = len(events)
 
-    # make sure x is 1D numpy vector
     x = np.array(x).ravel()
     nx = len(x)
 
@@ -458,6 +468,7 @@ def event_intervals(events, other=None, kind="post", segments=None):
     index : 1d array
         index of the event to which the interval was determined
 
+
     """
     events = check_events(events, copy=False)
     n = len(events)
@@ -466,7 +477,10 @@ def event_intervals(events, other=None, kind="post", segments=None):
         return np.array([]), np.array([])
 
     if not kind in ["pre", "<", "post", ">", "smallest", "largest"]:
-        raise ValueError
+        raise NotImplementedError(
+            str(kind)
+            + " is not the right keyword for kind. Available keys are : pre , <, post, >, smallest or largest"
+        )
 
     if other is None:  # auto intervals
 
@@ -528,9 +542,6 @@ def event_intervals(events, other=None, kind="post", segments=None):
         idx = idxpre
         idx[tmp] = idxpost[tmp]
         idx[np.logical_or(np.isnan(ipre), np.isnan(ipost))] = -1
-
-    else:
-        raise Error
 
     if segments is not None:
         segments = check_segments(segments)
@@ -664,7 +675,7 @@ def _calc_csi(dt, da, max_int, min_int):
 
 
 @numba.jit("f8(f8[:],f8)", nopython=True, nogil=True)
-def _bsearchi(vector, key):
+def _bsearchi(vector, key):  # pragma: no cover
 
     nmemb = len(vector)
 
@@ -689,7 +700,7 @@ def _bsearchi(vector, key):
 
 
 @numba.jit("uint64[:](f8[:],f8[:,:])", nopython=True, nogil=True)
-def fastbin(events, bins):
+def fastbin(events, bins):  # pragma: no cover
     """Count number of events in bins.
 
     Parameters
@@ -730,7 +741,9 @@ def fastbin(events, bins):
 
 
 @numba.jit("u8(f8[:],f8[:],f8,f8,f8[:,:],b1,i8[:,:])", nopython=True, nogil=True)
-def _find_events_near_reference(ref, ev, minlag, maxlag, segs, unbiased, out):
+def _find_events_near_reference(
+    ref, ev, minlag, maxlag, segs, unbiased, out
+):  # pragma: no cover
 
     nref = len(ref)  # number of reference events
     nev = len(ev)  # number of events
@@ -773,14 +786,10 @@ def _find_events_near_reference(ref, ev, minlag, maxlag, segs, unbiased, out):
 
             i2 = int(math.floor(_bsearchi(ref, tmp)))
 
-        # print(k, i1,i2)
-
         if i1 > i2 or i1 < 0 or i2 < 0:
             continue
 
         n += i2 - i1 + 1
-
-        # print(k,n)
 
         # loop through all reference events in segment
         for l in range(i1, i2 + 1):
@@ -806,7 +815,7 @@ def _find_events_near_reference(ref, ev, minlag, maxlag, segs, unbiased, out):
 
 
 @numba.jit("f8[:](f8[:],f8[:],i8[:,:],f8[:])", nopython=True, nogil=True)
-def _align_events(events, reference, idx, x):
+def _align_events(events, reference, idx, x):  # pragma: no cover
     n = len(reference)
 
     startidx = 0
@@ -902,6 +911,23 @@ def peri_event_histogram(
     histogram: array with peri-event histogram, shape is (lags, events, references)
     bins: array with time lag bins used to compute histogram, shape is (nbins,2)
 
+
+    .. note:: Developer's documentation of the various normalizations in peri-event histogram.
+
+        T : total time
+        mean rate:
+        P0 = N0/T
+        P1 = N1/T
+        cross-correlation histogram: J10 = eventcorr( spike 0, spike 1 )
+        cross product density: P10 = J/bT
+        asymptotic distribution (independent):  sqrt(P10) -> sqrt(P1P0) +- norminv(1-alpha/2)/sqrt(4bT)
+        conditional mean intensity: m10 = J/bN0
+        asymptotic distribution (independent): qrt(m10) -> sqrt(P1) +- norminv(1-alpha/2)/sqrt(4bN0)
+        cross-covariance / cumulant density: q10 = P10 - P1P0
+        asymptotic distribution (independent):  q10 -> 0 +- norminv(1-alpha/2)*sqrt(P1P0/Tb)
+        variance normalized q10 is approx normal only when normal approx to Poisson
+        distribution applies, i.e. when lamda > 20 (see Lubenov&Siapas,2005)
+        this gives condition bTP0P1>20
     """
     events = check_events_list(events, copy=False)
 
@@ -988,39 +1014,6 @@ def peri_event_histogram(
     bins = np.vstack([lags[0:-1], lags[1:]]).T
 
     return p, bins
-
-
-#%b : binsize
-#%T : total time
-
-#%mean rate
-#%P0 = N0/T
-#%P1 = N1/T
-
-#%cross-correlation histogram
-#%J10 = eventcorr( spike 0, spike 1 )
-
-#%cross product density
-#%P10 = J/bT
-
-#%asymptotic distribution (independent)
-#% sqrt(P10) -> sqrt(P1P0) +- norminv(1-alpha/2)/sqrt(4bT)
-
-#%conditional mean intensity
-#%m10 = J/bN0
-
-#%asymptotic distribution (independent)
-#% sqrt(m10) -> sqrt(P1) +- norminv(1-alpha/2)/sqrt(4bN0)
-
-#%cross-covariance / cumulant density
-#%q10 = P10 - P1P0
-
-#%asymptotic distribution (independent)
-#% q10 -> 0 +- norminv(1-alpha/2)*sqrt(P1P0/Tb)
-
-#% variance normalized q10 is approx normal only when normal approx to Poisson
-#% distribution applies, i.e. when lamda > 20 (see Lubenov&Siapas,2005)
-#% this gives condition bTP0P1>20
 
 
 def peri_event_density(
@@ -1188,76 +1181,3 @@ def spike_time_tiling_coefficient(a, b, dt=0.1, epochs=None):
     sttc = 0.5 * ((pa - tb) / (1 - pa * tb) + (pb - ta) / (1 - pb * ta))
 
     return sttc
-
-
-@deprecated("Please use fklab.signals.event_triggered_average instead.")
-def event_average(
-    events,
-    t,
-    data,
-    lags=None,
-    fs=None,
-    interpolation="linear",
-    method="fast",
-    function=None,
-):
-    """Event triggered average.
-
-    Parameters
-    ----------
-    events : 1d array
-        vector of sorted event times (in seconds)
-
-    t : 1d array
-        vector of sample times for data array
-
-    data : ndarray
-        array of data samples. First dimension should be time.
-
-    lags : 2-element sequence, optional
-        minimum and maximum lags over which to compute average
-
-    fs : float, optional
-        sampling frequency of average. If not provided, will be calculated from time vector t
-
-    interpolation : string or integer, optional
-        kind of interpolation.
-
-    method : {'fast'}, optional
-        method for calculating event triggered average. Currently, only the 'fast' method is implemented.
-
-    function : callable, optional
-        function to apply to data samples (e.g. to compute something else than the average)
-
-    See Also
-    --------
-    scipy.interpolate.interp1d
-
-    Returns
-    -------
-    ndarray
-        event triggered average of data
-
-    """
-    events = check_events(events, copy=False)
-
-    if lags is None:
-        lags = [-1, 1]
-
-    if fs is None:
-        fs = 1 / np.mean(np.diff(t))
-
-    if function is None:
-        function = np.nanmean
-
-    lags = np.arange(lags[0], lags[-1], 1 / fs)
-
-    if method == "fast":
-        b = sp.interpolate.interp1d(
-            t, data, kind=interpolation, bounds_error=False, fill_value=np.nan, axis=0
-        )(events[:, None] + lags[None, :])
-        a = function(b, axis=0)
-    else:
-        raise NotImplementedError
-
-    return a

@@ -284,7 +284,7 @@ def localextrema(
     elif method in ["discrete"]:
         imax, imin = _localextrema_discrete(y)
     else:
-        raise Error
+        raise ValueError("Unknown method argument. Expecting 'gradient' or 'discrete'.")
 
     # select the requested extrema
     if kind in ("extrema", "extremes"):
@@ -294,7 +294,9 @@ def localextrema(
     elif kind in ("min", "minimum", "minima"):
         ii = imin
     else:
-        raise Error
+        raise ValueError(
+            "Unknown kind argument. Expecting one of ‘extrema’, ‘extremes’, ‘max’, ‘maximum’, ‘maxima’, ‘min’, ‘minimum’, ‘minima’"
+        )
 
     # compute signal amplitude at local extrema
     try:
@@ -760,7 +762,7 @@ def generate_windows(
     return numwin, window_time, _index_generator
 
 
-def extract_data_windows(data, *args, **kwargs):
+def extract_data_windows(data, window_size, *args, **kwargs):
     """Extract windows from regular sampled signal.
 
     Parameters
@@ -787,7 +789,7 @@ def extract_data_windows(data, *args, **kwargs):
     """
     n = len(data)
 
-    nidx, t, idx = generate_windows(n, *args, **kwargs)
+    nidx, t, idx = generate_windows(n, window_size, *args, **kwargs)
 
     idx = np.vstack(list(idx())).T
 
@@ -860,7 +862,7 @@ def generate_trigger_windows(n, triggers, window, fs=1.0, start_time=0.0, epochs
     return ntriggers, window_time, _index_generator
 
 
-def extract_trigger_windows(data, *args, **kwargs):
+def extract_trigger_windows(data, triggers, window, **kwargs):
     """Extract windows around triggers in regular sampled signal.
 
     Parameters
@@ -887,7 +889,7 @@ def extract_trigger_windows(data, *args, **kwargs):
     """
     n = len(data)
 
-    nidx, t, idx = generate_trigger_windows(n, *args, **kwargs)
+    nidx, t, idx = generate_trigger_windows(n, triggers, window, **kwargs)
 
     idx = np.vstack(list(idx())).T
 

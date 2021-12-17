@@ -19,7 +19,7 @@ from fklab.io.neuralynx import NlxOpen
 from fklab.utilities.general import natural_sort
 from fklab.utilities.general import slices
 
-from fklab.version._internal_version._version import __version__
+from fklab.version._core_version._version import __version__
 
 
 def data_generation(
