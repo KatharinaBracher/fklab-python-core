@@ -74,7 +74,7 @@ setup(
     packages=packages,
     ext_modules=[radon_ext],
     install_requires=[
-        "numpy",
+        "numpy>=1.17",
         "scipy>=1.2",
         "numba",
         "h5py",
