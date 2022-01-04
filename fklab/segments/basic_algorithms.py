@@ -414,80 +414,36 @@ def segment_contains(segment, x, issorted=True, expand=None):
         sort_indices = np.argsort(x)
         x = x[sort_indices]
 
+    isinseg = np.full(x.shape, False)
+
     valid = np.flatnonzero(~np.isnan(x))
 
     segment = check_segments(segment, copy=False)
-    nseg = segment.shape[0]
-    nx = len(valid)
 
-    xp = 0  # index of current x value
-    xfillp = 0  # index of last x value that has been tested
+    idx = np.searchsorted(x[valid], segment, side="left")
 
-    isinseg = np.zeros(
-        x.shape, dtype=bool
-    )  # True for each x inside any of the segments
-    contains = -1 * np.ones(
-        segment.shape, dtype=int
-    )  # for each segment start and end index of x-values that are contained within the segment
-    ninseg = np.zeros(
-        segment.shape[0], dtype=int
-    )  # for each segment number of x-values it contains
+    ninseg = idx[:, 1] - idx[:, 0]
 
-    if nx > 0:
+    for (a, b) in idx:
+        isinseg[valid[a:b]] = True
 
-        # loop through all segments
-        for sp in range(nseg):
+    idx[:, 1] -= 1
 
-            if x[valid[xp]] < segment[sp, 0]:  # current x is before segment start
-                # find first x inside segment
-                idx = np.searchsorted(
-                    x[valid[xp:]], segment[sp, 0], side="left"
-                )  # switch to 'right' to make left open interval
-                if (idx + xp) >= nx:  # no x inside segment found
-                    break
-                if (
-                    x[valid[idx + xp]] >= segment[sp, 1]
-                ):  # Use '>' to make right closed interval
-                    continue
-                xp += idx  # update current x
-                contains[sp, 0] = valid[xp]  # mark first x for this segment
-            elif (
-                x[valid[xp]] >= segment[sp, 1]
-            ):  # x-value is past current segment, go to next segment. Use '>' to make right closed interval
-                continue
-            else:
-                contains[sp, 0] = valid[xp]  # mark first x for this segment
-
-            # find last x in segment and mark it
-            xlastp = (
-                xp + np.searchsorted(x[valid[xp:]], segment[sp, 1], side="left") - 1
-            )  # switch to 'right' to make right closed interval
-            contains[sp, 1] = valid[xlastp]
-
-            # count number of x values in segment
-            ninseg[sp] = contains[sp, 1] - contains[sp, 0] + 1
-
-            # fast forward current fill index if needed
-            if xp > xfillp:
-                xfillp = xp
-
-            # mark x-values as contained
-            isinseg[valid[xfillp : (xlastp + 1)]] = 1
-
-            # set new current fill index
-            if xfillp < xlastp:
-                xfillp = xlastp
-
-    if not issorted:
-        isinseg = isinseg[np.argsort(sort_indices)]
+    idx[idx[:, 1] < idx[:, 0], :] = -1
 
     if expand:
         if issorted:
-            contains = [np.arange(start, stop + 1) for start, stop in contains]
+            idx = [np.arange(start, stop + 1) for start, stop in idx]
         else:
-            contains = [sort_indices[start : stop + 1] for start, stop in contains]
+            idx = [sort_indices[start : stop + 1] for start, stop in idx]
 
-    return isinseg, ninseg, contains
+    if not issorted:
+        # undo sorting
+        # note that it won't work without the copy
+        # because isinseg is then changed in-place
+        isinseg[sort_indices] = isinseg.copy()
+
+    return isinseg, ninseg, idx
 
 
 def segment_count(segments, x):

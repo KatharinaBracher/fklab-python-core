@@ -1303,7 +1303,7 @@ class Segment(object):
                [ 1,  1]]))
 
         >>> Segment([[1,2], [4,5], [0,1], [3,5]]).contains([0, 4], expand=True)
-        (array([False,  True]), array([0, 1, 0, 1]), [array([-1]), array([1]), array([-1]), array([1])])
+        (array([ True,  True]), array([0, 1, 1, 1]), [array([-1]), array([1]), array([0]), array([1])])
         """
         # TODO: test if self is sorted
         # TODO: test if value is sorted
