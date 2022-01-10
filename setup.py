@@ -53,7 +53,8 @@ radon_ext = Extension(
     libraries=[],
     include_dirs=[get_pybind_include(), get_pybind_include(user=True)],
     language="c++",
-    extra_compile_args=["-std=c++11", "-O3"],
+    #extra_compile_args=["-std=c++11", "-O3"],
+    extra_compile_args=['/std:c++11']
 )
 
 
