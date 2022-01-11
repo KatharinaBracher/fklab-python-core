@@ -1060,7 +1060,10 @@ def peri_event_density(
         Vector of time lags
 
     """
-    import fklab.decode
+    try:
+        import fklab.decode as kde
+    except ImportError:
+        import compressed_kde as kde
 
     if not isinstance(events, (tuple, list)):
         events = [events]
@@ -1084,7 +1087,7 @@ def peri_event_density(
     events = [x[np.isfinite(x)] for x in events]
     triggers = [x[np.isfinite(x)] for x in triggers]
 
-    kde_space = fklab.decode.EuclideanSpace(["lag"], bandwidth=bandwidth)
+    kde_space = kde.EuclideanSpace(["lag"], bandwidth=bandwidth)
     grid_points = np.linspace(*lags, npoints)
     kde_grid = kde_space.grid([grid_points])
 
@@ -1112,7 +1115,7 @@ def peri_event_density(
 
             nrelevents = len(rel_events)
 
-            mix = fklab.decode.Mixture(kde_space)
+            mix = kde.Mixture(kde_space)
             mix.merge(rel_events)
 
             yy[:, e, t] = mix.evaluate(kde_grid) * nrelevents / ntriggers
