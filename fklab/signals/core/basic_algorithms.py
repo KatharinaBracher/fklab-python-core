@@ -11,6 +11,7 @@ Basic algorithms for detecting extremes, zero crossing, etc. in data.
 import numpy as np
 import scipy as sp
 import scipy.interpolate
+import scipy.stats
 from numba import float64
 from numba import int_
 from numba import jit
@@ -27,6 +28,7 @@ __all__ = [
     "compute_threshold_zscore",
     "compute_threshold_median",
     "compute_threshold_percentile",
+    "compute_threshold_mad",
     "detect_mountains",
     "localextrema",
     "localmaxima",
@@ -86,6 +88,10 @@ def compute_threshold(time, signal, threshold, segments=None, kind="raw"):
         threshold = compute_threshold_median(threshold)(signal[b])
     elif kind == "percentile":
         threshold = compute_threshold_percentile(threshold)(signal[b])
+    elif kind == "median mad":
+        threshold = compute_threshold_mad(threshold)(signal[b])
+    elif kind == "mean mad":
+        threshold = compute_threshold_mad(threshold, center=np.mean)(signal[b])
 
     return threshold
 
@@ -162,6 +168,37 @@ def compute_threshold_percentile(percentiles=None):
 
     def inner(signal, percentiles=percentiles):
         return np.percentile(signal, percentiles)
+
+    return inner
+
+
+def compute_threshold_mad(multipliers=None, center=np.median):
+    """Create callable for computing thresholds based on median
+    or mean absolute deviation.
+
+    Parameters
+    ----------
+    multipliers : scalar or sequence
+    center : callable (default = np.median)
+        Function that returns the central value of the data
+        along an axis. The function should take the data array as
+        an argument.
+
+    Returns
+    -------
+    callable object that takes a 1D array and returns
+    center(signal) + multipliers * MAD(signal)
+
+    """
+    if multipliers is None:
+        multipliers = 1
+
+    multipliers = np.array(multipliers, copy=True, dtype=np.float64).ravel()
+
+    def inner(signal, multipliers=multipliers):
+        mu = center(signal)
+        mad = scipy.stats.median_abs_deviation(signal, center=center, scale="normal")
+        return mu + multipliers * mad
 
     return inner
 
