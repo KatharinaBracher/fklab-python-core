@@ -8,6 +8,7 @@ Event algorithms (:mod:`fklab.events.basic_algorithms`)
 Provides basic algorithms for event time vectors.
 """
 import math
+import warnings
 
 import numba
 import numpy as np
@@ -1060,7 +1061,21 @@ def peri_event_density(
         Vector of time lags
 
     """
-    import fklab.decode
+    try:
+        # we prefer this one
+        import compressed_kde
+    except ImportError:
+        try:
+            # this is our fallback
+            import fklab.decode as compressed_kde
+        except ImportError:
+            # in case neither is installed
+            raise ModuleNotFoundError(name="compressed_kde")
+
+        warnings.warn(
+            "the old deprecated package of the decoding lib is used. "
+            "Consider removing this one and install instead the py-compressed-kde package."
+        )
 
     if not isinstance(events, (tuple, list)):
         events = [events]
@@ -1084,7 +1099,7 @@ def peri_event_density(
     events = [x[np.isfinite(x)] for x in events]
     triggers = [x[np.isfinite(x)] for x in triggers]
 
-    kde_space = fklab.decode.EuclideanSpace(["lag"], bandwidth=bandwidth)
+    kde_space = compressed_kde.EuclideanSpace(["lag"], bandwidth=bandwidth)
     grid_points = np.linspace(*lags, npoints)
     kde_grid = kde_space.grid([grid_points])
 
@@ -1112,7 +1127,7 @@ def peri_event_density(
 
             nrelevents = len(rel_events)
 
-            mix = fklab.decode.Mixture(kde_space)
+            mix = compressed_kde.Mixture(kde_space)
             mix.merge(rel_events)
 
             yy[:, e, t] = mix.evaluate(kde_grid) * nrelevents / ntriggers
