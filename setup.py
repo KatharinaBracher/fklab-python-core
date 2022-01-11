@@ -1,5 +1,6 @@
 from setuptools import setup
 from distutils.core import Extension
+import sys
 
 # because we have namespace packages without __init__.py
 # which are not detected automatically by find_packages()
@@ -46,6 +47,12 @@ class get_pybind_include(object):
 
         return pybind11.get_include(self.user)
 
+if sys.platform.startswith('win'):
+    compile_args = ['/std:c++17', '/O2']
+elif sys.platform.startswith('linux'):
+    compile_args = ['-std=c++17', '-O3']
+else:
+    compile_args = []
 
 radon_ext = Extension(
     "fklab.radon.radonc",
@@ -53,8 +60,7 @@ radon_ext = Extension(
     libraries=[],
     include_dirs=[get_pybind_include(), get_pybind_include(user=True)],
     language="c++",
-    #extra_compile_args=["-std=c++11", "-O3"],
-    extra_compile_args=['/std:c++17']
+    extra_compile_args=compile_args,
 )
 
 
