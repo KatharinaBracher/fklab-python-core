@@ -122,8 +122,8 @@ PYBIND11_MODULE(radonc, m) {
             sizeof(double),
             py::format_descriptor<double>::value,
             2,
-            py::detail::any_container<long int>({ theta_buf.shape[0], rho_buf.shape[0] }),
-            py::detail::any_container<long int>({ sizeof(double) * rho_buf.shape[0], sizeof(double) })
+            { theta_buf.shape[0], rho_buf.shape[0] },
+            { sizeof(double) * rho_buf.shape[0], sizeof(double) }
         ));
 
         auto result_buf = result.request();
@@ -133,8 +133,8 @@ PYBIND11_MODULE(radonc, m) {
             sizeof(uint16_t),
             py::format_descriptor<uint16_t>::value,
             3,
-            py::detail::any_container<long int>({ theta_buf.shape[0], rho_buf.shape[0], 2 }),
-            py::detail::any_container<long int>({ sizeof(uint16_t) * rho_buf.shape[0] * 2, sizeof(uint16_t) * 2, sizeof(uint16_t) })
+            std::vector<py::ssize_t>({ theta_buf.shape[0], rho_buf.shape[0], 2 }),
+            std::vector<py::ssize_t>({ (py::ssize_t) (sizeof(uint16_t) * rho_buf.shape[0] * 2), sizeof(uint16_t) * 2, sizeof(uint16_t) })
         ));
 
         auto n_buf = n.request();
