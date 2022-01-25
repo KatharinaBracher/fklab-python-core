@@ -11,12 +11,20 @@ Functions to increase or decrease a signal's sampling rate.
 """
 from fklab.version._core_version._version import __version__
 
-__all__ = ["upsample", "interp", "interp_time_vector", "decimate", "resample"]
+__all__ = [
+    "upsample",
+    "interp",
+    "interp_time_vector",
+    "factorization",
+    "decimate",
+    "resample",
+]
 
 import numpy as np
 import scipy as sp
 import scipy.signal
-from scipy.signal import decimate, resample
+from scipy.signal import decimate as _decimate
+from scipy.signal import resample
 
 
 def upsample(x, factor, axis=-1):
@@ -154,3 +162,91 @@ def interp_time_vector(t, dt, factor):
     ts = ts + t.reshape(t.size, 1)
     ts = ts.flatten()
     return ts
+
+
+def factorization(v: int, x: int):
+    """Factorize integer `v` into factors smaller than `x`
+
+    Parameters
+    ----------
+    v : int
+        Value to factorize.
+    x : int
+        Maximum factor.
+
+    Returns
+    -------
+    factors : tuple of ints
+
+    """
+
+    ret = []
+    while v > x:
+        for i in range(x, 1, -1):
+            if v % i == 0:
+                ret.append(i)
+                v //= i
+                break
+        else:
+            raise RuntimeError(
+                f"Value {v} cannot be factorized to factors smaller than {x}"
+            )
+
+    ret.append(v)
+    return tuple(ret)
+
+
+def decimate(x, q, **kwargs):
+    """Downsample the signal after applying an anti-aliasing filter.
+
+    This is a thin wrapper around scipy.signal.decimate that checks if
+    the (integer) downsampling factor is larger than 12, in which case
+    the downsampling factor is facorized to multiple downsampling factors
+    smaller than 12 (if possible) and decimation is performed multiple
+    times. Alternatively, it is possible to directly specify an iterable
+    of downsample factors.
+
+    By default, an order 8 Chebyshev type I filter is used. A 30 point FIR
+    filter with Hamming window is used if `ftype` is 'fir'.
+
+    Parameters
+    ----------
+    x : array_like
+        The signal to be downsampled, as an N-dimensional array.
+    q : int or iterable of int
+        The downsampling factor(s). If the downsampling factor
+        is larger than 12, then it is factorized into smaller factors
+        and decimation is performed multiple times in sequence.
+        If factorization is not possible, then an exception is raised.
+    n : int, optional
+        The order of the filter (1 less than the length for 'fir'). Defaults to
+        8 for 'iir' and 20 times the downsampling factor for 'fir'.
+    ftype : str {'iir', 'fir'} or ``dlti`` instance, optional
+        If 'iir' or 'fir', specifies the type of lowpass filter. If an instance
+        of an `dlti` object, uses that object to filter before downsampling.
+    axis : int, optional
+        The axis along which to decimate.
+    zero_phase : bool, optional
+        Prevent phase shift by filtering with `filtfilt` instead of `lfilter`
+        when using an IIR filter, and shifting the outputs back by the filter's
+        group delay when using an FIR filter. The default value of ``True`` is
+        recommended, since a phase shift is generally not desired.
+
+    Returns
+    -------
+    y : ndarray
+        The down-sampled signal.
+
+    """
+
+    if isinstance(q, int):
+        if q == 1:
+            return x
+        q = factorization(q, 12)
+    else:
+        q = np.asarray(q, dtype=int).ravel()
+
+    for factor in q:
+        x = _decimate(x, factor, **kwargs)
+
+    return x
