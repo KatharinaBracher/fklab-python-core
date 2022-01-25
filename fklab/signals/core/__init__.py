@@ -10,6 +10,7 @@ Basic algorithms.
 
 """
 from .basic_algorithms import compute_threshold
+from .basic_algorithms import compute_threshold_mad
 from .basic_algorithms import compute_threshold_median
 from .basic_algorithms import compute_threshold_percentile
 from .basic_algorithms import compute_threshold_zscore

@@ -40,6 +40,7 @@ __all__ = [
     "plot_filter_group_delay",
     "compute_envelope",
     "compute_sliding_rms",
+    "contrast_frequency_bands",
 ]
 
 standard_frequency_bands = {
@@ -783,3 +784,80 @@ def compute_sliding_rms(
     envelope = np.sqrt(envelope)
 
     return envelope
+
+
+def contrast_frequency_bands(
+    signal,
+    fs=2000.0,
+    target=[160, 225],
+    contrast=[[100, 140], [250, 400]],
+    weights=None,
+    kind="power",
+    transition_width="10%",
+    smooth=0.01,
+):
+    """Compute difference between target and contrast frequency bands.
+
+    Parameters
+    ----------
+    signal : 1d or 2d array, or list of 1d or 2d arrays
+    fs : float
+        Sampling frequency
+    target : 1d-array like with shape (2,)
+    contrast : 2d array-like with shape (n,2)
+    weights : None or 1d array like with shape (n,)
+    kind: str
+        One of: `power`, `power x frequency` or `envelope`.
+    transition_width : float or str
+        Transition width for band-pass filters.
+    smooth : float
+        Kernel bandwidth for smoothing of power or envelope
+
+    Returns
+    -------
+    contrast : 1d array
+
+    """
+
+    all_bands = np.row_stack([target, contrast])
+
+    if not isinstance(signal, (list, tuple)):
+        signal = [signal]
+
+    signal = [y[:, None] if y.ndim == 1 else y for y in signal]
+
+    # filter signal
+    y = [
+        np.dstack(
+            [
+                apply_filter(x, band, fs=fs, axis=0, transition_width=transition_width)
+                for band in all_bands
+            ]
+        )
+        for x in signal
+    ]
+
+    if kind == "power":
+        y = [k ** 2 for k in y]
+    elif kind == "power x frequency":
+        fcenter = np.array([(a + b) / 2 for a, b in all_bands])[None, None, :]
+        y = [(k ** 2) * fcenter for k in y]
+    elif kind == "envelope":
+        y = [np.abs(scipy.signal.hilbert(k, axis=0)) for k in y]
+    else:
+        raise ValueError("Unknown value for kind argument.")
+
+    if weights is None:
+        weights = np.ones(len(contrast)) / len(contrast)
+
+    y = [k[:, :, 0] - np.average(k[:, :, 1:], axis=2, weights=weights) for k in y]
+
+    if not smooth is None:
+        y = [
+            fklab.signals.smooth.smooth1d(k, axis=0, delta=1.0 / fs, bandwidth=smooth)
+            for k in y
+        ]
+
+    y = np.mean(np.concatenate(y, axis=1), axis=1)
+
+    return y
