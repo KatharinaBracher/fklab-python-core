@@ -819,6 +819,9 @@ def contrast_frequency_bands(
 
     """
 
+    if not kind in ("power", "power x frequency", "envelope"):
+        raise ValueError("Unknown value for kind argument.")
+
     all_bands = np.row_stack([target, contrast])
 
     if not isinstance(signal, (list, tuple)):
@@ -842,10 +845,8 @@ def contrast_frequency_bands(
     elif kind == "power x frequency":
         fcenter = np.array([(a + b) / 2 for a, b in all_bands])[None, None, :]
         y = [(k ** 2) * fcenter for k in y]
-    elif kind == "envelope":
+    else:  # kind == "envelope"
         y = [np.abs(scipy.signal.hilbert(k, axis=0)) for k in y]
-    else:
-        raise ValueError("Unknown value for kind argument.")
 
     if weights is None:
         weights = np.ones(len(contrast)) / len(contrast)
