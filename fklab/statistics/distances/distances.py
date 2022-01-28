@@ -21,6 +21,11 @@ __all__ = [
 def bhattacharyya_coefficient(p1, p2, **kwargs):
     """Compute Bhattacharyya coefficient for two probability distributions.
 
+    The Bhattacharyya coefficient is computed by summing the square root of
+    the product of `p1` and `p2`.
+
+    See https://en.wikipedia.org/wiki/Bhattacharyya_distance
+
     Parameters
     ----------
     p1, p2 : arrays
@@ -36,12 +41,27 @@ def bhattacharyya_coefficient(p1, p2, **kwargs):
     -------
     array
 
+    Examples
+    --------
+    >>> bhattacharyya_coefficient(np.array([0.1, 0.3, 0.6]), np.array([0.2, 0.5, 0.3]))
+    0.9529837595699797
+
+    >>> bhattacharyya_coefficient(np.array([[0.1, 0.3, 0.6], [0.7, 0.2, 0.1]]),
+    ...                           np.array([[0.9, 0.0, 0.1], [0.2, 0.5, 0.3]]),
+    ...                           axis=1)
+    array([0.54494897, 0.86359859])
+
     """
     return np.sum(np.sqrt(p1 * p2), **kwargs)
 
 
 def bhattacharyya_distance(p1, p2, **kwargs):
     """Compute Bhattacharyya distance between two probability distributions.
+
+    The Bhattacharyya distance is computed as the negative natural
+    logarithm of the Bhattacharyya coefficient.
+
+    See https://en.wikipedia.org/wiki/Bhattacharyya_distance
 
     Parameters
     ----------
@@ -57,6 +77,16 @@ def bhattacharyya_distance(p1, p2, **kwargs):
     Returns
     -------
     array
+
+    Examples
+    --------
+    >>> bhattacharyya_distance(np.array([0.1, 0.3, 0.6]), np.array([0.2, 0.5, 0.3]))
+    0.04815741684776861
+
+    >>> bhattacharyya_distance(np.array([[0.1, 0.3, 0.6], [0.7, 0.2, 0.1]]),
+    ...                        np.array([[0.9, 0.0, 0.1], [0.2, 0.5, 0.3]]),
+    ...                        axis=1)
+    array([0.60706311, 0.14664722])
 
     """
     return -np.log(bhattacharyya_coefficient(p1, p2, **kwargs))
@@ -65,6 +95,11 @@ def bhattacharyya_distance(p1, p2, **kwargs):
 def hellinger_distance(p1, p2, **kwargs):
     """Compute Hellinger distance between two probability distributions.
 
+    The Hellinger distance is computed as the square root of one minus
+    the Bhattacharyya coefficient.
+
+    See https://en.wikipedia.org/wiki/Hellinger_distance
+
     Parameters
     ----------
     p1, p2 : arrays
@@ -79,6 +114,16 @@ def hellinger_distance(p1, p2, **kwargs):
     Returns
     -------
     array
+
+    Examples
+    --------
+    >>> hellinger_distance(np.array([0.1, 0.3, 0.6]), np.array([0.2, 0.5, 0.3]))
+    0.216832286410535
+
+    >>> hellinger_distance(np.array([[0.1, 0.3, 0.6], [0.7, 0.2, 0.1]]),
+    ...                    np.array([[0.9, 0.0, 0.1], [0.2, 0.5, 0.3]]),
+    ...                    axis=1)
+    array([0.6745747 , 0.36932562])
 
     """
     return np.sqrt(1 - bhattacharyya_coefficient(p1, p2, **kwargs))
@@ -88,6 +133,15 @@ def prob_weighted_distance(
     p1, p2, x1=None, x2=None, distances=None, exponent=2, axis=None, keepdims=False
 ):
     """Compute weighted distance between two probability distributions.
+
+    Given two probability distributions that represent estimates of locations
+    in a discrete space, this function will compute the mean distance between
+    the two location estimates, i.e., for vectors this would amount to
+    `np.sum(p1[:,None]*p2[None,:]*np.abs(x2[None,:]-x1[:,None]))`.
+    In words, for every pair of locations, their distance (`np.abs(x2[j]-x1[i])`)
+    is eighted by their joint probability (`p1[i]*p2[j]`).
+    A `distances` matrix can be provided instead of location vectors `x1` and `x2`
+    if the space is not euclidean.
 
     Parameters
     ----------
@@ -102,7 +156,7 @@ def prob_weighted_distance(
         then location vectors are generated as np.arange(n) for each dimension.
     distances : None or array
         An array of pair-wise distances associated with the probabilities in
-        `p1` and `p2`. Cannot be used together with `p1` and `p2`.
+        `p1` and `p2`. Cannot be used together with `x1` and `x2`.
     exponent : scalar
     axis : None, int or tuple of ints
         The array dimensions along which to compute the coefficient.
@@ -112,6 +166,21 @@ def prob_weighted_distance(
     Returns
     -------
     array
+
+    Examples
+    --------
+    >>> prob_weighted_distance(np.array([0.1, 0.3, 0.6]), np.array([0.2, 0.5, 0.3]))
+    1.0488088481701516
+
+    >>> prob_weighted_distance(np.array([0.1, 0.3, 0.6]),
+    ...                        np.array([0.2, 0.5, 0.3]),
+    ...                        x1 = np.array([1, 3, 5]))
+    2.0976176963403033
+
+    >>> prob_weighted_distance(np.array([[0.1, 0.3, 0.6], [0.7, 0.2, 0.1]]),
+    ...                        np.array([[0.9, 0.0, 0.1], [0.2, 0.5, 0.3]]),
+    ...                        axis=1)
+    array([1.58113883, 1.19163753])
 
     """
 
