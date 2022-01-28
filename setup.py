@@ -29,6 +29,7 @@ packages = [
     "fklab.statistics.core",
     "fklab.statistics.circular",
     "fklab.statistics.correlation",
+    "fklab.statistics.distances",
     "fklab.statistics.information",
     "fklab.utilities",
 ]
