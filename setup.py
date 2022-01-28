@@ -8,7 +8,6 @@ import sys
 packages = [
     "fklab.version._core_version",
     "fklab.codetools",
-    "fklab.distances",
     "fklab.events",
     "fklab.segments",
     "fklab.geometry",
@@ -30,6 +29,7 @@ packages = [
     "fklab.statistics.core",
     "fklab.statistics.circular",
     "fklab.statistics.correlation",
+    "fklab.statistics.distances",
     "fklab.statistics.information",
     "fklab.utilities",
 ]
