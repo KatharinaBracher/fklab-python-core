@@ -17,6 +17,7 @@ __all__ = [
     "format_pvalue_relative",
     "format_pvalue",
     "monte_carlo_pvalue",
+    "combine_pvalues",
     "find_mode",
     "beta_reparameterize",
     "generate_full_binned_array",
@@ -246,6 +247,53 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
     )
 
     return p
+
+
+def combine_pvalues(p, method="fisher", **kwargs):
+    """Combine p-value of multiple independent tests.
+
+    This function is a thin wrapper around `scipy.stats.combine_pvalues`
+    and adds the friston and nichols methods.
+
+    Also see: https://stats.stackexchange.com/a/160804/94255.
+
+    Note that `scipy.stats.combine_pvalues` has a bug and returns
+    complement p-values for the 'pearson' and 'tippett' methods.
+    See https://github.com/scipy/scipy/issues/15373. This function
+    implements a work-around and returns the correct p-value.
+
+    Parameters
+    ----------
+    p : sequence of floats
+        The p-values to combine.
+    methods : str
+        Valid methods are: 'fisher', 'pearson', 'tippett', 'stouffer',
+        'mudholkar_george', 'nichols' and 'friston'.
+    **kwargs :
+        Extra keyword arguments for `scipy.stats.combine_pvalues`.
+
+    Returns
+    -------
+    p : float
+        The combined p-value.
+
+    """
+
+    if method == "nichols":
+        return np.max(p)
+    elif method == "friston":
+        return np.max(p) ** len(p)
+    else:
+        p = scipy.stats.combine_pvalues(p, method=method, **kwargs)[1]
+
+        # Work-around for bug in scipy
+        # See: https://github.com/scipy/scipy/issues/15373
+        # This work-around should check for the scipy version
+        # once the issue has been resolved
+        if method in ("tippett", "pearson"):
+            p = 1 - p
+
+        return p
 
 
 def find_mode(x, weights=None, axis=0, gridsize=201):
