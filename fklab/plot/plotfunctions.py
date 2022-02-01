@@ -1024,7 +1024,36 @@ def labeled_vmarker(
     text_style=None,
     ax=None,
 ):
+    """Vertical line marker with label.
 
+    Parameters
+    ----------
+    x : float
+        X-coordinate of the vertical line.
+    text : str
+        Text for the label.
+    text_x : str
+        Horizontal location of the label relative to the line.
+        Either "left" or "right".
+    text_y : str or float
+        Vertical location of the label in axes-coordinates. Valid
+        string values are "bottom", "top" and "center", which are
+        equal to float values 0, 1, and 0.5 respectively.
+        Vertical alignment of the label is automatically determined
+        based on `text_y`.
+    text_offset : float
+        Horizontal offset of the label relative to the line.
+    style : None or dict
+        Extra keyword arguments passed to `ax.axvline`.
+    text_style : None or dict
+        Extra keyword arguments passed to `ax.text`.
+    ax : matplotlib Axes
+
+    Returns
+    -------
+    dict with artists
+
+    """
     if ax is None:
         ax = plt.gca()
 
@@ -1077,7 +1106,36 @@ def labeled_hmarker(
     text_style=None,
     ax=None,
 ):
+    """Horizontal line marker with label.
 
+    Parameters
+    ----------
+    y : float
+        Y-coordinate of the horizontal line.
+    text : str
+        Text for the label.
+    text_x : str or float
+        Horizontal location of the label in axes-coordinates. Valid
+        string values are "left", "right" and "center", which are
+        equal to float values 0, 1, and 0.5 respectively.
+        Horizontal alignment of the label is automatically determined
+        based on `text_x`.
+    text_y : str
+        Vertical location of the label relative to the line.
+        Either "top" or "bottom".
+    text_offset : float
+        Vertical offset of the label relative to the line.
+    style : None or dict
+        Extra keyword arguments passed to `ax.axhline`.
+    text_style : None or dict
+        Extra keyword arguments passed to `ax.text`.
+    ax : matplotlib Axes
+
+    Returns
+    -------
+    dict with artists
+
+    """
     if ax is None:
         ax = plt.gca()
 

@@ -12,8 +12,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
-import fklab.plot.core
-import fklab.plot.plots
+import fklab.plot
 from fklab.version._core_version._version import __version__
 
 __all__ = ["plot_recording"]
@@ -67,14 +66,12 @@ def plot_recording(
         fig = plt.figure()
         axes = plt.axes()
 
-    t = fklab.plot.core.utilities.RangeVector(
-        f["recordings/0/data"].shape[0], start_time, 1.0 / fs
-    )
+    t = fklab.plot.RangeVector(f["recordings/0/data"].shape[0], start_time, 1.0 / fs)
 
-    h = fklab.plot.plots.plot_signals(
+    h = fklab.plot.plot_signals(
         t,
         [
-            fklab.plot.utilities.ColumnView(
+            fklab.plot.ColumnView(
                 f["recordings/0/data"],
                 k,
                 lambda x, scale=0.001 * bitvolts[k]: x * scale,
@@ -86,7 +83,7 @@ def plot_recording(
         **kwargs
     )
 
-    v = fklab.plot.core.interaction.ScrollPanZoom(axes)
+    v = fklab.plot.ScrollPanZoom(axes)
     v.enable()
 
     if xlim is None:
@@ -110,7 +107,7 @@ def plot_recording(
     axes.spines["top"].set_visible(False)
     axes.xaxis.set_ticks_position("bottom")
 
-    scalebar = fklab.plot.core.artists.StaticScaleBar(
+    scalebar = fklab.plot.artists.StaticScaleBar(
         location="right", size=[0.0, 0.1], label="{value:.2f} mV", linewidth=2, offset=5
     )
     axes.add_artist(scalebar)

@@ -8,9 +8,9 @@ Core plotting tools (:mod:`fklab.plot`)
 Plotting tools.
 
 """
-from . import artists
 from . import colors
 from . import styles
+from .artists import *
 from .interaction import *
 from .plotfunctions import *
 from .polar import *

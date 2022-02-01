@@ -5,10 +5,7 @@ import fklab.io.common
 import fklab.io.mwl
 import fklab.io.neuralynx
 import fklab.io.openephys
-import fklab.plot.core
-import fklab.plot.neuralynx
-import fklab.plot.openephys
-import fklab.plot.plots
+import fklab.plot
 import fklab.radon
 import fklab.segments
 import fklab.signals.core
