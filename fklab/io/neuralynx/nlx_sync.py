@@ -202,7 +202,8 @@ def _nlx_retrieve_ttl_event(
             raising_time = event_time[ti]
             pulse = ttl_mask
         elif ttl_value == 0 and pulse != 0:
-            ret.append((raising_time, event_time[ti]))
+            if event_time[ti] - raising_time > 0.05:
+                ret.append((raising_time, event_time[ti]))
             pulse = 0
 
     return np.array(ret)
