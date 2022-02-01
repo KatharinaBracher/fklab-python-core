@@ -33,6 +33,8 @@ from .basic_algorithms import segment_span
 from .basic_algorithms import segment_split
 from .basic_algorithms import segment_uniform_random
 from .basic_algorithms import segment_union
+from .plot import plot_segments_as_lines
+from .plot import plot_segments_as_patches
 from fklab.codetools import deprecated
 from fklab.utilities.general import issorted
 from fklab.utilities.general import partition_vector
@@ -1545,3 +1547,9 @@ class Segment(object):
 
         """
         return segment_uniform_random(self._data, size=size)
+
+    def plot_as_lines(self, *args, **kwargs):
+        return plot_segments_as_lines(self._data, *args, **kwargs)
+
+    def plot_as_patches(self, *args, **kwargs):
+        return plot_segments_as_patches(self._data, *args, **kwargs)

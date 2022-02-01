@@ -1,7 +1,11 @@
-from .utilities import install_custom_colors
+import warnings
 
-COLORS = {
-    #'context:label': '#eeeeee',
-}
+from ..colors import *
+from fklab.codetools import FKLabDeprecationWarning
 
-install_custom_colors(COLORS, "fklab")
+warnings.warn(
+    "The fklab.plot.core.colors module is deprecated. "
+    "Please use fklab.plot.colors instead.",
+    FKLabDeprecationWarning,
+    stacklevel=2,
+)

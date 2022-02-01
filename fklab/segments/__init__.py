@@ -11,6 +11,7 @@ directly from the top level segments package.
 
 """
 from .basic_algorithms import *
+from .plot import *
 from .segment import Segment
 from .segment import SegmentError
 

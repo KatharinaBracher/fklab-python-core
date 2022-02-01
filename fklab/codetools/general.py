@@ -19,7 +19,7 @@ import warnings
 
 from fklab.version._core_version._version import __version__
 
-__all__ = ["deprecated"]
+__all__ = ["deprecated", "FKLabDeprecationWarning"]
 
 # deprecated decorator was borrowed from https://gist.github.com/kgriffs/8202106
 
