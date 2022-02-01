@@ -648,7 +648,7 @@ class ellipse(boxed):
             )
             return rectangle(
                 center=[(x[0] + x[1]) / 2, (y[0] + y[1]) / 2],
-                size=np.abs([(x[1] - x[0]), (y[1] - y[0])]),
+                size=np.abs([float(x[1] - x[0]), float(y[1] - y[0])]),
                 orientation=0,
             )
 

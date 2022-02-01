@@ -24,7 +24,7 @@ import warnings
 from fklab.codetools import FKLabDeprecationWarning
 
 warnings.warn(
-    "The fklab.plot.polts.polar module is deprecated. "
+    "The fklab.plot.plots.polar module is deprecated. "
     "Please use fklab.plot.polar instead.",
     FKLabDeprecationWarning,
     stacklevel=2,
