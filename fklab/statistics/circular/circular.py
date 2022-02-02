@@ -15,7 +15,6 @@ from numpy import deg2rad
 from numpy import rad2deg
 from scipy.stats import vonmises
 
-from fklab.codetools import deprecated
 from fklab.version._core_version._version import __version__
 
 __all__ = [
@@ -593,58 +592,6 @@ def inrange(theta, crange=[], low=0.0, high=2 * np.pi):
         return np.logical_or(theta >= crange[0], theta <= crange[1])
     else:
         return np.logical_and(theta >= crange[0], theta <= crange[1])
-
-
-@deprecated("Please use uniform.rvs instead.")
-def uniformrnd(size=1):
-    """Random sample from circular uniform distribution.
-
-    Parameters
-    ----------
-    size : tuple of ints
-
-    Returns
-    -------
-    ndarray
-
-    """
-    return np.random.uniform(low=0, high=2 * np.pi, size=size)
-
-
-@deprecated("Please use uniform.cdf instead.")
-def uniformcdf(theta):
-    """Circular uniform distribution function.
-
-    Parameters
-    ----------
-    theta : ndarray
-        Array of angles at which the circular uniform cumulative distribution density is computed.
-
-    Returns
-    -------
-    ndarray
-
-    """
-    return wrap(theta) / (2 * np.pi)
-
-
-@deprecated("Please use uniform.pdf instead.")
-def uniformpdf(theta):
-    """Compute the circular uniform probability density function.
-
-    Parameters
-    ----------
-    theta : ndarray
-        Array of angles at which the circular uniform probability density
-        is computed.
-
-    Returns
-    -------
-    ndarray
-
-    """
-    theta = np.asarray(theta)
-    return np.ones(theta.shape) / (2 * np.pi)
 
 
 class uniform_gen(scipy.stats.rv_continuous):
