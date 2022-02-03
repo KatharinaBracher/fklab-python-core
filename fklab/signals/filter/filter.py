@@ -22,7 +22,6 @@ import scipy.signal
 from matplotlib import gridspec
 
 import fklab.signals.smooth
-from fklab.codetools import deprecated
 from fklab.version._core_version._version import __version__
 
 __all__ = [
@@ -141,15 +140,6 @@ def construct_filter(band, fs=1.0, transition_width="25%", attenuation=60):
     return h
 
 
-@deprecated("Please use construct_filter instead.")
-def construct_band_filter(*args, **kwargs):
-
-    return construct_filter(*args, **kwargs)
-
-
-construct_band_filter.__doc__ = construct_filter.__doc__
-
-
 def construct_low_pass_filter(cutoff, **kwargs):
     """Construct FIR low-pass filter.
 
@@ -207,11 +197,6 @@ def _filter(b, signal, axis=0, pad=True):
     # signal is nD signal, with n>=1
     # filter will be applied along axis
     # odd type reflective padding is used
-
-    warnings.warn(
-        "This new implementation (since version 1.7) does not perform a backward filter pass like previously, which could introduce difference in the result. It should not be necessary for (symmetrical) FIR filter but if needed, you could obtained a similar effect as before by calling apply_filter twice.",
-        UserWarning,
-    )
 
     # expand dimensionality of b to match signal dimensionality
     if signal.ndim > 1:
@@ -297,15 +282,6 @@ def apply_median_filter(signal, median_filter, fs):
     signal_filtered = signal - series.median()
 
     return signal_filtered
-
-
-@deprecated("Please use apply_filter instead.")
-def apply_band_filter(*args, **kwargs):
-
-    return apply_filter(*args, **kwargs)
-
-
-apply_band_filter.__doc__ = apply_filter.__doc__
 
 
 def apply_low_pass_filter(signal, cutoff, **kwargs):
