@@ -605,8 +605,8 @@ class uniform_gen(scipy.stats.rv_continuous):
 
     """
 
-    def _rvs(self):
-        return self._random_state.uniform(0.0, 2.0 * np.pi, self._size)
+    def _rvs(self, size=None, random_state=None):
+        return random_state.uniform(0.0, 2.0 * np.pi, size)
 
     def _pdf(self, x):
         return (x == x) / (2.0 * np.pi)

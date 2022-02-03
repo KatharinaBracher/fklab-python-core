@@ -1,3 +1,11 @@
-from .utilities import install_custom_stylesheets
+import warnings
 
-STYLES = install_custom_stylesheets(__name__)
+from ..styles import *
+from fklab.codetools import FKLabDeprecationWarning
+
+warnings.warn(
+    "The fklab.plot.core.styles module is deprecated. "
+    "Please use fklab.plot.styles instead.",
+    FKLabDeprecationWarning,
+    stacklevel=2,
+)

@@ -12,11 +12,10 @@ import numpy as np
 
 import fklab.events
 import fklab.io.neuralynx as nlx
-import fklab.plot.core.artists
-from fklab.plot.core.interaction import ScrollPanZoom
-from fklab.plot.plots import plot_events
-from fklab.plot.plots import plot_signals
-from fklab.plot.plots import plot_spectrogram
+from fklab.plot import plot_event_raster
+from fklab.plot import plot_signals
+from fklab.plot import plot_spectrogram
+from fklab.plot import ScrollPanZoom
 from fklab.version._core_version._version import __version__
 
 __all__ = ["plot_nev", "plot_csc", "plot_csc_spectrogram"]
@@ -30,7 +29,7 @@ def plot_nev(filename, events=None, axes=None, **kwargs):
     filename : str
     events : str or list of str
     axes : matplotlib Axes object
-    kwargs : option for plot_events function
+    kwargs : options for `plot_event_raster` function
 
     Returns
     -------
@@ -52,7 +51,7 @@ def plot_nev(filename, events=None, axes=None, **kwargs):
         fig = plt.figure()
         axes = plt.axes()
 
-    h = plot_events(data, fullheight=True, axes=axes, **kwargs)
+    h = plot_event_raster(data, axes=axes, heights=0.8, labels=events, **kwargs)
 
     return h
 
@@ -208,7 +207,7 @@ def plot_csc(
     axes.spines["top"].set_visible(False)
     axes.xaxis.set_ticks_position("bottom")
 
-    scalebar = fklab.plot.artists.StaticScaleBar(
+    scalebar = fklab.plot.StaticScaleBar(
         location="right", size=[0.0, 0.1], label="{value:.2f} mV", linewidth=2, offset=5
     )
     axes.add_artist(scalebar)

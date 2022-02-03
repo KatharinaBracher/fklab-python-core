@@ -33,6 +33,8 @@ from .basic_algorithms import segment_span
 from .basic_algorithms import segment_split
 from .basic_algorithms import segment_uniform_random
 from .basic_algorithms import segment_union
+from .plot import plot_segments_as_lines
+from .plot import plot_segments_as_patches
 from fklab.codetools import deprecated
 from fklab.utilities.general import issorted
 from fklab.utilities.general import partition_vector
@@ -1545,3 +1547,73 @@ class Segment(object):
 
         """
         return segment_uniform_random(self._data, size=size)
+
+    def plot_as_lines(self, *args, **kwargs):
+        """Plot segments as lines with optional start and end markers.
+
+        Parameters
+        ----------
+        y : float
+            Coordinate in the y-axis of the plotted lines.
+        ycoords : str
+            Coordinate system of the y-coordinate. Either 'data' coordinates
+            or 'axes' coordinates.
+        orientation : str
+            Either 'horizontal' or 'vertical'. If 'vertical', then the segment
+            start and end points in `x` are oriented along the y-axis and
+            `y` is interpreted as an offset along the x-axis.
+        marker, startmarker, endmarker : marker specification
+            Valid matplotlib marker specification. If `startmarker` or
+            `endmarker` is None, then the value from `marker` is taken.
+        markersize : float
+            Size of the start and end markers.
+        color : color specification
+            Valid matplotlib color specification for lines and markers.
+        alpha : float
+            Transparency for lines and markers.
+        axes : None or matplotlib Axes
+        lineprops : None or dict
+            Dictionay with additional line properties that is passed to
+            `matplotlib.collections.LineCollection` constructor.
+
+        Returns
+        -------
+        SegmentLinesContainer
+
+        """
+        return plot_segments_as_lines(self._data, *args, **kwargs)
+
+    def plot_as_patches(self, *args, **kwargs):
+        """Plot segments as filled rectangular patches.
+
+        Parameters
+        ----------
+        y : float
+            Anchor point offset along the y-axis.
+        height : float
+            Height of the rectangles.
+        anchor : float
+            Anchoring point of the rectangle along the y-axis. This value ranges
+            from 0 (bottom) to 1 (top). The final y-offset is computed as
+            `y - anchor * height`.
+        ycoords : str
+            Coordinate system of the y-coordinate. Either 'data' coordinates
+            or 'axes' coordinates. If 'data', then the default anchoring point
+            is 0.5, such that `y` represents the center of the drawn rectangles.
+            If `axes`, then default anchoring point is 0, such that `y`
+            represents the offset of the bottom of the drawn rectangles.
+        orientation : str
+            Either 'horizontal' or 'vertical'. If 'vertical', then the segment
+            start and end points in `x` are oriented along the y-axis and
+            `y` is interpreted as an offset along the x-axis.
+        axes : None or matplotlib Axes
+        **kwargs :
+            Extra keyword arguments that are passed to matplotlib's
+            `broken_barh` function.
+
+        Returns
+        -------
+        BrokenBarHCollection
+
+        """
+        return plot_segments_as_patches(self._data, *args, **kwargs)
