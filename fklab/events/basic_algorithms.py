@@ -741,10 +741,21 @@ def fastbin(events, bins):  # pragma: no cover
     return counts
 
 
-@numba.jit("u8(f8[:],f8[:],f8,f8,f8[:,:],b1,i8[:,:])", nopython=True, nogil=True)
+@numba.jit("u8(f8[:],f8[:],f8,f8,f8[:,:],i8,i8[:,:])", nopython=True, nogil=True)
 def _find_events_near_reference(
-    ref, ev, minlag, maxlag, segs, unbiased, out
+    ref, ev, minlag, maxlag, segs, mode, out
 ):  # pragma: no cover
+
+    # mode = 0: biased
+    #   include all references and events inside segments
+    # mode = 1: unbiased, strict
+    #   include all events, but include only references for which
+    #   surrounding [minlag, maxlag] window falls completely
+    #   inside segments
+    # mode = 2: unbiased, relaxed
+    #   include all references, inside segments and include all
+    #   events within [minlag, maxlag] window of references, even
+    #   if events are outside segments
 
     nref = len(ref)  # number of reference events
     nev = len(ev)  # number of events
@@ -763,7 +774,7 @@ def _find_events_near_reference(
         else:
             tmp = segs[k, 0]
 
-            if unbiased:
+            if mode == 1:
                 # adjust segment boundary
                 tmp = tmp - minlag
 
@@ -778,7 +789,7 @@ def _find_events_near_reference(
         else:
             tmp = segs[k, 1]
 
-            if unbiased:
+            if mode == 1:
                 # adjust segment boundary
                 tmp = tmp - maxlag
 
@@ -797,8 +808,12 @@ def _find_events_near_reference(
 
             i = event_i
             event_i_set = 0
-            while i < nev and ev[i] <= ref[l] + maxlag and ev[i] <= segs[k, 1]:
-                if ev[i] >= ref[l] + minlag and ev[i] >= segs[k, 0]:
+            while (
+                i < nev
+                and ev[i] <= ref[l] + maxlag
+                and (mode == 2 or ev[i] <= segs[k, 1])
+            ):
+                if ev[i] >= ref[l] + minlag and (mode == 2 or ev[i] >= segs[k, 0]):
                     if event_i_set == 0:
                         out[l, 0] = i
                         event_i_set = 1
@@ -830,8 +845,10 @@ def _align_events(events, reference, idx, x):  # pragma: no cover
 
 
 def _event_correlation(
-    events, reference=None, lags=None, segments=None, unbiased=False
+    events, reference=None, lags=None, segments=None, unbiased=False, return_index=False
 ):
+
+    unbiased = {False: 0, True: 1, "none": 0, "strict": 1, "relaxed": 2}[unbiased]
 
     events = check_events(events, copy=False)
 
@@ -870,7 +887,10 @@ def _event_correlation(
 
     x = _align_events(events, reference, idx, x)
 
-    return x, nvalidref
+    if return_index:
+        return x, nvalidref, idx
+    else:
+        return x, nvalidref
 
 
 def peri_event_histogram(
@@ -901,8 +921,11 @@ def peri_event_histogram(
     normalization : {'none', 'coef', 'rate', 'conditional mean intensity', 'product density', 'cross covariance', 'standard cross covariance', 'cumulant density', 'zscore'}, optional
         type of normalization
 
-    unbiased : bool, optional
-        only include reference events for which data is available at all lags
+    unbiased : bool or {'none', 'stict', 'relaxed'}, optional
+        If True or 'strict', only include reference events for which data
+        is available at all lags. If 'relaxed', then all references inside
+        segments are considered and events at all lags are counted even
+        if they may lie outside segments.
 
     remove_zero_lag : bool, optional
         remove zero lag event counts
@@ -971,7 +994,11 @@ def peri_event_histogram(
             else:
                 p[:, k, t] = np.histogram(tmp, bins=lags)[0]
 
-    if unbiased and normalization not in ["coef", "rate", "conditional mean intensity"]:
+    if (unbiased == True or unbiased == "strict") and normalization not in [
+        "coef",
+        "rate",
+        "conditional mean intensity",
+    ]:
         tmp = np.array([np.sum(segment_contains(segments, x)[0]) for x in reference])
         p = p * (tmp[None, None, :] / nvalid[None, None, :])
 
