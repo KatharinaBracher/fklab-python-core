@@ -33,6 +33,7 @@ __all__ = [
     "event_intervals",
     "filter_intervals",
     "complex_spike_index",
+    "event_correlation",
     "peri_event_histogram",
     "peri_event_density",
     "check_events",
@@ -844,10 +845,57 @@ def _align_events(events, reference, idx, x):  # pragma: no cover
     return x
 
 
-def _event_correlation(
-    events, reference=None, lags=None, segments=None, unbiased=False, return_index=False
+def event_correlation(
+    events,
+    reference=None,
+    lags=None,
+    segments=None,
+    remove_zero_lag=False,
+    unbiased=False,
+    return_index=False,
+    return_time=False,
 ):
+    """Find events surrounding reference events.
 
+    Parameters
+    ----------
+    events : 1d array
+        vector of sorted event times (in seconds)
+    reference : 1d array
+        vector(s) of sorted reference event times (in seconds).
+        If not provided, then events are used as a reference.
+    lags : (float, float)
+        minimum and maximum lag.
+    segments : (n,2) array or Segment, optional
+        array of time segment start and end times
+    remove_zero_lag : bool, optional
+        remove zero lag events
+    unbiased : bool or one of {'none', 'strict', 'relaxed'}, optional
+        If True or 'strict', only include reference events for which data
+        is available at all lags. If 'relaxed', then all references inside
+        segments are considered and events at all lags are counted even
+        if they may lie outside segments.
+    return_index : bool
+        additionally, return indices of events near reference events
+    return_time : bool or str
+        additionally, return times of events near reference events.
+        If return_time is 'reference', returns the time of the reference
+        event instead.
+
+    Returns
+    -------
+    rel_event_time : array
+        time differences between events and reference events
+    nvalid : int
+        number of valid reference events
+    index : (n,2) array, optional
+        for each reference event, the start and end indices of neighboring
+        events
+    time : (n,) array, optional
+        for each event near a reference events, the time of the event
+        or the time of the corresponding reference event.
+
+    """
     unbiased = {False: 0, True: 1, "none": 0, "strict": 1, "relaxed": 2}[unbiased]
 
     events = check_events(events, copy=False)
@@ -872,6 +920,13 @@ def _event_correlation(
     else:
         segments = check_segments(segments)
 
+    if return_time == True:
+        return_time = "event"
+    elif return_time != False and not return_time in ("reference", "event"):
+        raise ValueError(
+            "Unknown value for return_time. Valid options are True, False, 'reference' and 'event'."
+        )
+
     # remove overlap between segments
     segments = segment_remove_overlap(segments, strict=False)
 
@@ -887,10 +942,26 @@ def _event_correlation(
 
     x = _align_events(events, reference, idx, x)
 
+    if remove_zero_lag:
+        keep = x != 0
+        x = x[keep]
+
+    return_values = [x, nvalidref]
+
     if return_index:
-        return x, nvalidref, idx
-    else:
-        return x, nvalidref
+        return_values.append(idx)
+
+    if not return_time == False:
+        if return_time == "event":
+            t = [events[a : a + b] for a, b in idx]
+        elif return_time == "reference":
+            t = [
+                np.full(b, reference[k], dtype=reference.dtype)
+                for k, (a, b) in enumerate(idx)
+            ]
+        return_values.append(np.concatenate(t)[keep])
+
+    return tuple(return_values)
 
 
 def peri_event_histogram(
@@ -982,17 +1053,16 @@ def peri_event_histogram(
 
     for t in range(nref):
         for k in range(nev):
-            tmp, nvalid[t] = _event_correlation(
+            tmp, nvalid[t] = event_correlation(
                 events[k],
                 reference[t],
                 lags=[minlag, maxlag],
                 segments=segments,
                 unbiased=unbiased,
+                remove_zero_lag=remove_zero_lag,
             )
-            if remove_zero_lag:
-                p[:, k, t] = np.histogram(tmp[tmp != 0], bins=lags)[0]
-            else:
-                p[:, k, t] = np.histogram(tmp, bins=lags)[0]
+
+            p[:, k, t] = np.histogram(tmp, bins=lags)[0]
 
     if (unbiased == True or unbiased == "strict") and normalization not in [
         "coef",
