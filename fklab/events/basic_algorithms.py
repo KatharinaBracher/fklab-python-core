@@ -34,6 +34,7 @@ __all__ = [
     "filter_intervals",
     "complex_spike_index",
     "event_correlation",
+    "joint_event_correlation",
     "peri_event_histogram",
     "peri_event_density",
     "check_events",
@@ -962,6 +963,77 @@ def event_correlation(
         return_values.append(np.concatenate(t)[keep])
 
     return tuple(return_values)
+
+
+def joint_event_correlation(
+    events,
+    reference=None,
+    var_t=None,
+    var=None,
+    segments=None,
+    minlag=-0.5,
+    maxlag=0.5,
+    remove_zero_lag=True,
+    unbiased="relaxed",
+    reference_time="reference",  # 'reference' or 'event'
+    interp_options=None,
+):
+    """Jointly assess temporal and variable correlation of events.
+
+    Parameters
+    ----------
+    events : 1d array
+        vector of sorted event times (in seconds)
+    reference : 1d array, optional
+        vector of sorted reference event times (in seconds). If not provided,
+        then events are used as a reference.
+    var_t : 1d array
+        time vector for variable
+    var : array
+        variable array, can be 2-dimensional, but first dimension must be time.
+    segments : (n,2) array or Segment, optional
+        array of time segment start and end times
+    minlag, maxlag : float
+        minimum and maximum lag times
+    remove_zero_lag : bool
+        remove events at zero time lag
+    unbiased : bool or one of {'none', 'strict', 'relaxed'}
+    reference_time : str, one of {'reference', 'event'}
+        If 'reference', uses the time of the reference event to compute the
+        associated variable value. If 'event', uses the actual event time.
+    interp_options : None or dict
+        Options for interpolation of variable at event times. By default,
+        interpolation kind is 'nearest'
+
+    Returns
+    -------
+    rel_event_time : 1d array
+    event_var : array
+    nvalid : int
+
+    """
+
+    interpolation_options = {"kind": "nearest"}
+    if not interp_options is None:
+        interpolation_options.update(interp_options)
+
+    if var_t is None or var is None:
+        raise ValueError("Please provide var_t and var arrays.")
+
+    rel_event_time, nvalid, t = event_correlation(
+        events,
+        reference,
+        lags=[minlag, maxlag],
+        segments=segments,
+        unbiased=unbiased,
+        return_time=reference_time,
+        remove_zero_lag=remove_zero_lag,
+    )
+
+    # interpolate variable for each neighboring spike
+    event_var = scipy.interpolate.interp1d(var_t, var, **interpolation_options)(t)
+
+    return rel_event_time, event_var, nvalid
 
 
 def peri_event_histogram(
