@@ -80,23 +80,25 @@ class shape(yaml.YAMLObject, metaclass=meta):
         return np.zeros(2)
 
     @abc.abstractmethod
-    def scale(self, factor):
+    def scale(self, factor, origin=None):
         """Scale shape.
 
         Parameters
         ----------
             factor : scalar or [factor_x, factor_y]
+            origin : (x, y), optional
 
         """
         pass
 
     @abc.abstractmethod
-    def rotate(self, angle):
+    def rotate(self, angle, origin=None):
         """Rotate shape around its center.
 
         Parameters
         ----------
         angle : scalar
+        origin : (x, y), optional
 
         """
         pass
@@ -436,27 +438,36 @@ class boxed(solid):
 
         self._orientation = value
 
-    def scale(self, factor):
+    def scale(self, factor, origin=None):
         """Scale shape.
 
         Parameters
         ----------
             factor : scalar or [factor_x, factor_y]
+            origin : (x, y), optional
 
         """
         factor = np.array(factor, dtype=np.float64)
         self.size = self._size * factor
 
-    def rotate(self, angle):
+        if not origin is None:
+            origin = np.array(origin, dtype=np.float64)
+            self.center = (self.center - origin) * factor + origin
+
+    def rotate(self, angle, origin=None):
         """Rotate shape around its center.
 
         Parameters
         ----------
         angle : scalar
+        origin : (x, y), optional
 
         """
         angle = np.array(angle, dtype=np.float64)
         self.orientation = self._orientation + angle
+
+        if not origin is None:
+            self.center = tf.Rotate(angle, origin).transform(self.center)
 
     def translate(self, offset):
         """Translate shape.
@@ -1508,27 +1519,35 @@ class polyline(path):
         self._isspline = bool(value)
         self._update_cached_values(True)
 
-    def scale(self, factor):
+    def scale(self, factor, origin=None):
         """Scale shape.
 
         Parameters
         ----------
             factor : scalar or [factor_x, factor_y]
+            origin : (x, y), optional
 
         """
-        t = tf.Scale(factor=factor, origin=self.center)
+        if origin is None:
+            origin = self.center
+
+        t = tf.Scale(factor=factor, origin=origin)
         self._vertices = t.transform(self._vertices)
         self._modifications += 1
 
-    def rotate(self, angle):
+    def rotate(self, angle, origin=None):
         """Rotate shape around its center.
 
         Parameters
         ----------
         angle : scalar
+        origin : (x, y), optional
 
         """
-        t = tf.Rotate(angle=angle, origin=self.center)
+        if origin is None:
+            origin = self.center
+
+        t = tf.Rotate(angle=angle, origin=origin)
         self._vertices = t.transform(self._vertices)
         self._modifications += 1
 
@@ -2086,28 +2105,36 @@ class graph(path):
         """Number of edges in graph."""
         return len(self._polylines)
 
-    def scale(self, factor):
+    def scale(self, factor, origin=None):
         """Scale shape.
 
         Parameters
         ----------
             factor : scalar or [factor_x, factor_y]
+            origin : (x, y), optional
 
         """
-        t = tf.Scale(factor=factor, origin=self.center)
+        if origin is None:
+            origin = self.center
+
+        t = tf.Scale(factor=factor, origin=origin)
         self._nodes = t.transform(self._nodes)
         for p in self._polylines:
             p.transform(t)
 
-    def rotate(self, angle):
+    def rotate(self, angle, origin=None):
         """Rotate shape around its center.
 
         Parameters
         ----------
         angle : scalar
+        origin : (x, y), optional
 
         """
-        t = tf.Rotate(angle=angle, origin=self.center)
+        if origin is None:
+            origin = self.center
+
+        t = tf.Rotate(angle=angle, origin=origin)
         self._nodes = t.transform(self._nodes)
         for p in self._polylines:
             p.transform(t)
@@ -2590,11 +2617,11 @@ class multishape(shape):
         else:
             return np.mean(np.vstack([x.center for x in self._shapes]).T, axis=0)
 
-    def scale(self, factor):
+    def scale(self, factor, origin=None):
         """Scaling transform is not implemented."""
         raise NotImplementedError()
 
-    def rotate(self, angle):
+    def rotate(self, angle, origin=None):
         """Rotation transform is not implemented."""
         raise NotImplementedError()
 

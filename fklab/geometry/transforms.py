@@ -194,7 +194,7 @@ class Rotate(Transform):
 
     def __init__(self, angle=0, origin=None):
 
-        if not origin:
+        if origin is None:
             origin = [0, 0]
         self.angle = angle
         self.origin = origin
