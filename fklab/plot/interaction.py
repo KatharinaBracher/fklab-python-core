@@ -34,6 +34,7 @@ __all__ = [
     "create_polyline",
     "create_polygon",
     "ScrollPanZoom",
+    "ScrollZoom2D",
 ]
 
 
