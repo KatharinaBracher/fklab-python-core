@@ -17,6 +17,8 @@ packages = [
     "fklab.io.neuralynx",
     "fklab.io.openephys",
     "fklab.plot",
+    "fklab.plot.plots",
+    "fklab.plot.core",
     "fklab.plot.neuralynx",
     "fklab.plot.openephys",
     "fklab.radon",
