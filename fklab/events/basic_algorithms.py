@@ -1287,7 +1287,7 @@ def peri_event_density(
             ntriggers = len(trigger)
 
         for e, event in enumerate(events):
-            rel_events = fklab.events.basic_algorithms._event_correlation(
+            rel_events = event_correlation(
                 event, trigger, lags=lags + [-4 * bandwidth, 4 * bandwidth]
             )[0]
 
