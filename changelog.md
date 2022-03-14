@@ -1,9 +1,35 @@
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.9.0]
+
+
+## Added
+
+- Support for windows packaging
+- fklab.signal package : add compute_threshold_mad  contrast_frequency_bands, factorization and decimate methods
+- Added new package fklab.statistics.distance metrics
+- add combine_pvalues method to the fklab.statistics package
+- add joint_event_correlation and event_correlation methods to fklab.events package
+
+## Fixed
+
+- segment.contains methods : speed improvement for large inputs
+
+## Restructure
+
+- fklab.plot package :
+  + Functions for plotting segments are now part of the fklab.segments.plot module (see docs).
+  + There are two functions: plot_segments_as_lines and plot_segments_as_patches. For example use, see the gallery.
+  + The fklab.plot.plots.plot_segments function is deprecated.
+  + The function for plotting spike rasters has been renamed to plot_event_raster and has a few new features. See the docs and gallery. The old plot_raster and plot_events functions are deprecated.
+  + Plot functions are now part of the fklab.plot.plotfunctions module and are available in the top level fklab.plot namespace. So, you just have to do import fklab.plot to get access to the functions. fklab.plot.plots is deprecated.
 
 
 ## [1.8.1]
