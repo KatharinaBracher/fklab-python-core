@@ -15,6 +15,7 @@ import numpy as np
 import scipy as sp
 import scipy.interpolate
 
+import fklab.segments
 import fklab.utilities.general
 from fklab.segments.basic_algorithms import check_segments
 from fklab.segments.basic_algorithms import segment_contains
@@ -41,6 +42,7 @@ __all__ = [
     "check_events_list",
     "fastbin",
     "spike_time_tiling_coefficient",
+    "shift_events",
 ]
 
 
@@ -1365,3 +1367,84 @@ def spike_time_tiling_coefficient(a, b, dt=0.1, epochs=None):
     sttc = 0.5 * ((pa - tb) / (1 - pa * tb) + (pb - ta) / (1 - pb * ta))
 
     return sttc
+
+
+def shift_events(events, shift=0, segments=None, circular=True):
+    """Circularly shift event times by a fixed value.
+
+    Parameters
+    ----------
+    events : 1d-array
+        Array of (sorted) event times.
+    shift : float
+        By how much to shift the event times.
+    segments : (n,2) array or Segment
+        Time windows in which to perform the shift. The time windows are considered
+        as a single contiguous time window for the purpose of the shift. Events
+        outside the time windows are not shifted.
+    circular : bool
+        If True, events at the boundaries will shift to the opposite boundary. If False,
+        events that are shifted outside the first/last time winodw will be removed.
+
+    Returns
+    -------
+    events : 1d array
+        Time-shifted events
+
+    """
+    if len(events) <= 1:
+        if circular:
+            return events
+        else:
+            return events + shift
+
+    # more than 1 event
+    if segments is None:
+        # add small number to segment end, so that last event is inside the segment
+        segments = fklab.segments.Segment(
+            [[events[0], events[-1] + np.finfo(float).eps]]
+        )
+    else:
+        segments = fklab.segments.Segment(segments)
+
+    # 1. remove segment overlap
+    segments = segments.removeoverlap(strict=False)
+    durations = segments.duration
+    duration = np.sum(durations)
+
+    # 2. for all spikes, find corresponding segments
+    isinseg, _, idx = segments.contains(events, expand=True)
+    seg_idx = np.full(len(events), -1, dtype=int)
+    for k, a in enumerate(idx):
+        seg_idx[a] = k
+
+    # 3. find cumulative inter-segment-intervals
+    isi = np.cumsum(np.concatenate([[0], segments.start[1:] - segments.stop[:-1]]))
+
+    # 4. adjust event times
+    adjusted_events = events[isinseg] - isi[seg_idx[isinseg]]
+
+    # 5. circularly shift spike trains
+    adjusted_events += shift
+    if circular:
+        adjusted_events[adjusted_events >= segments.start[0] + duration] -= duration
+        adjusted_events[adjusted_events < segments.start[0]] += duration
+
+    # 6. for all adjusted spikes, find corresponding segment
+    adjusted_segs = segments - isi[:, None]
+    keep, _, idx = fklab.segments.segment_contains(
+        adjusted_segs, adjusted_events, issorted=False, expand=True
+    )
+    seg_idx = np.full(len(adjusted_events), -1, dtype=int)
+    for k, a in enumerate(idx):
+        seg_idx[a] = k
+
+    # 7. adjust event times
+    isinseg = np.flatnonzero(isinseg)
+    shifted_events = events.copy()
+    shifted_events[isinseg[keep]] = adjusted_events[keep] + isi[seg_idx][keep]
+
+    if not circular:
+        shifted_events = np.delete(shifted_events, isinseg[~keep])
+
+    return np.sort(shifted_events)
