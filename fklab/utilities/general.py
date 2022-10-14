@@ -6,7 +6,7 @@ General utiltity functions.
 
 """
 import re
-from collections import Mapping
+from collections.abc import Mapping
 from functools import reduce
 
 import numba
