@@ -488,7 +488,6 @@ def event_intervals(events, other=None, kind="post", segments=None):
         )
 
     if other is None:  # auto intervals
-
         d = np.diff(events)
         ipre = np.concatenate(([np.nan], -d))
         idxpre = np.int64(np.concatenate(([-1], np.arange(n - 1))))
@@ -652,7 +651,6 @@ def complex_spike_index(spike_times, spike_amp=None, intervals=None):
 
 
 def _calc_csi(dt, da, max_int, min_int):
-
     # find all valid intervals (i.e. interval smaller than or equal to max_int)
     valid = np.abs(dt) <= max_int
 
@@ -681,7 +679,6 @@ def _calc_csi(dt, da, max_int, min_int):
 
 @numba.jit("f8(f8[:],f8)", nopython=True, nogil=True)
 def _bsearchi(vector, key):  # pragma: no cover
-
     nmemb = len(vector)
 
     left = 0
@@ -749,7 +746,6 @@ def fastbin(events, bins):  # pragma: no cover
 def _find_events_near_reference(
     ref, ev, minlag, maxlag, segs, mode, out
 ):  # pragma: no cover
-
     # mode = 0: biased
     #   include all references and events inside segments
     # mode = 1: unbiased, strict
@@ -771,7 +767,6 @@ def _find_events_near_reference(
 
     # loop through all segments
     for k in range(nseg):
-
         # find index i1 of first reference event within segment
         if segs[k, 0] < ref[0]:
             i1 = 0
@@ -809,7 +804,6 @@ def _find_events_near_reference(
 
         # loop through all reference events in segment
         for l in range(i1, i2 + 1):
-
             i = event_i
             event_i_set = 0
             while (
@@ -948,6 +942,8 @@ def event_correlation(
     if remove_zero_lag:
         keep = x != 0
         x = x[keep]
+    else:
+        keep = np.full_like(x, True, dtype=bool)
 
     return_values = [x, nvalidref]
 
@@ -1277,7 +1273,6 @@ def peri_event_density(
     yy = np.empty((npoints, len(events), len(triggers)), dtype=np.float)
 
     for t, trigger in enumerate(triggers):
-
         if not segments is None and unbiased:
             # compute segments relative to triggers
             trig_seg = np.reshape(
