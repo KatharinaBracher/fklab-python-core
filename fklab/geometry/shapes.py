@@ -41,6 +41,7 @@ __all__ = [
 # shape <- path <- (polyline,solid) <- polygon
 # shape <- multishape
 
+
 # we need to create a single common meta base class
 class meta(yaml.YAMLObjectMetaclass, abc.ABCMeta):
     pass
@@ -288,12 +289,14 @@ class path(shape):
 
         return L, D, (vx, vy)
 
-    def plot_path(self, axes=None, **kwargs):
+    def plot_path(self, axes=None, show_direction=False, **kwargs):
         """Plot the path.
 
         Parameters
         ----------
         axes : Axes
+        show_direction : bool
+            Show the direction of the polyline with an arrow.
         **kwargs :
             Extra keyword arguments for `plot` function
 
@@ -306,7 +309,27 @@ class path(shape):
             axes = plt.gca()
 
         xy = self.samplepath()
-        axes.plot(xy[:, 0], xy[:, 1], **kwargs)
+        (h,) = axes.plot(xy[:, 0], xy[:, 1], **kwargs)
+
+        if show_direction:
+            col = h.get_color()
+            axes.plot(*x[0], ".", color=col, ms=10)
+            axes.annotate(
+                "",
+                xy=x[-1],
+                xycoords="data",
+                xytext=x[-2],
+                textcoords="data",
+                arrowprops=dict(
+                    arrowstyle="-|>",
+                    connectionstyle="arc3",
+                    shrinkA=0,
+                    shrinkB=0,
+                    lw=0,
+                    facecolor=col,
+                    mutation_scale=20,
+                ),
+            )
 
         return axes
 
@@ -535,7 +558,6 @@ class ellipse(boxed):
     def __init__(
         self, center=(0, 0), size=None, radius=None, orientation=0.0, **kwargs
     ):
-
         if size and radius:
             assert np.array(size) / 2 == np.array(
                 radius
@@ -564,8 +586,10 @@ class ellipse(boxed):
 
     def __repr__(self):
         if self.iscircle:
-            return "circle (radius={radius[0]}, center=[{center[0]},{center[1]}])".format(
-                center=self.center, radius=self.size
+            return (
+                "circle (radius={radius[0]}, center=[{center[0]},{center[1]}])".format(
+                    center=self.center, radius=self.size
+                )
             )
         else:
             return "ellipse (size=[{size[0]},{size[1]}], center=[{center[0]},{center[1]}], orientation={orientation[0]} rad)".format(
@@ -674,11 +698,10 @@ class ellipse(boxed):
         return L
 
     def _compute_pathlength(self):
-
         if self.iscircle:
             L = 2 * np.pi * self.radius
         else:
-            L = 4 * np.max(self.radius) * sp.special.ellipe(self.eccentricity ** 2)
+            L = 4 * np.max(self.radius) * sp.special.ellipe(self.eccentricity**2)
 
         return L
 
@@ -963,7 +986,7 @@ class ellipse(boxed):
         assert points.ndim == 2 and points.shape[1] == 2
 
         if self.iscircle:
-            return np.sum((points - self._center) ** 2, axis=1) <= self.radius ** 2
+            return np.sum((points - self._center) ** 2, axis=1) <= self.radius**2
         else:
             # transform points: translate(-center), rotate(-orientation), scale(1/size)
             # test if distance of point to (0,0) <= 1
@@ -973,7 +996,7 @@ class ellipse(boxed):
                 + tf.Scale(1 / self.radius)
             )
             points = t.transform(points)
-            return np.sum(points ** 2, axis=1) <= 1
+            return np.sum(points**2, axis=1) <= 1
 
     def random_in(self, n):
         """Sample random points inside ellipse.
@@ -1948,8 +1971,8 @@ class polygon(polyline, solid):
         xy = np.zeros((n, 2), dtype=np.float64)
 
         npoints = (
-            0
-        )  # number of random points inside polygon that have been generated so far
+            0  # number of random points inside polygon that have been generated so far
+        )
         niteration = 0  # number of iterations
         MAXITER = 10  # maximum number of iterations - we should never reach this
 
@@ -2329,7 +2352,6 @@ class graph(path):
         d = np.empty((edge.size)) * np.nan
 
         for k, p in enumerate(self._polylines):
-
             idx = edge == k
             if np.any(idx):
                 d[idx] = p.tangent(dist_along_edge[idx])
@@ -2527,12 +2549,14 @@ class graph(path):
         else:
             return _bin_path(self.edgelengths, binsize)
 
-    def plot_path(self, axes=None, **kwargs):
+    def plot_path(self, axes=None, show_direction=False, **kwargs):
         """Plot the graph path.
 
         Parameters
         ----------
         axes : Axes
+        show_direction : bool
+            Show the direction of the polyline with an arrow.
         **kwargs :
             Extra keyword arguments for `plot` function
 
@@ -2545,7 +2569,29 @@ class graph(path):
             axes = plt.gca()
 
         xy = [x.samplepath() for x in self._polylines]
-        [axes.plot(x[:, 0], x[:, 1], **kwargs) for x in xy]
+
+        for x in xy:
+            (h,) = axes.plot(x[:, 0], x[:, 1], **kwargs)
+
+            if show_direction:
+                col = h.get_color()
+                axes.plot(*x[0], ".", color=col, ms=10)
+                axes.annotate(
+                    "",
+                    xy=x[-1],
+                    xycoords="data",
+                    xytext=x[-2],
+                    textcoords="data",
+                    arrowprops=dict(
+                        arrowstyle="-|>",
+                        connectionstyle="arc3",
+                        shrinkA=0,
+                        shrinkB=0,
+                        lw=0,
+                        facecolor=col,
+                        mutation_scale=20,
+                    ),
+                )
 
         return axes
 
@@ -2939,7 +2985,6 @@ def _construct_spline(vertices, closed=False):
 
 
 def _sample_spline(vertices, oversampling=20, closed=False, openpath=False):
-
     oversampling = np.floor(oversampling)
     if oversampling == 1:
         return vertices.copy()
@@ -2987,7 +3032,6 @@ def _sample_polyline(vertices, oversampling=1, closed=False, openpath=False):
 
 
 def _inv_ellipeinc(a, b, n=100):
-
     if a > b:
         t_offset = 1.5 * np.pi
     else:
@@ -3012,7 +3056,6 @@ def _inv_ellipeinc(a, b, n=100):
 
 
 def _check_graph(nodes, polylines, tol=0.001, correct=False):
-
     nodes = util.aspoints(nodes)
 
     if isinstance(polylines, polyline):
@@ -3087,7 +3130,6 @@ def _edge2path(x, edgelengths, pathlength):
 
 
 def _bin_path(edge_lengths, dx):
-
     edge_lengths = np.asarray(edge_lengths)
 
     # fraction number of bins
