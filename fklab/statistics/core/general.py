@@ -202,6 +202,19 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
         Simulated test statistics
     test : scalar
         Test statistic derived from actual data
+    tails : str
+        Either "left", "right" or "both". Computes the left, right or two-tailed
+        p-value.
+    center : scalar, array, None or callable
+        The center of the simulated sample distribution. If an array, it should be the
+        same size as the `test` array. If None, the mean of the `simulated` array is
+        computed along `axis`. If a callable, it should take two arguments: the
+        `simulated` array and the `axis` keyword that specifies along which array axis
+        the center should be computed. The function should either return a scalar or
+        an array the same size is the `test` array.
+    axis : int
+        The samples axis of the `simulated` array. If the `test` array includes
+        the samples axis, it should be of size 1.
 
     Returns
     -------
@@ -212,12 +225,12 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
     simulated = np.atleast_1d(simulated)
     test = np.atleast_1d(test)
 
-    if test.size != int(np.prod(simulated.shape[1:])):
+    if test.size != int(np.prod(simulated.shape) / simulated.shape[axis]):
         raise ValueError("Incorrect size of test statistic array.")
 
     if test.ndim == simulated.ndim - 1:
-        test = test[None, :]
-    elif test.ndim != simulated.ndim or test.shape[0] != 1:
+        test = np.expand_dims(test, axis)
+    elif test.ndim != simulated.ndim or test.shape[axis] != 1:
         raise ValueError("Incompatible shape of test statistic array.")
 
     if tails == "right":
@@ -230,10 +243,10 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
         raise ValueError("Invalid tails.")
 
     if center is None:
-        center = lambda x: np.nanmean(x, axis=0)
+        center = lambda x, axis=0: np.nanmean(x, axis=axis)
 
     if callable(center):
-        center = center(simulated)
+        center = center(simulated, axis=axis)
     else:
         center = np.asarray(center)
 
@@ -242,9 +255,15 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
             raise ValueError("Incorrect size of center array.")
         center = center.reshape(test.shape)
 
-    p = (np.nansum(cmp_fcn(simulated - center, test - center), axis=axis) + 1) / (
-        len(simulated) + 1
-    )
+    invalid = (np.all(np.isnan(simulated), axis=axis, keepdims=True)) | (np.isnan(test))
+
+    p = (
+        np.nansum(cmp_fcn(simulated - center, test - center), axis=axis, keepdims=True)
+        + 1
+    ) / (np.sum(~np.isnan(simulated), axis=axis, keepdims=True) + 1)
+
+    p[invalid] = np.nan
+    p = np.squeeze(p, axis=axis)
 
     return p
 
