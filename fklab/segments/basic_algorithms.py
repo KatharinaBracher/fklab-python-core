@@ -294,11 +294,9 @@ def segment_intersection(*args):
     segment_stack = segment_list[0]
 
     for iseg in segment_list:
-
         overlap = np.zeros([0, 2])
 
         for k in range(segment_stack.shape[0]):
-
             b = np.logical_and(
                 segment_stack[k, 0] <= iseg[:, 0], segment_stack[k, 1] > iseg[:, 0]
             )
@@ -424,7 +422,7 @@ def segment_contains(segment, x, issorted=True, expand=None):
 
     ninseg = idx[:, 1] - idx[:, 0]
 
-    for (a, b) in idx:
+    for a, b in idx:
         isinseg[valid[a:b]] = True
 
     idx[:, 1] -= 1
@@ -433,9 +431,9 @@ def segment_contains(segment, x, issorted=True, expand=None):
 
     if expand:
         if issorted:
-            idx = [np.arange(start, stop + 1) for start, stop in idx]
+            idx = [np.arange(max(0, start), stop + 1) for start, stop in idx]
         else:
-            idx = [sort_indices[start : stop + 1] for start, stop in idx]
+            idx = [sort_indices[max(0, start) : stop + 1] for start, stop in idx]
 
     if not issorted:
         # undo sorting
