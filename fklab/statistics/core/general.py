@@ -202,6 +202,19 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
         Simulated test statistics
     test : scalar
         Test statistic derived from actual data
+    tails : str
+        Either "left", "right" or "both". Computes the left, right or two-tailed
+        p-value.
+    center : scalar, array, None or callable
+        The center of the simulated sample distribution. If an array, it should be the
+        same size as the `test` array. If None, the mean of the `simulated` array is
+        computed along `axis`. If a callable, it should take two arguments: the
+        `simulated` array and the `axis` keyword that specifies along which array axis
+        the center should be computed. The function should either return a scalar or
+        an array the same size is the `test` array.
+    axis : int
+        The samples axis of the `simulated` array. If the `test` array includes
+        the samples axis, it should be of size 1.
 
     Returns
     -------
@@ -230,7 +243,7 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
         raise ValueError("Invalid tails.")
 
     if center is None:
-        center = lambda x, ax=0: np.nanmean(x, axis=ax)
+        center = lambda x, axis=0: np.nanmean(x, axis=axis)
 
     if callable(center):
         center = center(simulated, axis=axis)
@@ -242,7 +255,7 @@ def monte_carlo_pvalue(simulated, test, tails="right", center=0, axis=0):
             raise ValueError("Incorrect size of center array.")
         center = center.reshape(test.shape)
 
-    invalid = (np.all(np.isnan(simulated), axis=axis)) | (np.isnan(test))
+    invalid = (np.all(np.isnan(simulated), axis=axis, keepdims=True)) | (np.isnan(test))
 
     p = (
         np.nansum(cmp_fcn(simulated - center, test - center), axis=axis, keepdims=True)
