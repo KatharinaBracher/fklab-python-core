@@ -1,7 +1,6 @@
 
 #include "radon.hpp"
 #include <iostream>
-#include <cstdint>
 
 Constraint constraint_from_string( const std::string & s ) {
     Constraint ret;
