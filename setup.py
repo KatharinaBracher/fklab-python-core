@@ -94,6 +94,7 @@ setup(
         "typing_extensions",
         "pandas"
     ],
+    setup_requires=['pybind11>=2.10'],
     author="Fabian Kloosterman",
     author_email="fabian.kloosterman@nerf.be",
     description="Kloosterman Lab Data Analysis Tools",
