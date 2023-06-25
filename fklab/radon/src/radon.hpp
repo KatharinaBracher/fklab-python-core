@@ -4,6 +4,7 @@
 #include <limits>
 #include <cmath>
 #include <stdexcept>
+#include <cstdint>
 
 enum class Interpolation { Nearest, Linear };
 enum class Constraint { X, Y, No };
